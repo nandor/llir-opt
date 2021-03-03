@@ -282,7 +282,8 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
           case Item::Kind::INT16:
           case Item::Kind::INT32:
           case Item::Kind::STRING:
-          case Item::Kind::EXPR:
+          case Item::Kind::EXPR32:
+          case Item::Kind::EXPR64:
           case Item::Kind::FLOAT64: {
             isTautological = false;
             break;

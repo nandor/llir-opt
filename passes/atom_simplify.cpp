@@ -46,7 +46,7 @@ bool AtomSimplifyPass::Run(Prog &prog)
               break;
             }
             if (unsigned pad = llvm::offsetToAlignment(offset, *align)) {
-              base->AddItem(new Item(Item::Space{ pad }));
+              base->AddItem(Item::CreateSpace(pad));
               offset += pad;
             }
             next->SetAlignment(llvm::Align(1));

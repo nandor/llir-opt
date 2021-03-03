@@ -88,6 +88,31 @@ void Printer::Print(const Atom &atom)
   if (auto align = atom.GetAlignment()) {
     os_ << "\t.align\t" << align->value() << "\n";
   }
+
+  auto printExpr = [&] (const char *token, const Expr *expr)
+  {
+    switch (expr->GetKind()) {
+      case Expr::Kind::SYMBOL_OFFSET: {
+        auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
+        if (auto *symbol = offsetExpr->GetSymbol()) {
+          os_ << "\t" << token << "\t" << symbol->getName();
+          if (auto offset = offsetExpr->GetOffset()) {
+            if (offset < 0) {
+              os_ << "-" << -offset;
+            }
+            if (offset > 0) {
+              os_ << "+" << +offset;
+            }
+          }
+        } else {
+          os_ << "\t" << token << "\t" << 0ull;
+        }
+        return;
+      }
+    }
+    llvm_unreachable("invalid expression kind");
+  };
+
   os_ << atom.getName() << ":\n";
   os_ << "\t.visibility\t" << atom.GetVisibility() << "\n";
   for (auto &item : atom) {
@@ -112,27 +137,12 @@ void Printer::Print(const Atom &atom)
         os_ << "\t.double\t" << item.GetFloat64();
         break;
       }
-      case Item::Kind::EXPR: {
-        auto *expr = item.GetExpr();
-        switch (expr->GetKind()) {
-          case Expr::Kind::SYMBOL_OFFSET: {
-            auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
-            if (auto *symbol = offsetExpr->GetSymbol()) {
-              os_ << "\t.quad\t" << symbol->getName();
-              if (auto offset = offsetExpr->GetOffset()) {
-                if (offset < 0) {
-                  os_ << "-" << -offset;
-                }
-                if (offset > 0) {
-                  os_ << "+" << +offset;
-                }
-              }
-            } else {
-              os_ << "\t.quad\t" << 0ull;
-            }
-            break;
-          }
-        }
+      case Item::Kind::EXPR32: {
+        printExpr(".long", item.GetExpr());
+        break;
+      }
+      case Item::Kind::EXPR64: {
+        printExpr(".quad", item.GetExpr());
         break;
       }
       case Item::Kind::SPACE: {

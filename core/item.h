@@ -41,27 +41,44 @@ public:
  */
 class Item final : public llvm::ilist_node_with_parent<Item, Atom> {
 public:
+  /// Enumeration of item kinds.
   enum class Kind : uint8_t {
-    INT8, INT16, INT32, INT64,
+    /// 8-bit integer.
+    INT8,
+    /// 16-bit integer.
+    INT16,
+    /// 32-bit integer.
+    INT32,
+    /// 64-bit integer.
+    INT64,
+    /// IEEE double.
     FLOAT64,
-    EXPR,
+    /// 32-bit pointer.
+    EXPR32,
+    /// 64-bit pointer.
+    EXPR64,
+    /// Unallocated space.
     SPACE,
+    /// Raw string.
     STRING
   };
 
-  struct Space { unsigned V; };
-
+public:
+  /// Copy constructor.
   Item(Item &that);
-  Item(int8_t val) : kind_(Kind::INT8), parent_(nullptr), int8val_(val) {}
-  Item(int16_t val) : kind_(Kind::INT16), parent_(nullptr), int16val_(val) {}
-  Item(int32_t val) : kind_(Kind::INT32), parent_(nullptr), int32val_(val) {}
-  Item(int64_t val) : kind_(Kind::INT64), parent_(nullptr), int64val_(val) {}
-  Item(double val) : kind_(Kind::FLOAT64), parent_(nullptr), float64val_(val) {}
-  Item(Space val) : kind_(Kind::SPACE), parent_(nullptr), int32val_(val.V) {}
-  Item(Expr *val);
-  Item(const std::string_view str);
-
+  /// Cleanup.
   ~Item();
+
+  // Helpers to create items.
+  static Item *CreateInt8(int8_t val);
+  static Item *CreateInt16(int16_t val);
+  static Item *CreateInt32(int32_t val);
+  static Item *CreateInt64(int64_t val);
+  static Item *CreateFloat64(double val);
+  static Item *CreateSpace(unsigned val);
+  static Item *CreateExpr32(Expr *val);
+  static Item *CreateExpr64(Expr *val);
+  static Item *CreateString(const std::string_view str);
 
   /// Removes an item from the parent.
   void removeFromParent();
@@ -73,6 +90,12 @@ public:
 
   /// Returns the item kind.
   Kind GetKind() const { return kind_; }
+
+  /// Checks whether the item is an expression.
+  bool IsExpr() const
+  {
+    return kind_ == Kind::EXPR32 || kind_ == Kind::EXPR64;
+  }
 
   /// Checks whether the item is space.
   bool IsSpace() const { return GetKind() == Item::Kind::SPACE; }
@@ -117,6 +140,10 @@ public:
   Expr *AsExpr();
   /// Returns the item as an expression, nullptr if not one.
   const Expr *AsExpr() const;
+
+private:
+  /// Create a new item of a specific kind.
+  Item(Kind kind) : kind_(kind), parent_(nullptr) {}
 
 private:
   friend struct llvm::ilist_traits<Item>;

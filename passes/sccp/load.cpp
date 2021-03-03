@@ -51,12 +51,13 @@ static Lattice LoadInt(Atom::iterator it, unsigned off, unsigned size)
     case Item::Kind::FLOAT64: {
       break;
     }
-    case Item::Kind::EXPR: {
+    case Item::Kind::EXPR32:
+    case Item::Kind::EXPR64: {
       auto *expr = it->GetExpr();
       switch (expr->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *sym = static_cast<SymbolOffsetExpr *>(expr);
-          if (size == 8) {
+          if (size == it->GetSize()) {
             return Lattice::CreateGlobal(sym->GetSymbol(), sym->GetOffset());
           }
           break;

@@ -66,11 +66,10 @@ private:
   void ParseSpace();
   void ParseAscii();
   void ParseAsciz();
-  void ParseQuad();
+  void ParseIntOrExpr(Type ty);
   void ParseComm(Visibility visibility);
   void ParseInt8();
   void ParseInt16();
-  void ParseInt32();
   void ParseDouble();
   // Function and segment attributes.
   void ParseFeatures();

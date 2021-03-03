@@ -165,7 +165,8 @@ void DataPrinter::LowerAtom(const Atom &atom)
         os_->emitIntValue(u.i, 8);
         break;
       }
-      case Item::Kind::EXPR: {
+      case Item::Kind::EXPR32:
+      case Item::Kind::EXPR64: {
         auto *expr = item.GetExpr();
         switch (expr->GetKind()) {
           case Expr::Kind::SYMBOL_OFFSET: {
@@ -193,13 +194,13 @@ void DataPrinter::LowerAtom(const Atom &atom)
                         llvm::MCConstantExpr::create(offset, *ctx_),
                         *ctx_
                     ),
-                    8
+                    item.GetSize()
                 );
               } else {
-                os_->emitSymbolValue(sym, 8);
+                os_->emitSymbolValue(sym, item.GetSize());
               }
             } else {
-              os_->emitIntValue(0ull, 8);
+              os_->emitIntValue(0ull, item.GetSize());
             }
             break;
           }

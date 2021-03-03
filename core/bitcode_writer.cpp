@@ -205,7 +205,8 @@ void BitcodeWriter::Write(const Atom &atom)
         Emit<double>(item.GetFloat64());
         continue;
       }
-      case Item::Kind::EXPR: {
+      case Item::Kind::EXPR32:
+      case Item::Kind::EXPR64: {
         Write(*item.GetExpr());
         continue;
       }

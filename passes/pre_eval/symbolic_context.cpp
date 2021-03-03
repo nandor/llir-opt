@@ -225,7 +225,10 @@ SymbolicObject *SymbolicContext::BuildObject(
           off += 8;
           continue;
         }
-        case Item::Kind::EXPR: {
+        case Item::Kind::EXPR32: {
+          llvm_unreachable("not implemented");
+        }
+        case Item::Kind::EXPR64: {
           switch (item.GetExpr()->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto se = ::cast_or_null<SymbolOffsetExpr>(item.GetExpr());

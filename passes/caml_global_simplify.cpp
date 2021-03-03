@@ -510,7 +510,7 @@ void CamlGlobalSimplifier::Simplify(Object &object)
       if (name.endswith("__gc_roots")) {
         item.eraseFromParent();
       } else {
-        atom.AddItem(new Item(static_cast<int64_t>(1)), &item);
+        atom.AddItem(Item::CreateInt64(1));
         item.eraseFromParent();
       }
       changed_ = true;

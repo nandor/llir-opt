@@ -54,7 +54,8 @@ void CoqEmitter::Write(const Prog &prog)
               case Item::Kind::INT32:   offset += 4; continue;
               case Item::Kind::INT64:   offset += 8; continue;
               case Item::Kind::FLOAT64: offset += 8; continue;
-              case Item::Kind::EXPR:    offset += 8; continue;
+              case Item::Kind::EXPR32:  offset += 4; continue;
+              case Item::Kind::EXPR64:  offset += 8; continue;
               case Item::Kind::SPACE: {
                 offset += item.GetSpace();
                 continue;

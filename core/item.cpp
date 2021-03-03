@@ -39,7 +39,8 @@ Item::Item(Item &that)
       int32val_ = that.int32val_;
       return;
     }
-    case Item::Kind::EXPR: {
+    case Item::Kind::EXPR32:
+    case Item::Kind::EXPR64: {
       new (&useVal_) Use(that.useVal_.get(), nullptr);
       return;
     }
@@ -52,19 +53,75 @@ Item::Item(Item &that)
 }
 
 // -----------------------------------------------------------------------------
-Item::Item(Expr *val)
-  : kind_(Kind::EXPR)
-  , parent_(nullptr)
+Item *Item::CreateInt8(int8_t val)
 {
-  new (&useVal_) Use(val, nullptr);
+  Item *item = new Item(Kind::INT8);
+  item->int8val_ = val;
+  return item;
 }
 
 // -----------------------------------------------------------------------------
-Item::Item(const std::string_view str)
-  : kind_(Kind::STRING)
-  , parent_(nullptr)
+Item *Item::CreateInt16(int16_t val)
 {
-  new (&stringVal_) std::string(str);
+  Item *item = new Item(Kind::INT16);
+  item->int16val_ = val;
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateInt32(int32_t val)
+{
+  Item *item = new Item(Kind::INT32);
+  item->int32val_ = val;
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateInt64(int64_t val)
+{
+  Item *item = new Item(Kind::INT64);
+  item->int64val_ = val;
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateFloat64(double val)
+{
+  Item *item = new Item(Kind::FLOAT64);
+  item->float64val_ = val;
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateSpace(unsigned val)
+{
+  Item *item = new Item(Kind::SPACE);
+  item->int32val_ = val;
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateExpr32(Expr *val)
+{
+  Item *item = new Item(Kind::EXPR32);
+  new (&item->useVal_) Use(val, nullptr);
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateExpr64(Expr *val)
+{
+  Item *item = new Item(Kind::EXPR64);
+  new (&item->useVal_) Use(val, nullptr);
+  return item;
+}
+
+// -----------------------------------------------------------------------------
+Item *Item::CreateString(const std::string_view str)
+{
+  Item *item = new Item(Kind::SPACE);
+  new (&item->stringVal_) std::string(str);
+  return item;
 }
 
 // -----------------------------------------------------------------------------
@@ -79,7 +136,8 @@ Item::~Item()
     case Item::Kind::SPACE: {
       return;
     }
-    case Item::Kind::EXPR: {
+    case Item::Kind::EXPR32:
+    case Item::Kind::EXPR64: {
       if (auto *v = useVal_.get().Get()) {
         auto *expr = ::cast<Expr>(v);
         useVal_.~Use();
@@ -109,7 +167,8 @@ size_t Item::GetSize() const
     case Item::Kind::INT64: return 8;
     case Item::Kind::FLOAT64: return 8;
     case Item::Kind::SPACE: return GetSpace();
-    case Item::Kind::EXPR: return 8;
+    case Item::Kind::EXPR32: return 4;
+    case Item::Kind::EXPR64: return 8;
     case Item::Kind::STRING: return GetString().size();
   }
   llvm_unreachable("invalid item kind");
@@ -130,25 +189,25 @@ void Item::eraseFromParent()
 // -----------------------------------------------------------------------------
 Expr *Item::GetExpr()
 {
-  assert(kind_ == Kind::EXPR);
+  assert(kind_ == Kind::EXPR32 || kind_ == Kind::EXPR64);
   return &*::cast<Expr>(*useVal_);
 }
 
 // -----------------------------------------------------------------------------
 const Expr *Item::GetExpr() const
 {
-  assert(kind_ == Kind::EXPR);
+  assert(kind_ == Kind::EXPR32 || kind_ == Kind::EXPR64);
   return &*::cast<Expr>(*useVal_);
 }
 
 // -----------------------------------------------------------------------------
 Expr *Item::AsExpr()
 {
-  return kind_ == Kind::EXPR ? GetExpr() : nullptr;
+  return IsExpr() ? GetExpr() : nullptr;
 }
 
 // -----------------------------------------------------------------------------
 const Expr *Item::AsExpr() const
 {
-  return kind_ == Kind::EXPR ? GetExpr() : nullptr;
+  return IsExpr() ? GetExpr() : nullptr;
 }

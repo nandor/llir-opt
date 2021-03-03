@@ -218,30 +218,46 @@ ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
         newObject->AddAtom(newAtom);
         for (Item &oldItem : oldAtom) {
           switch (oldItem.GetKind()) {
-            case Item::Kind::INT8:
-              newAtom->AddItem(new Item(oldItem.GetInt8()));
+            case Item::Kind::INT8: {
+              newAtom->AddItem(Item::CreateInt8(oldItem.GetInt8()));
               break;
-            case Item::Kind::INT16:
-              newAtom->AddItem(new Item(oldItem.GetInt16()));
+            }
+            case Item::Kind::INT16: {
+              newAtom->AddItem(Item::CreateInt16(oldItem.GetInt16()));
               break;
-            case Item::Kind::INT32:
-              newAtom->AddItem(new Item(oldItem.GetInt32()));
+            }
+            case Item::Kind::INT32: {
+              newAtom->AddItem(Item::CreateInt32(oldItem.GetInt32()));
               break;
-            case Item::Kind::INT64:
-              newAtom->AddItem(new Item(oldItem.GetInt64()));
+            }
+            case Item::Kind::INT64: {
+              newAtom->AddItem(Item::CreateInt64(oldItem.GetInt64()));
               break;
-            case Item::Kind::FLOAT64:
-              newAtom->AddItem(new Item(oldItem.GetFloat64()));
+            }
+            case Item::Kind::FLOAT64: {
+              newAtom->AddItem(Item::CreateFloat64(oldItem.GetFloat64()));
               break;
-            case Item::Kind::EXPR:
-              newAtom->AddItem(new Item(CloneVisitor::Map(oldItem.GetExpr())));
+            }
+            case Item::Kind::EXPR32: {
+              newAtom->AddItem(Item::CreateExpr32(
+                  CloneVisitor::Map(oldItem.GetExpr())
+              ));
               break;
-            case Item::Kind::SPACE:
-              newAtom->AddItem(new Item(Item::Space{ oldItem.GetSpace() }));
+            }
+            case Item::Kind::EXPR64: {
+              newAtom->AddItem(Item::CreateExpr64(
+                  CloneVisitor::Map(oldItem.GetExpr())
+              ));
               break;
-            case Item::Kind::STRING:
-              newAtom->AddItem(new Item(oldItem.GetString()));
+            }
+            case Item::Kind::SPACE: {
+              newAtom->AddItem(Item::CreateSpace(oldItem.GetSpace()));
               break;
+            }
+            case Item::Kind::STRING: {
+              newAtom->AddItem(Item::CreateString(oldItem.GetString()));
+              break;
+            }
           }
         }
       }

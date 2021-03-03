@@ -232,17 +232,20 @@ bool ObjectSplitPass::Run(Prog &prog)
                   llvm_unreachable("not implemented");
                 }
                 case Item::Kind::SPACE: {
-                  newAtom->AddItem(new Item(Item::Space{left}));
+                  newAtom->AddItem(Item::CreateSpace(left));
                   itOff = 0;
                   ++it;
                   continue;
                 }
-                case Item::Kind::EXPR: {
+                case Item::Kind::EXPR32: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::EXPR64: {
                   llvm_unreachable("not implemented");
                 }
                 case Item::Kind::STRING: {
                   auto chunk = it->GetString().substr(itOff, left);
-                  newAtom->AddItem(new Item(chunk));
+                  newAtom->AddItem(Item::CreateString(chunk));
                   itOff = 0;
                   ++it;
                   continue;
@@ -268,18 +271,21 @@ bool ObjectSplitPass::Run(Prog &prog)
                 llvm_unreachable("not implemented");
               }
               case Item::Kind::SPACE: {
-                newAtom->AddItem(new Item(Item::Space{size}));
+                newAtom->AddItem(Item::CreateSpace(size));
                 startOff += size;
                 itOff += size;
                 size = 0;
                 continue;
               }
-              case Item::Kind::EXPR: {
+              case Item::Kind::EXPR32: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::EXPR64: {
                 llvm_unreachable("not implemented");
               }
               case Item::Kind::STRING: {
                 auto chunk = it->GetString().substr(itOff, size);
-                newAtom->AddItem(new Item(chunk));
+                newAtom->AddItem(Item::CreateString(chunk));
                 startOff += size;
                 itOff += size;
                 size = 0;

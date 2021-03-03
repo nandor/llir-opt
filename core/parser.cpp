@@ -148,7 +148,7 @@ std::unique_ptr<Prog> Parser::Parse()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseQuad()
+void Parser::ParseIntOrExpr(Type ty)
 {
   if (!data_) {
     l_.Error(".quad not in data segment");
@@ -158,12 +158,48 @@ void Parser::ParseQuad()
       l_.Expect(Token::NUMBER);
       int64_t value = -l_.Int();
       l_.NextToken();
-      return GetAtom()->AddItem(new Item(value));
+      switch (ty) {
+        case Type::I32:{
+          return GetAtom()->AddItem(Item::CreateInt32(value));
+        }
+        case Type::I64:
+        case Type::V64: {
+          return GetAtom()->AddItem(Item::CreateInt64(value));
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I128:
+        case Type::F32:
+        case Type::F64:
+        case Type::F128:
+        case Type::F80: {
+          llvm_unreachable("invalid integer type");
+        }
+      }
+      llvm_unreachable("unknown type");
     }
     case Token::NUMBER: {
       int64_t value = l_.Int();
       l_.NextToken();
-      return GetAtom()->AddItem(new Item(value));
+      switch (ty) {
+        case Type::I32:{
+          return GetAtom()->AddItem(Item::CreateInt32(value));
+        }
+        case Type::I64:
+        case Type::V64: {
+          return GetAtom()->AddItem(Item::CreateInt64(value));
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I128:
+        case Type::F32:
+        case Type::F64:
+        case Type::F128:
+        case Type::F80: {
+          llvm_unreachable("invalid integer type");
+        }
+      }
+      llvm_unreachable("unknown type");
     }
     case Token::IDENT: {
       std::string name(ParseName(l_.String()));
@@ -185,9 +221,29 @@ void Parser::ParseQuad()
           break;
         }
       }
-      return GetAtom()->AddItem(new Item(
-          SymbolOffsetExpr::Create(prog_->GetGlobalOrExtern(name), offset)
-      ));
+      auto *expr = SymbolOffsetExpr::Create(
+          prog_->GetGlobalOrExtern(name),
+          offset
+      );
+      switch (ty) {
+        case Type::I32:{
+          return GetAtom()->AddItem(Item::CreateExpr32(expr));
+        }
+        case Type::I64:
+        case Type::V64: {
+          return GetAtom()->AddItem(Item::CreateExpr64(expr));
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I128:
+        case Type::F32:
+        case Type::F64:
+        case Type::F128:
+        case Type::F80: {
+          llvm_unreachable("invalid integer type");
+        }
+      }
+      llvm_unreachable("unknown type");
     }
     default: {
       l_.Error("unexpected token, expected value");
@@ -227,7 +283,7 @@ void Parser::ParseComm(Visibility visibility)
 
   Atom *atom = new Atom(ParseName(name));
   atom->SetAlignment(llvm::Align(align));
-  atom->AddItem(new Item(Item::Space{ static_cast<unsigned>(size) }));
+  atom->AddItem(Item::CreateSpace(static_cast<unsigned>(size)));
   atom->SetVisibility(visibility);
 
   Object *object = new Object();
@@ -243,26 +299,20 @@ void Parser::ParseComm(Visibility visibility)
 // -----------------------------------------------------------------------------
 void Parser::ParseInt8()
 {
-  GetAtom()->AddItem(new Item(static_cast<int8_t>(Number())));
+  GetAtom()->AddItem(Item::CreateInt8(Number()));
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseInt16()
 {
-  GetAtom()->AddItem(new Item(static_cast<int16_t>(Number())));
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseInt32()
-{
-  GetAtom()->AddItem(new Item(static_cast<int32_t>(Number())));
+  GetAtom()->AddItem(Item::CreateInt16(Number()));
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseDouble()
 {
   union U { double f; int64_t i; } u = { .i = Number() };
-  GetAtom()->AddItem(new Item(u.f));
+  GetAtom()->AddItem(Item::CreateFloat64(u.f));
 }
 
 // -----------------------------------------------------------------------------
@@ -318,7 +368,7 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'l': {
-      if (op == ".long") return ParseInt32();
+      if (op == ".long") return ParseIntOrExpr(Type::I32);
       if (op == ".local") return ParseLocal();
       if (op == ".lcomm") return ParseComm(Visibility::WEAK_HIDDEN);
       break;
@@ -333,7 +383,7 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'q': {
-      if (op == ".quad") return ParseQuad();
+      if (op == ".quad") return ParseIntOrExpr(Type::I64);
       break;
     }
     case 's': {
@@ -550,17 +600,17 @@ void Parser::ParseSpace()
   Atom *atom = GetAtom();
   switch (l_.NextToken()) {
     case Token::NEWLINE: {
-      atom->AddItem(new Item(Item::Space{ length }));
+      atom->AddItem(Item::CreateSpace(length));
       break;
     }
     case Token::COMMA: {
       l_.Expect(Token::NUMBER);
       int64_t v = l_.Int();
       if (v == 0) {
-        atom->AddItem(new Item(Item::Space{ length }));
+        atom->AddItem(Item::CreateSpace(length));
       } else {
         for (unsigned i = 0; i < length; ++i) {
-          atom->AddItem(new Item(static_cast<int8_t>(v)));
+          atom->AddItem(Item::CreateInt8(v));
         }
       }
       l_.Expect(Token::NEWLINE);
@@ -819,7 +869,7 @@ void Parser::ParseAscii()
 {
   l_.Check(Token::STRING);
   InData();
-  GetAtom()->AddItem(new Item(l_.String()));
+  GetAtom()->AddItem(Item::CreateString(l_.String()));
   l_.Expect(Token::NEWLINE);
 }
 
@@ -829,8 +879,8 @@ void Parser::ParseAsciz()
   l_.Check(Token::STRING);
   InData();
   Atom *atom = GetAtom();
-  atom->AddItem(new Item(l_.String()));
-  atom->AddItem(new Item(static_cast<int8_t>(0)));
+  atom->AddItem(Item::CreateString(l_.String()));
+  atom->AddItem(Item::CreateInt8(0));
   l_.Expect(Token::NEWLINE);
 }
 

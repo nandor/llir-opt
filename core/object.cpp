@@ -112,7 +112,24 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
     case Item::Kind::FLOAT64: {
       return nullptr;
     }
-    case Item::Kind::EXPR: {
+    case Item::Kind::EXPR32: {
+      auto *expr = it->GetExpr();
+      switch (expr->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *sym = static_cast<SymbolOffsetExpr *>(expr);
+          if (size == 4) {
+            if (sym->GetOffset()) {
+              return expr;
+            } else {
+              return sym->GetSymbol();
+            }
+          }
+          break;
+        }
+      }
+      return nullptr;
+    }
+    case Item::Kind::EXPR64: {
       auto *expr = it->GetExpr();
       switch (expr->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
@@ -211,13 +228,17 @@ static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr)
     case Item::Kind::INT16: {
       llvm_unreachable("not implemented");
     }
+    case Item::Kind::EXPR32:
     case Item::Kind::INT32: {
-      llvm_unreachable("not implemented");
+      auto *item = Item::CreateExpr32(expr);
+      it->getParent()->AddItem(item, &*it);
+      it->eraseFromParent();
+      return true;
     }
-    case Item::Kind::EXPR:
+    case Item::Kind::EXPR64:
     case Item::Kind::INT64:
     case Item::Kind::FLOAT64: {
-      auto *item = new Item(expr);
+      auto *item = Item::CreateExpr64(expr);
       it->getParent()->AddItem(item, &*it);
       it->eraseFromParent();
       return true;
@@ -242,7 +263,7 @@ static bool StoreInt(
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
       if (type == Type::I8) {
-        auto *item = new Item(static_cast<int8_t>(value.getSExtValue()));
+        auto *item = Item::CreateInt8(value.getSExtValue());
         it->getParent()->AddItem(item, &*it);
         it->eraseFromParent();
         return true;
@@ -254,7 +275,7 @@ static bool StoreInt(
     }
     case Item::Kind::INT32: {
       if (type == Type::I32) {
-        auto *item = new Item(static_cast<int32_t>(value.getSExtValue()));
+        auto *item = Item::CreateInt32(value.getSExtValue());
         it->getParent()->AddItem(item, &*it);
         it->eraseFromParent();
         return true;
@@ -263,7 +284,7 @@ static bool StoreInt(
     }
     case Item::Kind::INT64: {
       if (type == Type::I64 || type == Type::V64) {
-        auto *item = new Item(static_cast<int64_t>(value.getSExtValue()));
+        auto *item = Item::CreateInt64(value.getSExtValue());
         it->getParent()->AddItem(item, &*it);
         it->eraseFromParent();
         return true;
@@ -280,7 +301,7 @@ static bool StoreInt(
       assert(after >= 0 && "invalid write");
       auto *atom = it->getParent();
       if (before > 0) {
-        atom->AddItem(new Item(Item::Space{static_cast<unsigned>(before)}), &*it);
+        atom->AddItem(Item::CreateSpace(before), &*it);
       }
       switch (type) {
         case Type::I8:
@@ -289,12 +310,12 @@ static bool StoreInt(
           llvm_unreachable("not implemented");
         }
         case Type::I32: {
-          atom->AddItem(new Item(static_cast<int32_t>(value.getSExtValue())), &*it);
+          atom->AddItem(Item::CreateInt32(value.getSExtValue()), &*it);
           break;
         }
         case Type::I64:
         case Type::V64: {
-          atom->AddItem(new Item(value.getSExtValue()), &*it);
+          atom->AddItem(Item::CreateInt64(value.getSExtValue()), &*it);
           break;
         }
         case Type::F32:
@@ -305,7 +326,7 @@ static bool StoreInt(
         }
       }
       if (after > 0) {
-        atom->AddItem(new Item(Item::Space{static_cast<unsigned>(after)}), &*it);
+        atom->AddItem(Item::CreateSpace(after), &*it);
       }
       it->eraseFromParent();
       return true;
@@ -313,7 +334,8 @@ static bool StoreInt(
     case Item::Kind::FLOAT64: {
       llvm_unreachable("not implemented");
     }
-    case Item::Kind::EXPR: {
+    case Item::Kind::EXPR32:
+    case Item::Kind::EXPR64: {
       llvm_unreachable("not implemented");
     }
   }

@@ -303,23 +303,22 @@ bool ISel::runOnModule(llvm::Module &Module)
     for (const Object &object : data) {
       for (const Atom &atom : object) {
         for (const Item &item : atom) {
-          if (item.GetKind() != Item::Kind::EXPR) {
-            continue;
-          }
-
-          auto *expr = item.GetExpr();
-          switch (expr->GetKind()) {
-            case Expr::Kind::SYMBOL_OFFSET: {
-              auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
-              auto *sym = offsetExpr->GetSymbol();
-              if (auto *block = ::cast_or_null<const Block>(sym)) {
-                auto *MBB = mbbs_[block];
-                auto *BB = bbs_[block];
-                MBB->setHasAddressTaken();
-                llvm::BlockAddress::get(BB->getParent(), BB);
+          if (item.IsExpr()) {
+            auto *expr = item.GetExpr();
+            switch (expr->GetKind()) {
+              case Expr::Kind::SYMBOL_OFFSET: {
+                auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
+                auto *sym = offsetExpr->GetSymbol();
+                if (auto *block = ::cast_or_null<const Block>(sym)) {
+                  auto *MBB = mbbs_[block];
+                  auto *BB = bbs_[block];
+                  MBB->setHasAddressTaken();
+                  llvm::BlockAddress::get(BB->getParent(), BB);
+                }
+                continue;
               }
-              break;
             }
+            llvm_unreachable("invalid symbol kind");
           }
         }
       }

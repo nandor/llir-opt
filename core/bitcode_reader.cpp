@@ -188,35 +188,39 @@ void BitcodeReader::Read(Atom &atom)
   for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
     switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
       case Item::Kind::INT8: {
-        atom.AddItem(new Item(ReadData<int8_t>()));
+        atom.AddItem(Item::CreateInt8(ReadData<int8_t>()));
         continue;
       }
       case Item::Kind::INT16: {
-        atom.AddItem(new Item(ReadData<int16_t>()));
+        atom.AddItem(Item::CreateInt16(ReadData<int16_t>()));
         continue;
       }
       case Item::Kind::INT32: {
-        atom.AddItem(new Item(ReadData<int32_t>()));
+        atom.AddItem(Item::CreateInt32(ReadData<int32_t>()));
         continue;
       }
       case Item::Kind::INT64: {
-        atom.AddItem(new Item(ReadData<int64_t>()));
+        atom.AddItem(Item::CreateInt64(ReadData<int64_t>()));
         continue;
       }
       case Item::Kind::FLOAT64: {
-        atom.AddItem(new Item(ReadData<double>()));
+        atom.AddItem(Item::CreateFloat64(ReadData<double>()));
         continue;
       }
-      case Item::Kind::EXPR: {
-        atom.AddItem(new Item(ReadExpr()));
+      case Item::Kind::EXPR32: {
+        atom.AddItem(Item::CreateExpr32(ReadExpr()));
+        continue;
+      }
+      case Item::Kind::EXPR64: {
+        atom.AddItem(Item::CreateExpr64(ReadExpr()));
         continue;
       }
       case Item::Kind::SPACE: {
-        atom.AddItem(new Item(Item::Space{ ReadData<uint32_t>() }));
+        atom.AddItem(Item::CreateSpace(ReadData<uint32_t>()));
         continue;
       }
       case Item::Kind::STRING: {
-        atom.AddItem(new Item(ReadString()));
+        atom.AddItem(Item::CreateString(ReadString()));
         continue;
       }
     }
