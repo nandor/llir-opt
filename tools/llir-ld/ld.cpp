@@ -65,30 +65,7 @@ getTriple(llvm::StringRef tool)
   }
 
   // Find the base triple (non-LLIR version).
-  llvm::Triple base(triple);
-  switch (base.getArch()) {
-    case llvm::Triple::llir_aarch64: {
-      base.setArch(llvm::Triple::aarch64);
-      break;
-    }
-    case llvm::Triple::llir_x86_64: {
-      base.setArch(llvm::Triple::x86_64);
-      break;
-    }
-    case llvm::Triple::llir_riscv64: {
-      base.setArch(llvm::Triple::riscv64);
-      break;
-    }
-    case llvm::Triple::llir_ppc64le: {
-      base.setArch(llvm::Triple::ppc64le);
-      break;
-    }
-    default: {
-      return MakeError(triple.str());
-    }
-  }
-
-  return std::make_pair(triple, base);
+  return std::make_pair(triple, triple.getNativeVariant());
 }
 
 // -----------------------------------------------------------------------------

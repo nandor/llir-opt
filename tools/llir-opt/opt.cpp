@@ -350,6 +350,7 @@ GetTarget(
     bool shared)
 {
   switch (tt.getArch()) {
+    case llvm::Triple::x86:
     case llvm::Triple::x86_64: {
       return std::make_unique<X86Target>(tt, cpu, tuneCPU, fs, abi, shared);
     }
@@ -394,24 +395,7 @@ int main(int argc, char **argv)
   } else {
     auto target = ParseToolName(argc ? argv[0] : "opt", "opt");
     if (!target.empty()) {
-      triple = llvm::Triple(target);
-      switch (triple.getArch()) {
-      default:
-        llvm::errs() << "[Error] Unknown triple: " + triple.str();
-        return EXIT_FAILURE;
-      case llvm::Triple::llir_x86_64:
-        triple.setArch(llvm::Triple::x86_64);
-        break;
-      case llvm::Triple::llir_aarch64:
-        triple.setArch(llvm::Triple::aarch64);
-        break;
-      case llvm::Triple::llir_riscv64:
-        triple.setArch(llvm::Triple::riscv64);
-        break;
-      case llvm::Triple::llir_ppc64le:
-        triple.setArch(llvm::Triple::ppc64le);
-        break;
-      }
+      triple = llvm::Triple(target).getNativeVariant();
     } else {
       triple = hostTriple;
     }
@@ -428,6 +412,10 @@ int main(int argc, char **argv)
 
   // Find the target architecture.
   auto t = GetTarget(triple, CPU, tuneCPU, optFS, optABI, optShared);
+  if (!t) {
+    llvm::errs() << "[Error] Cannot find target: " + triple.str() + "\n";
+    return EXIT_FAILURE;
+  }
 
   // Open the input.
   auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(optInput);
@@ -566,6 +554,7 @@ int main(int argc, char **argv)
   auto getEmitter = [&] () -> std::unique_ptr<Emitter> {
     auto &os = output->os();
     switch (triple.getArch()) {
+      case llvm::Triple::x86:
       case llvm::Triple::x86_64: {
         return std::make_unique<X86Emitter>(optInput, os, *t->As<X86Target>());
       }

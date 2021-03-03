@@ -320,10 +320,6 @@ public:
     if (!blocks_.count(addr->getParent())) {
       return;
     }
-    #ifndef NDEBUG
-    auto ty = addr.GetType();
-    assert(ty == Type::I64 || ty == Type::V64 && "not a pointer");
-    #endif
     pointers_.insert(addr);
 
     if (auto add = ::cast_or_null<AddInst>(addr)) {
