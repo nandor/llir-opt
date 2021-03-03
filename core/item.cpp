@@ -119,7 +119,7 @@ Item *Item::CreateExpr64(Expr *val)
 // -----------------------------------------------------------------------------
 Item *Item::CreateString(const std::string_view str)
 {
-  Item *item = new Item(Kind::SPACE);
+  Item *item = new Item(Kind::STRING);
   new (&item->stringVal_) std::string(str);
   return item;
 }

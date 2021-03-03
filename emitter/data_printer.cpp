@@ -156,14 +156,14 @@ void DataPrinter::LowerAtom(const Atom &atom)
   os_->emitLabel(sym);
   for (const Item &item : atom) {
     switch (item.GetKind()) {
-      case Item::Kind::INT8:  os_->emitIntValue(item.GetInt8(),  1); break;
-      case Item::Kind::INT16: os_->emitIntValue(item.GetInt16(), 2); break;
-      case Item::Kind::INT32: os_->emitIntValue(item.GetInt32(), 4); break;
-      case Item::Kind::INT64: os_->emitIntValue(item.GetInt64(), 8); break;
+      case Item::Kind::INT8:  os_->emitIntValue(item.GetInt8(),  1); continue;
+      case Item::Kind::INT16: os_->emitIntValue(item.GetInt16(), 2); continue;
+      case Item::Kind::INT32: os_->emitIntValue(item.GetInt32(), 4); continue;
+      case Item::Kind::INT64: os_->emitIntValue(item.GetInt64(), 8); continue;
       case Item::Kind::FLOAT64: {
         union U { double f; uint64_t i; } u = { .f = item.GetFloat64() };
         os_->emitIntValue(u.i, 8);
-        break;
+        continue;
       }
       case Item::Kind::EXPR32:
       case Item::Kind::EXPR64: {
@@ -202,20 +202,21 @@ void DataPrinter::LowerAtom(const Atom &atom)
             } else {
               os_->emitIntValue(0ull, item.GetSize());
             }
-            break;
+            continue;
           }
         }
-        break;
+        llvm_unreachable("invalid expression kind");
       }
       case Item::Kind::SPACE:  {
         os_->emitZeros(item.GetSpace());
-        break;
+        continue;
       }
       case Item::Kind::STRING: {
         os_->emitBytes(item.getString());
-        break;
+        continue;
       }
     }
+    llvm_unreachable("invalid item kind");
   }
 }
 

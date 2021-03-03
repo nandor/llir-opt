@@ -66,17 +66,11 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
       }
     }
     case Value::Kind::GLOBAL: {
-      if (IsPointerType(i.GetType())) {
-        return global(*::cast<Global>(arg), 0ll);
-      }
-      llvm_unreachable("invalid global type");
+      return global(*::cast<Global>(arg), 0ll);
     }
     case Value::Kind::EXPR: {
       auto &sym = *::cast<SymbolOffsetExpr>(arg);
-      if (IsPointerType(i.GetType())) {
-        return global(*sym.GetSymbol(), sym.GetOffset());
-      }
-      llvm_unreachable("invalid expression type");
+      return global(*sym.GetSymbol(), sym.GetOffset());
     }
     case Value::Kind::CONST: {
       auto &c = *::cast<Constant>(arg);

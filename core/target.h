@@ -6,6 +6,8 @@
 
 #include <llvm/ADT/Triple.h>
 
+#include "core/type.h"
+
 
 
 /// Forward declaration of target kinds.
@@ -74,6 +76,9 @@ public:
   llvm::StringRef getFS() const { return fs_; }
   /// Return the feature strings of the target.
   llvm::StringRef getABI() const { return abi_; }
+
+  /// Return the target pointer type.
+  Type GetPointerType() const;
 
 protected:
   /// Target kind.

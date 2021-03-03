@@ -21,7 +21,7 @@ public:
   static const char *kPassID;
 
   /// Initialises the pass.
-  VerifierPass(PassManager *passManager) : Pass(passManager) {}
+  VerifierPass(PassManager *passManager);
 
   /// Runs the pass.
   bool Run(Prog &prog) override;
@@ -53,10 +53,6 @@ private:
       ConstRef<Inst> ref,
       Type type
   );
-
-  /// Return the pointer type.
-  Type GetPointerType() const { return Type::I64; }
-
   /// Report an error.
   [[noreturn]] void Error(const Inst &i, llvm::Twine msg);
 
@@ -95,4 +91,8 @@ private:
   void VisitStoreInst(const StoreInst &i) override;
   void VisitVaStartInst(const VaStartInst &i) override;
   void VisitSelectInst(const SelectInst &i) override;
+
+private:
+  /// Underlying pointer type.
+  Type ptrTy_;
 };

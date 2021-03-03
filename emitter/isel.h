@@ -96,9 +96,9 @@ protected:
   /// Lovers a register value.
   SDValue LoadReg(Register reg);
   /// Lowers an offset reference to a global.
-  llvm::SDValue LowerGlobal(const Global &val);
+  llvm::SDValue LowerGlobal(const Global &val, Type type);
   /// Lowers a global value.
-  llvm::SDValue LowerGlobal(const Global &val, int64_t offset);
+  llvm::SDValue LowerGlobal(const Global &val, int64_t offset, Type type);
   /// Lowers all arguments.
   void LowerArgs(const CallLowering &lowering);
   /// Lower all return values.
@@ -163,7 +163,7 @@ protected:
   /// Returns a constant if the instruction introduces one.
   SDValue LowerConstant(ConstRef<Inst> inst);
   /// Lowers an expression value.
-  SDValue LowerExpr(const Expr &expr);
+  SDValue LowerExpr(const Expr &expr, Type type);
 
   /// Looks up an existing value.
   SDValue GetValue(ConstRef<Inst> inst);

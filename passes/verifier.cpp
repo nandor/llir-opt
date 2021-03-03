@@ -15,6 +15,7 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/printer.h"
+#include "core/target.h"
 #include "core/pass_manager.h"
 #include "core/analysis/dominator.h"
 #include "passes/verifier.h"
@@ -23,6 +24,13 @@
 
 // -----------------------------------------------------------------------------
 const char *VerifierPass::kPassID = "verifier";
+
+// -----------------------------------------------------------------------------
+VerifierPass::VerifierPass(PassManager *passManager)
+  : Pass(passManager)
+  , ptrTy_(GetTarget()->GetPointerType())
+{
+}
 
 // -----------------------------------------------------------------------------
 bool VerifierPass::Run(Prog &prog)
@@ -344,7 +352,7 @@ void VerifierPass::VisitMovInst(const MovInst &mi)
 // -----------------------------------------------------------------------------
 void VerifierPass::VisitAllocaInst(const AllocaInst &i)
 {
-  if (i.GetType(0) != GetPointerType()) {
+  if (i.GetType(0) != ptrTy_) {
     Error(i, "pointer type expected");
   }
 }
@@ -352,7 +360,7 @@ void VerifierPass::VisitAllocaInst(const AllocaInst &i)
 // -----------------------------------------------------------------------------
 void VerifierPass::VisitFrameInst(const FrameInst &i)
 {
-  if (i.GetType(0) != GetPointerType()) {
+  if (i.GetType(0) != ptrTy_) {
     Error(i, "pointer type expected");
   }
 }

@@ -701,10 +701,10 @@ void ISel::Export(ConstRef<Inst> inst, SDValue value)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerGlobal(const Global &val)
+llvm::SDValue ISel::LowerGlobal(const Global &val, Type ty)
 {
   auto &DAG = GetDAG();
-  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
+  auto vt = GetVT(ty);
 
   switch (val.GetKind()) {
     case Global::Kind::BLOCK: {
@@ -713,7 +713,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
         auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
         auto *BA = llvm::BlockAddress::get(F_, BB);
         MBB->setHasAddressTaken();
-        return DAG.getBlockAddress(BA, ptrVT);
+        return DAG.getBlockAddress(BA, vt);
       } else {
         llvm::report_fatal_error("Unknown block '" + val.getName() + "'");
       }
@@ -728,26 +728,26 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
         break;
       }
 
-      return DAG.getGlobalAddress(GV, SDL_, ptrVT);
+      return DAG.getGlobalAddress(GV, SDL_, vt);
     }
   }
   llvm_unreachable("invalid global type");
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
+llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset, Type ty)
 {
   if (offset == 0) {
-    return LowerGlobal(val);
+    return LowerGlobal(val, ty);
   } else {
     auto &DAG = GetDAG();
-    auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
+    auto vt = GetVT(ty);
     return DAG.getNode(
         ISD::ADD,
         SDL_,
-        ptrVT,
-        LowerGlobal(val),
-        DAG.getConstant(offset, SDL_, ptrVT)
+        vt,
+        LowerGlobal(val, ty),
+        DAG.getConstant(offset, SDL_, vt)
     );
   }
 }
@@ -1322,16 +1322,10 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
           llvm_unreachable("invalid constant kind");
         }
         case Value::Kind::GLOBAL: {
-          if (!IsPointerType(movInst->GetType())) {
-            Error(movInst.Get(), "Invalid address type");
-          }
-          return LowerGlobal(*::cast_or_null<Global>(val), 0);
+          return LowerGlobal(*::cast_or_null<Global>(val), rt);
         }
         case Value::Kind::EXPR: {
-          if (!IsPointerType(movInst->GetType())) {
-            Error(movInst.Get(), "Invalid address type");
-          }
-          return LowerExpr(*::cast_or_null<Expr>(val));
+          return LowerExpr(*::cast_or_null<Expr>(val), rt);
         }
       }
       llvm_unreachable("invalid value kind");
@@ -1365,12 +1359,12 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerExpr(const Expr &expr)
+llvm::SDValue ISel::LowerExpr(const Expr &expr, Type type)
 {
   switch (expr.GetKind()) {
     case Expr::Kind::SYMBOL_OFFSET: {
       auto &symOff = static_cast<const SymbolOffsetExpr &>(expr);
-      return LowerGlobal(*symOff.GetSymbol(), symOff.GetOffset());
+      return LowerGlobal(*symOff.GetSymbol(), symOff.GetOffset(), type);
     }
   }
   llvm_unreachable("invalid expression");
@@ -1643,17 +1637,11 @@ void ISel::HandleSuccessorPHI(const Block *block)
               break;
             }
             case Value::Kind::GLOBAL: {
-              if (!IsPointerType(phi.GetType())) {
-                Error(&phi, "Invalid address type");
-              }
-              regs = ExportValue(LowerGlobal(*::cast_or_null<Global>(arg), 0));
+              regs = ExportValue(LowerGlobal(*::cast_or_null<Global>(arg), phiType));
               break;
             }
             case Value::Kind::EXPR: {
-              if (!IsPointerType(phi.GetType())) {
-                Error(&phi, "Invalid address type");
-              }
-              regs = ExportValue(LowerExpr(*::cast_or_null<Expr>(arg)));
+              regs = ExportValue(LowerExpr(*::cast_or_null<Expr>(arg), phiType));
               break;
             }
             case Value::Kind::CONST: {
