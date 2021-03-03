@@ -1,4 +1,6 @@
 <map id="Annot" name="Annot">
-<area shape="rect" id="node3" href="$classCamlFrame.html" title="CamlFrame" alt="" coords="5,155,101,181"/>
-<area shape="rect" id="node4" href="$classProbability.html" title="Probability" alt="" coords="126,155,218,181"/>
+<area shape="rect" id="node1" title=" " alt="" coords="83,80,143,107"/>
+<area shape="rect" id="node3" href="$classCamlFrame.html" title=" " alt="" coords="5,155,103,181"/>
+<area shape="rect" id="node4" href="$classProbability.html" title=" " alt="" coords="127,155,219,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="17,5,208,32"/>
 </map>

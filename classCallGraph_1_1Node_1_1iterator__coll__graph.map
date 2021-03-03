@@ -1,2 +1,4 @@
 <map id="CallGraph::Node::iterator" name="CallGraph::Node::iterator">
+<area shape="rect" id="node1" title="Iterator over call site targets." alt="" coords="5,109,189,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="14,5,181,61"/>
 </map>

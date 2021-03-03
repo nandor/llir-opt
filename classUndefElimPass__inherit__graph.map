@@ -1,4 +1,5 @@
 <map id="UndefElimPass" name="UndefElimPass">
-<area shape="rect" id="node2" href="$classPass.html" title="Pass" alt="" coords="5,5,56,32"/>
-<area shape="rect" id="node3" href="$classInstVisitor.html" title="InstVisitor\&lt; bool \&gt;" alt="" coords="80,5,227,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="33,80,151,107"/>
+<area shape="rect" id="node2" href="$classPass.html" title=" " alt="" coords="5,5,56,32"/>
+<area shape="rect" id="node3" href="$classInstVisitor.html" title=" " alt="" coords="80,5,227,32"/>
 </map>

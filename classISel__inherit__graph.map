@@ -1,7 +1,9 @@
 <map id="ISel" name="ISel">
-<area shape="rect" id="node4" href="$classAArch64ISel.html" title="AArch64ISel" alt="" coords="5,155,105,181"/>
-<area shape="rect" id="node5" href="$classPPCISel.html" title="PPCISel" alt="" coords="129,155,200,181"/>
-<area shape="rect" id="node6" href="$classRISCVISel.html" title="RISCVISel" alt="" coords="225,155,310,181"/>
-<area shape="rect" id="node7" href="$classX86ISel.html" title="X86ISel" alt="" coords="335,155,405,181"/>
-<area shape="rect" id="node3" href="$classISelMapping.html" title="ISelMapping" alt="" coords="227,5,329,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="192,80,239,107"/>
+<area shape="rect" id="node4" href="$classAArch64ISel.html" title=" " alt="" coords="5,155,105,181"/>
+<area shape="rect" id="node5" href="$classPPCISel.html" title=" " alt="" coords="129,155,200,181"/>
+<area shape="rect" id="node6" href="$classRISCVISel.html" title=" " alt="" coords="225,155,310,181"/>
+<area shape="rect" id="node7" href="$classX86ISel.html" title=" " alt="" coords="335,155,405,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="75,5,211,32"/>
+<area shape="rect" id="node3" href="$classISelMapping.html" title=" " alt="" coords="236,5,339,32"/>
 </map>

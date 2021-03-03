@@ -1,7 +1,9 @@
 <map id="LoopNesting::Loop" name="LoopNesting::Loop">
-<area shape="rect" id="node2" href="$classBlock.html" title="Block" alt="" coords="79,261,138,288"/>
-<area shape="rect" id="node4" href="$classGlobal.html" title="Global" alt="" coords="205,178,269,205"/>
-<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="211,95,263,121"/>
-<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="169,5,227,32"/>
-<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="252,5,299,32"/>
+<area shape="rect" id="node1" title="Structure representing a loop." alt="" coords="37,351,180,377"/>
+<area shape="rect" id="node2" href="$classBlock.html" title=" " alt="" coords="79,261,138,288"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,171,180,212"/>
+<area shape="rect" id="node4" href="$classGlobal.html" title=" " alt="" coords="205,178,269,205"/>
+<area shape="rect" id="node5" href="$classUser.html" title=" " alt="" coords="211,95,263,121"/>
+<area shape="rect" id="node6" href="$classValue.html" title=" " alt="" coords="169,5,227,32"/>
+<area shape="rect" id="node7" href="$classUse.html" title=" " alt="" coords="252,5,299,32"/>
 </map>

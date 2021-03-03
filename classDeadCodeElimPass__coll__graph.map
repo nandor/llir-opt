@@ -1,4 +1,5 @@
 <map id="DeadCodeElimPass" name="DeadCodeElimPass">
-<area shape="rect" id="node2" href="$classPass.html" title="Pass" alt="" coords="53,95,104,121"/>
-<area shape="rect" id="node3" href="$classPassManager.html" title="PassManager" alt="" coords="25,5,132,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,171,152,197"/>
+<area shape="rect" id="node2" href="$classPass.html" title=" " alt="" coords="53,95,104,121"/>
+<area shape="rect" id="node3" href="$classPassManager.html" title=" " alt="" coords="25,5,133,32"/>
 </map>

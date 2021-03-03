@@ -1,6 +1,7 @@
 <map id="Node" name="Node">
-<area shape="rect" id="node2" href="$classGraphNode.html" title="GraphNode" alt="" coords="59,80,153,107"/>
-<area shape="rect" id="node5" href="$classRootNode.html" title="RootNode" alt="" coords="178,80,263,107"/>
-<area shape="rect" id="node3" href="$classDerefNode.html" title="DerefNode" alt="" coords="5,155,97,181"/>
-<area shape="rect" id="node4" href="$classSetNode.html" title="SetNode" alt="" coords="122,155,199,181"/>
+<area shape="rect" id="node1" title=" " alt="" coords="135,5,191,32"/>
+<area shape="rect" id="node2" href="$classGraphNode.html" title=" " alt="" coords="59,80,153,107"/>
+<area shape="rect" id="node5" href="$classRootNode.html" title=" " alt="" coords="177,80,264,107"/>
+<area shape="rect" id="node3" href="$classDerefNode.html" title=" " alt="" coords="5,155,97,181"/>
+<area shape="rect" id="node4" href="$classSetNode.html" title=" " alt="" coords="122,155,199,181"/>
 </map>

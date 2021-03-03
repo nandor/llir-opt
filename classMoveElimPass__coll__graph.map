@@ -1,4 +1,5 @@
 <map id="MoveElimPass" name="MoveElimPass">
-<area shape="rect" id="node2" href="$classPass.html" title="Pass" alt="" coords="37,95,88,121"/>
-<area shape="rect" id="node3" href="$classPassManager.html" title="PassManager" alt="" coords="9,5,116,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,171,121,197"/>
+<area shape="rect" id="node2" href="$classPass.html" title=" " alt="" coords="38,95,89,121"/>
+<area shape="rect" id="node3" href="$classPassManager.html" title=" " alt="" coords="9,5,117,32"/>
 </map>

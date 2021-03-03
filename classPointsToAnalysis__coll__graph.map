@@ -1,5 +1,6 @@
 <map id="PointsToAnalysis" name="PointsToAnalysis">
-<area shape="rect" id="node2" href="$classAnalysis.html" title="Analysis" alt="" coords="32,171,109,197"/>
-<area shape="rect" id="node3" href="$classPass.html" title="Pass" alt="" coords="45,95,96,121"/>
-<area shape="rect" id="node4" href="$classPassManager.html" title="PassManager" alt="" coords="17,5,124,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,247,136,273"/>
+<area shape="rect" id="node2" href="$classAnalysis.html" title=" " alt="" coords="32,171,109,197"/>
+<area shape="rect" id="node3" href="$classPass.html" title=" " alt="" coords="45,95,96,121"/>
+<area shape="rect" id="node4" href="$classPassManager.html" title=" " alt="" coords="17,5,125,32"/>
 </map>

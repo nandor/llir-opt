@@ -1,8 +1,11 @@
 <map id="SymbolicHeap::Origin" name="SymbolicHeap::Origin">
-<area shape="rect" id="node2" href="$unionSymbolicHeap_1_1Origin_1_1U.html" title="ID of the object kind. " alt="" coords="617,78,799,105"/>
-<area shape="rect" id="node3" href="$structSymbolicHeap_1_1Origin_1_1AllocOrigin.html" title="Heap object. " alt="" coords="392,5,555,47"/>
-<area shape="rect" id="node4" href="$classCallSite.html" title="CallSite" alt="" coords="235,13,307,39"/>
-<area shape="rect" id="node6" href="$structSymbolicHeap_1_1Origin_1_1FrameOrigin.html" title="Frame object. " alt="" coords="392,71,555,112"/>
-<area shape="rect" id="node7" href="$structSymbolicHeap_1_1Origin_1_1DataOrigin.html" title="Data object. " alt="" coords="392,136,555,177"/>
-<area shape="rect" id="node8" href="$classObject.html" title="Object" alt="" coords="239,143,303,170"/>
+<area shape="rect" id="node1" title="Class to describe the origin of an object." alt="" coords="867,78,1029,105"/>
+<area shape="rect" id="node2" href="$unionSymbolicHeap_1_1Origin_1_1U.html" title="ID of the object kind." alt="" coords="617,78,799,105"/>
+<area shape="rect" id="node3" href="$structSymbolicHeap_1_1Origin_1_1AllocOrigin.html" title="Heap object." alt="" coords="392,5,555,47"/>
+<area shape="rect" id="node4" href="$classCallSite.html" title=" " alt="" coords="235,13,307,39"/>
+<area shape="rect" id="node5" title=" " alt="" coords="37,13,153,39"/>
+<area shape="rect" id="node6" href="$structSymbolicHeap_1_1Origin_1_1FrameOrigin.html" title="Frame object." alt="" coords="392,71,555,112"/>
+<area shape="rect" id="node7" href="$structSymbolicHeap_1_1Origin_1_1DataOrigin.html" title="Data object." alt="" coords="392,136,555,177"/>
+<area shape="rect" id="node8" href="$classObject.html" title=" " alt="" coords="239,143,303,170"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,136,185,177"/>
 </map>

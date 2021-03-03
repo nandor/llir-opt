@@ -1,5 +1,6 @@
 <map id="InstCompare" name="InstCompare">
-<area shape="rect" id="node2" href="$classValueNumbering.html" title="ValueNumbering" alt="" coords="122,80,253,107"/>
-<area shape="rect" id="node3" href="$classGlobalValueNumbering.html" title="GlobalValueNumbering" alt="" coords="5,155,177,181"/>
-<area shape="rect" id="node4" href="$classLocalValueNumbering.html" title="LocalValueNumbering" alt="" coords="201,155,365,181"/>
+<area shape="rect" id="node1" title=" " alt="" coords="135,5,240,32"/>
+<area shape="rect" id="node2" href="$classValueNumbering.html" title=" " alt="" coords="122,80,253,107"/>
+<area shape="rect" id="node3" href="$classGlobalValueNumbering.html" title=" " alt="" coords="5,155,177,181"/>
+<area shape="rect" id="node4" href="$classLocalValueNumbering.html" title=" " alt="" coords="201,155,365,181"/>
 </map>

@@ -1,6 +1,7 @@
 <map id="SpecialisePass::Parameter::G" name="SpecialisePass::Parameter::G">
-<area shape="rect" id="node2" href="$classGlobal.html" title="Global" alt="" coords="79,171,143,197"/>
-<area shape="rect" id="node3" href="$classUser.html" title="User" alt="" coords="85,95,137,121"/>
-<area shape="rect" id="node4" href="$classValue.html" title="Value" alt="" coords="43,5,101,32"/>
-<area shape="rect" id="node5" href="$classUse.html" title="Use" alt="" coords="126,5,173,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,260,216,287"/>
+<area shape="rect" id="node2" href="$classGlobal.html" title=" " alt="" coords="79,171,143,197"/>
+<area shape="rect" id="node3" href="$classUser.html" title=" " alt="" coords="85,95,137,121"/>
+<area shape="rect" id="node4" href="$classValue.html" title=" " alt="" coords="43,5,101,32"/>
+<area shape="rect" id="node5" href="$classUse.html" title=" " alt="" coords="126,5,173,32"/>
 </map>

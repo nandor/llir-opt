@@ -1,6 +1,7 @@
 <map id="Target" name="Target">
-<area shape="rect" id="node2" href="$classAArch64Target.html" title="AArch64Target" alt="" coords="5,80,121,107"/>
-<area shape="rect" id="node3" href="$classPPCTarget.html" title="PPCTarget" alt="" coords="145,80,232,107"/>
-<area shape="rect" id="node4" href="$classRISCVTarget.html" title="RISCVTarget" alt="" coords="257,80,358,107"/>
-<area shape="rect" id="node5" href="$classX86Target.html" title="X86Target" alt="" coords="383,80,469,107"/>
+<area shape="rect" id="node1" title=" " alt="" coords="216,5,279,32"/>
+<area shape="rect" id="node2" href="$classAArch64Target.html" title=" " alt="" coords="5,80,121,107"/>
+<area shape="rect" id="node3" href="$classPPCTarget.html" title=" " alt="" coords="145,80,232,107"/>
+<area shape="rect" id="node4" href="$classRISCVTarget.html" title=" " alt="" coords="257,80,358,107"/>
+<area shape="rect" id="node5" href="$classX86Target.html" title=" " alt="" coords="383,80,469,107"/>
 </map>
