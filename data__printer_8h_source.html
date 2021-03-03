@@ -112,24 +112,25 @@ $(function() {
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> getAnalysisUsage(llvm::AnalysisUsage &amp;AU) <span class="keyword">const override</span>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> LowerSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> LowerObject(<span class="keyword">const</span> <a class="code" href="classObject.html">Object</a> &amp;<span class="keywordtype">object</span>);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> LowerAtom(<span class="keyword">const</span> <a class="code" href="classAtom.html">Atom</a> &amp;atom);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  llvm::MCSymbol *LowerSymbol(<span class="keyword">const</span> std::string_view name);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  llvm::MCSection *GetSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <a class="code" href="classISelMapping.html">ISelMapping</a> *isel_;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  llvm::MCContext *ctx_;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  llvm::MCStreamer *os_;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo_;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">const</span> llvm::DataLayout &amp;layout_;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;};</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> LowerExtern(<span class="keyword">const</span> <a class="code" href="classExtern.html">Extern</a> &amp;ext);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> LowerSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> LowerObject(<span class="keyword">const</span> <a class="code" href="classObject.html">Object</a> &amp;<span class="keywordtype">object</span>);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> LowerAtom(<span class="keyword">const</span> <a class="code" href="classAtom.html">Atom</a> &amp;atom);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  llvm::MCSymbol *LowerSymbol(<span class="keyword">const</span> std::string_view name);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  llvm::MCSection *GetSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <a class="code" href="classISelMapping.html">ISelMapping</a> *isel_;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  llvm::MCContext *ctx_;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  llvm::MCStreamer *os_;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo_;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">const</span> llvm::DataLayout &amp;layout_;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassAtom_html"><div class="ttname"><a href="classAtom.html">Atom</a></div><div class="ttdef"><b>Definition:</b> atom.h:23</div></div>
 <div class="ttc" id="aclassISelMapping_html"><div class="ttname"><a href="classISelMapping.html">ISelMapping</a></div><div class="ttdef"><b>Definition:</b> isel_mapping.h:22</div></div>
@@ -139,6 +140,7 @@ $(function() {
 <div class="ttc" id="aclassDataPrinter_html"><div class="ttname"><a href="classDataPrinter.html">DataPrinter</a></div><div class="ttdef"><b>Definition:</b> data_printer.h:25</div></div>
 <div class="ttc" id="aclassDataPrinter_html_a4963acce03994b1e24e69912e933c991"><div class="ttname"><a href="classDataPrinter.html#a4963acce03994b1e24e69912e933c991">DataPrinter::DataPrinter</a></div><div class="ttdeci">DataPrinter(const Prog &amp;Prog, ISelMapping *isel, llvm::MCContext *ctx, llvm::MCStreamer *os, const llvm::MCObjectFileInfo *objInfo, const llvm::DataLayout &amp;layout, bool shared)</div><div class="ttdoc">Initialises the pass which prints data sections.</div><div class="ttdef"><b>Definition:</b> data_printer.cpp:27</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
+<div class="ttc" id="aclassExtern_html"><div class="ttname"><a href="classExtern.html">Extern</a></div><div class="ttdef"><b>Definition:</b> extern.h:20</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
