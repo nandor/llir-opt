@@ -545,6 +545,10 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
 
             // Architecture-specific flags.
             switch (baseTriple_.getArch()) {
+              case llvm::Triple::x86:
+              case llvm::Triple::llir_x86: {
+                break;
+              }
               case llvm::Triple::x86_64:
               case llvm::Triple::llir_x86_64: {
                 args.push_back("--no-ld-generated-unwind-info");

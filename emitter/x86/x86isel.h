@@ -156,6 +156,9 @@ private:
   /// Lowers variable argument list frame setup.
   void LowerVASetup(const X86Call &lowering);
 
+  /// Finalize the lowering.
+  virtual bool Finalize(llvm::MachineFunction &MF) override;
+
 private:
   /// Reads the value from %fs:0
   SDValue LoadRegArch(Register reg) override;

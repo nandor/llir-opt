@@ -92,6 +92,9 @@ protected:
   /// Target-specific instruction selection.
   virtual void Select(SDNode *node) = 0;
 
+  /// Finalize the lowering.
+  virtual bool Finalize(llvm::MachineFunction &MF) { return true; }
+
 protected:
   /// Lovers a register value.
   SDValue LoadReg(Register reg);

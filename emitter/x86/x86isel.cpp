@@ -388,6 +388,13 @@ void X86ISel::LowerVASetup(const X86Call &ci)
 }
 
 // -----------------------------------------------------------------------------
+bool X86ISel::Finalize(llvm::MachineFunction &MF)
+{
+  llvm::X86::CreateGlobalBaseReg(MF);
+  return true;
+}
+
+// -----------------------------------------------------------------------------
 SDValue X86ISel::LoadRegArch(Register reg)
 {
   auto &DAG = GetDAG();

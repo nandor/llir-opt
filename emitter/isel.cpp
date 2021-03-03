@@ -292,6 +292,11 @@ bool ISel::runOnModule(llvm::Module &Module)
     MRI.EmitLiveInCopies(entryMBB, TRI, TII);
     TLI.finalizeLowering(*MF);
 
+    // Emit additional glue.
+    if (!Finalize(*MF)) {
+      Error(func_, "Cannot finalise function");
+    }
+
     MF->verify(nullptr, "LLIR-to-X86 ISel");
 
     MBB_ = nullptr;
