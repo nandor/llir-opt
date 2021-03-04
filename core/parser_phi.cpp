@@ -14,34 +14,16 @@
 
 
 // -----------------------------------------------------------------------------
-void Parser::EndFunction()
-{
-  // Check if function is ill-defined.
-  if (func_->empty()) {
-    l_.Error(func_, "Empty function");
-  } else if (!func_->rbegin()->GetTerminator()) {
-    l_.Error(func_, "Function not terminated");
-  }
-
-  PhiPlacement();
-
-  func_ = nullptr;
-  block_ = nullptr;
-
-  vregs_.clear();
-}
-
-// -----------------------------------------------------------------------------
-void Parser::PhiPlacement()
+llvm::Error Parser::PhiPlacement(Func &func, VRegMap vregs)
 {
   // Construct the dominator tree & find dominance frontiers.
-  DominatorTree DT(*func_);
+  DominatorTree DT(func);
   DominanceFrontier DF;
   DF.analyze(DT);
 
   // Find all definitions of all variables.
   llvm::DenseSet<unsigned> custom;
-  for (Block &block : *func_) {
+  for (Block &block : func) {
     for (PhiInst &inst : block.phis()) {
       for (Use &use : inst.operands()) {
         const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
@@ -53,12 +35,12 @@ void Parser::PhiPlacement()
   }
 
   llvm::DenseMap<unsigned, std::queue<Ref<Inst>>> sites;
-  for (Block &block : *func_) {
+  for (Block &block : func) {
     llvm::DenseMap<unsigned, Ref<Inst>> localSites;
     for (Inst &inst : block) {
       for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
         Ref<Inst> ref(&inst, i);
-        if (auto it = vregs_.find(ref); it != vregs_.end()) {
+        if (auto it = vregs.find(ref); it != vregs.end()) {
           unsigned vreg = it->second;
           if (custom.count(vreg) == 0) {
             localSites[vreg] = ref;
@@ -84,7 +66,7 @@ void Parser::PhiPlacement()
         for (auto &front : DF.calculate(DT, node)) {
           bool found = false;
           for (PhiInst &phi : front->phis()) {
-            if (auto it = vregs_.find(&phi); it != vregs_.end()) {
+            if (auto it = vregs.find(&phi); it != vregs.end()) {
               if (it->second == var.first) {
                 found = true;
                 break;
@@ -96,7 +78,7 @@ void Parser::PhiPlacement()
           if (!found) {
             auto *phi = new PhiInst(inst.GetType(), {});
             front->AddPhi(phi);
-            vregs_[phi] = var.first;
+            vregs[phi] = var.first;
             q.push(phi);
           }
         }
@@ -107,14 +89,15 @@ void Parser::PhiPlacement()
   // Renaming variables to point to definitions or PHI nodes.
   llvm::DenseMap<unsigned, std::stack<Ref<Inst>>> vars;
   llvm::SmallPtrSet<Block *, 8> blocks;
-  std::function<void(Block *block)> rename = [&](Block *block) {
+  std::function<llvm::Error(Block *)> rename = [&](Block *block) -> llvm::Error
+  {
     // Add the block to the set of visited ones.
     blocks.insert(block);
 
     // Register the names of incoming PHIs.
     for (PhiInst &phi : block->phis()) {
-      auto it = vregs_.find(&phi);
-      if (it != vregs_.end()) {
+      auto it = vregs.find(&phi);
+      if (it != vregs.end()) {
         vars[it->second].push(&phi);
       }
     }
@@ -130,11 +113,7 @@ void Parser::PhiPlacement()
         if (vreg & 1) {
           auto &stk = vars[vreg >> 1];
           if (stk.empty()) {
-            l_.Error(
-                func_,
-                block,
-                "undefined vreg: " + std::to_string(vreg >> 1)
-            );
+            return MakeError("undefined vreg: " + std::to_string(vreg >> 1));
           }
           use = stk.top();
         }
@@ -142,7 +121,7 @@ void Parser::PhiPlacement()
 
       for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
         Ref<Inst> ref(&inst, i);
-        if (auto it = vregs_.find(ref); it != vregs_.end()) {
+        if (auto it = vregs.find(ref); it != vregs.end()) {
           vars[it->second].push(ref);
         }
       }
@@ -158,7 +137,7 @@ void Parser::PhiPlacement()
             phi.Add(block, vars[vreg >> 1].top());
           }
         } else {
-          auto &stk = vars[vregs_[&phi]];
+          auto &stk = vars[vregs[&phi]];
           if (!stk.empty()) {
             phi.Add(block, stk.top());
           } else {
@@ -185,27 +164,33 @@ void Parser::PhiPlacement()
 
     // Recursively rename child nodes.
     for (const auto *child : *DT[block]) {
-      rename(child->getBlock());
+      if (auto err = rename(child->getBlock())) {
+        return err;
+      }
     }
 
     // Pop definitions of this block from the stack.
     for (auto it = block->rbegin(); it != block->rend(); ++it) {
       for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
         Ref<Inst> ref{&*it, i};
-        if (auto jt = vregs_.find(ref); jt != vregs_.end()) {
+        if (auto jt = vregs.find(ref); jt != vregs.end()) {
           auto &q = vars[jt->second];
           assert(q.top() == ref && "invalid type");
           q.pop();
         }
       }
     }
+    return llvm::Error::success();
   };
-  rename(DT.getRoot());
+
+  if (auto err = rename(DT.getRoot())) {
+    return err;
+  }
 
   // Remove blocks which are trivially dead.
   std::vector<PhiInst *> queue;
   std::set<PhiInst *> inQueue;
-  for (auto it = func_->begin(); it != func_->end(); ) {
+  for (auto it = func.begin(); it != func.end(); ) {
     Block *block = &*it++;
     if (blocks.count(block) == 0) {
       block->replaceAllUsesWith(new ConstantInt(0));
@@ -253,7 +238,7 @@ void Parser::PhiPlacement()
     }
   }
 
-  for (Block &block : *func_) {
+  for (Block &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       if (auto *phi = ::cast_or_null<PhiInst>(&*it++)) {
         // Remove redundant PHIs.
@@ -291,4 +276,5 @@ void Parser::PhiPlacement()
       }
     }
   }
+  return llvm::Error::success();
 }

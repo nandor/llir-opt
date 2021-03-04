@@ -211,19 +211,20 @@ void Parser::ParseInstruction(const std::string_view opcode)
   l_.Check(Token::NEWLINE);
 
   // Create a block for the instruction.
-  if (block_ == nullptr) {
+  if (func->empty()) {
     // An empty start block, if not explicitly defined.
-    CreateBlock(".LBBentry" + std::to_string(++nextLabel_));
-  } else if (!block_->empty()) {
+    CreateBlock(func, ".LBBentry" + std::to_string(++nextLabel_));
+  } else if (!func->rbegin()->empty()) {
     // If the previous instruction is a terminator, start a new block.
-    Inst *l = &*block_->rbegin();
+    Inst *l = &*func->rbegin()->rbegin();
     if (l->IsTerminator()) {
-      CreateBlock(".LBBterm" + std::to_string(++nextLabel_));
+      CreateBlock(func, ".LBBterm" + std::to_string(++nextLabel_));
     }
   }
 
   // Add the instruction to the block.
   Inst *i = CreateInst(
+      func,
       op,
       ops,
       flags,
@@ -242,12 +243,13 @@ void Parser::ParseInstruction(const std::string_view opcode)
     }
   }
 
-  block_->AddInst(i);
+  func->rbegin()->AddInst(i);
 }
 
 
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
+    Func *func,
     const std::string &opc,
     const std::vector<Operand> &ops,
     const std::vector<std::pair<unsigned, TypeFlag>> &fs,
@@ -260,7 +262,7 @@ Inst *Parser::CreateInst(
 {
   auto arg = [&, this] (int idx) -> const Operand & {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
-      l_.Error("Missing operand");
+      l_.Error(func, "Missing operand");
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
@@ -268,18 +270,18 @@ Inst *Parser::CreateInst(
     if (auto vreg = arg(idx).ToVal()) {
       return *vreg;
     }
-    l_.Error("value expected");
+    l_.Error(func, "value expected");
   };
   auto t = [&, this] (int idx) {
     if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
-      l_.Error("Missing type");
+      l_.Error(func, "Missing type");
     }
     return idx >= 0 ? ts[idx] : *(ts.end() + idx);
   };
   auto op = [&, this] (int idx) -> Ref<Inst> {
     const auto &ref = val(idx);
     if ((reinterpret_cast<uintptr_t>(ref.Get()) & 1) == 0) {
-      l_.Error("vreg expected");
+      l_.Error(func, "vreg expected");
     }
     return Ref(static_cast<Inst *>(ref.Get()), ref.Index());
   };
@@ -295,7 +297,7 @@ Inst *Parser::CreateInst(
   };
   auto sym = [&, this] (int idx) -> Block * {
     if (!is_sym(idx)) {
-      l_.Error(func_, "not a global");
+      l_.Error(func, "not a global");
     }
     return static_cast<Block *>(val(idx).Get());
   };
@@ -306,17 +308,17 @@ Inst *Parser::CreateInst(
     if (auto r = arg(idx).ToReg()) {
       return *r;
     }
-    l_.Error("not a register");
+    l_.Error(func, "not a register");
   };
   auto cc = [&, this] () {
     if (!ccs) {
-      l_.Error(func_, "missing condition code");
+      l_.Error(func, "missing condition code");
     }
     return *ccs;
   };
   auto call = [&, this] () {
     if (!conv) {
-      l_.Error("missing calling conv");
+      l_.Error(func, "missing calling conv");
     }
     return *conv;
   };

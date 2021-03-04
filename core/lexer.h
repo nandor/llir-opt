@@ -70,8 +70,6 @@ public:
   Token GetToken() const { return tk_; }
   /// Fetches the next token.
   Token NextToken();
-  /// Fetches the next character.
-  char NextChar();
   /// Checks if the next character is of a specific type.
   void Expect(Token type);
   /// Checks if the current token is of a specific type.
@@ -95,6 +93,10 @@ public:
   [[noreturn]] void Error(const std::string &msg);
   [[noreturn]] void Error(Func *f, const std::string &msg);
   [[noreturn]] void Error(Func *f, Block *b, const std::string &msg);
+
+private:
+  /// Fetches the next character.
+  char NextChar();
 
 private:
   /// Source stream.

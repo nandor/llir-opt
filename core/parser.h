@@ -16,6 +16,7 @@
 #include "core/adt/hash.h"
 #include "core/adt/sexp.h"
 #include "core/calling_conv.h"
+#include "core/error.h"
 #include "core/inst.h"
 #include "core/lexer.h"
 #include "core/visibility.h"
@@ -36,6 +37,12 @@ class Object;
  * Parses an assembly file.
  */
 class Parser final {
+private:
+  /// Alias to the token.
+  using Token = Lexer::Token;
+  /// Mapping from instructions to their corresponding vregs.
+  using VRegMap = std::unordered_map<ConstRef<Inst>, unsigned>;
+
 public:
   /**
    * Initialises the parser.
@@ -66,10 +73,8 @@ private:
   void ParseSpace();
   void ParseAscii();
   void ParseAsciz();
-  void ParseIntOrExpr(Type ty);
+  void ParseItem(Type ty);
   void ParseComm(Visibility visibility);
-  void ParseInt8();
-  void ParseInt16();
   void ParseDouble();
   // Function and segment attributes.
   void ParseFeatures();
@@ -100,24 +105,24 @@ private:
   void InData();
 
   /// Create a new block.
-  void CreateBlock(const std::string_view name);
+  void CreateBlock(Func *func, const std::string_view name);
 
   /// Returns the current object.
-  Object *GetObject();
+  Object *GetOrCreateObject();
   /// Returns the current atom.
-  Atom *GetAtom();
+  Atom *GetOrCreateAtom();
   /// Returns the current function.
   Func *GetFunction();
-  /// Returns the current basic block.
-  Block *GetBlock();
+
   /// Ends parsing a function, fixing up vregs.
   void EndFunction();
+  /// Ends the current function or atom.
+  void EndItem();
+  /// Ends everything.
+  void End();
 
   /// Places PHI nodes in a function.
-  void PhiPlacement();
-
-  /// Parses a positive or negative number.
-  int64_t Number();
+  [[nodiscard]] static llvm::Error PhiPlacement(Func &func, VRegMap vregs);
 
   /// Parses a string to a token.
   template<typename T>
@@ -126,6 +131,8 @@ private:
       const std::string_view str
   );
 
+  /// Parses a positive or negative number.
+  int64_t Number();
   /// Parses a type.
   Type ParseType(std::string_view str);
   /// Parses a flag type declaration.
@@ -187,6 +194,7 @@ private:
   void ParseAnnotation(const std::string_view name, AnnotSet &annot);
   /// Factory method for instructions.
   Inst *CreateInst(
+      Func *func,
       const std::string &op,
       const std::vector<Operand> &ops,
       const std::vector<std::pair<unsigned, TypeFlag>> &flags,
@@ -199,18 +207,21 @@ private:
   );
 
 private:
-  /// Alias to the token.
-  using Token = Lexer::Token;
   /// Underlying lexer.
   Lexer l_;
-
-  /// Alignment for some functions.
-  std::optional<unsigned> funcAlign_;
-  /// Alignment for data items.
-  std::optional<unsigned> dataAlign_;
-
   /// Current program.
   std::unique_ptr<Prog> prog_;
+  /// Next available ID number.
+  uint64_t nextLabel_;
+  /// Set of global symbols.
+  std::unordered_set<std::string> globls_;
+  /// Set of hidden symbols.
+  std::unordered_set<std::string> hidden_;
+  /// Set of weak symbols.
+  std::unordered_set<std::string> weak_;
+
+  /// Alignment for some functions.
+  std::optional<unsigned> align_;
   /// Current data segment.
   Data *data_;
   /// Current object.
@@ -219,21 +230,6 @@ private:
   Atom *atom_;
   /// Current function.
   Func *func_;
-  /// Current basic block.
-  Block *block_;
   /// Current mapping of vregs to instructions.
-  std::unordered_map<ConstRef<Inst>, unsigned> vregs_;
-
-  /// Set of global symbols.
-  std::unordered_set<std::string> globls_;
-  /// Set of hidden symbols.
-  std::unordered_set<std::string> hidden_;
-  /// Set of weak symbols.
-  std::unordered_set<std::string> weak_;
-
-  /// Next available ID number.
-  uint64_t nextLabel_;
-
-  /// Block names to fix up.
-  std::vector<std::pair<std::string, Use **>> fixups_;
+  VRegMap vregs_;
 };
