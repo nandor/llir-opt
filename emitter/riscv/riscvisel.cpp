@@ -81,7 +81,7 @@ RISCVISel::RISCVISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue RISCVISel::LoadRegArch(Register reg)
+llvm::SDValue RISCVISel::GetRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -811,8 +811,15 @@ void RISCVISel::LowerSet(const SetInst *inst)
     case Register::RISCV_FRM: return set("fsrm $0");
     case Register::RISCV_FCSR: return set("fscsr $0");
     // Invalid registers.
+    case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CS:
+    case Register::X86_DS:
+    case Register::X86_ES:
+    case Register::X86_SS:
+    case Register::X86_FS:
+    case Register::X86_GS:
     case Register::AARCH64_FPCR:
     case Register::AARCH64_FPSR:
     case Register::PPC_FPSCR: {

@@ -145,8 +145,6 @@ private:
   bool VisitX86_LgdtInst(X86_LgdtInst &i) override;
   bool VisitX86_LidtInst(X86_LidtInst &i) override;
   bool VisitX86_LtrInst(X86_LtrInst &i) override;
-  bool VisitX86_SetCsInst(X86_SetCsInst &i) override;
-  bool VisitX86_SetDsInst(X86_SetDsInst &i) override;
   bool VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
   bool VisitX86_RdTscInst(X86_RdTscInst &i) override;
 

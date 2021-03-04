@@ -538,8 +538,6 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_LGDT:
     case Inst::Kind::X86_LIDT:
     case Inst::Kind::X86_LTR:
-    case Inst::Kind::X86_SET_CS:
-    case Inst::Kind::X86_SET_DS:
     case Inst::Kind::X86_F_SAVE:
     case Inst::Kind::X86_F_RESTORE:
     case Inst::Kind::X86_F_X_SAVE:
@@ -1552,6 +1550,14 @@ bool ISel::IsExported(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
+llvm::MVT ISel::GetPointerType()
+{
+  auto &DAG = GetDAG();
+  auto &STI = DAG.getMachineFunction().getSubtarget();
+  return STI.getTargetLowering()->getPointerTy(DAG.getDataLayout());
+}
+
+// -----------------------------------------------------------------------------
 std::pair<bool, llvm::CallingConv::ID>
 ISel::GetCallingConv(const Func *caller, const CallSite *call)
 {
@@ -2529,15 +2535,22 @@ void ISel::LowerGet(const GetInst *get)
     }
     // Loads an architecture-specific register.
     case Register::FS:
+    case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CS:
+    case Register::X86_DS:
+    case Register::X86_ES:
+    case Register::X86_SS:
+    case Register::X86_FS:
+    case Register::X86_GS:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:
     case Register::PPC_FPSCR: {
-      Export(get, LoadRegArch(reg));
+      Export(get, GetRegArch(reg));
       return;
     }
   }

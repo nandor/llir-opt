@@ -57,7 +57,7 @@ protected:
   virtual void Lower(llvm::MachineFunction &mf) = 0;
 
   /// Reads the value from an architecture-specific register.
-  virtual SDValue LoadRegArch(Register reg) = 0;
+  virtual SDValue GetRegArch(Register reg) = 0;
 
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
@@ -190,8 +190,8 @@ protected:
   ConstRef<Value> GetMoveArg(ConstRef<MovInst> inst);
   /// Check if the value is exported from its defining block.
   bool IsExported(ConstRef<Inst> inst);
-  /// Copies a value to a register.
-  SDValue CopyToReg(SDValue chain, ConstRef<Inst> value);
+  /// Return the pointer type.
+  MVT GetPointerType();
 
 protected:
   /// Prepare LLVM globals.

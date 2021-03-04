@@ -494,8 +494,6 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::X86_LGDT:           llvm_unreachable("X86_LGDT");
     case Inst::Kind::X86_LIDT:           llvm_unreachable("X86_LIDT");
     case Inst::Kind::X86_LTR:            llvm_unreachable("X86_LTR");
-    case Inst::Kind::X86_SET_CS:         llvm_unreachable("X86_SET_CS");
-    case Inst::Kind::X86_SET_DS:         llvm_unreachable("X86_SET_DS");
     case Inst::Kind::X86_F_SAVE:         llvm_unreachable("X86_F_SAVE");
     case Inst::Kind::X86_F_RESTORE:      llvm_unreachable("X86_F_RESTORE");
     case Inst::Kind::X86_F_X_SAVE:       llvm_unreachable("X86_F_X_SAVE");

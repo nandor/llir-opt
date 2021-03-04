@@ -694,18 +694,6 @@ def X86_LTR : Inst
   let HasSideEffects = 1;
 }
 
-def X86_SET_CS : Inst
-{
-  let Fields = [ InstField<"Value"> ];
-  let HasSideEffects = 1;
-}
-
-def X86_SET_DS : Inst
-{
-  let Fields = [ InstField<"Value"> ];
-  let HasSideEffects = 1;
-}
-
 class X86_ContextInst : Inst
 {
   let Fields = [ InstField<"Addr"> ];

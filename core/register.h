@@ -18,10 +18,24 @@ enum class Register : uint8_t {
   RET_ADDR,
   /// Virtual register taking the value of the top of the stack.
   FRAME_ADDR,
-  /// X86_64 CR2 register.
+  /// X86 CR0 register.
+  X86_CR0,
+  /// X86 CR2 register.
   X86_CR2,
-  /// X86_64 CR3 register.
+  /// X86 CR3 register.
   X86_CR3,
+  /// X86 Data Segment.
+  X86_DS,
+  /// X86 Extra Segment.
+  X86_ES,
+  /// X86 Stack Segment.
+  X86_SS,
+  /// X86 General Purpose Segment.
+  X86_FS,
+  /// X86 General Purpose Segment.
+  X86_GS,
+  /// X86 Code Segment.
+  X86_CS,
   /// AArch64 FPSR register.
   AARCH64_FPSR,
   /// AArch64 FPCR register.

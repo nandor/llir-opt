@@ -32,18 +32,6 @@ bool SymbolicEval::VisitX86_LtrInst(X86_LtrInst &i)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitX86_SetCsInst(X86_SetCsInst &i)
-{
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitX86_SetDsInst(X86_SetDsInst &i)
-{
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 {
   return false;

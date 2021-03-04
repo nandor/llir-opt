@@ -83,7 +83,7 @@ PPCISel::PPCISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue PPCISel::LoadRegArch(Register reg)
+llvm::SDValue PPCISel::GetRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();

@@ -129,8 +129,6 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_LGDT:        return Lower(static_cast<const X86_LgdtInst *>(i));
     case Inst::Kind::X86_LIDT:        return Lower(static_cast<const X86_LidtInst *>(i));
     case Inst::Kind::X86_LTR:         return Lower(static_cast<const X86_LtrInst *>(i));
-    case Inst::Kind::X86_SET_CS:      return Lower(static_cast<const X86_SetCsInst *>(i));
-    case Inst::Kind::X86_SET_DS:      return Lower(static_cast<const X86_SetDsInst *>(i));
   }
 }
 
@@ -163,37 +161,32 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 void X86ISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());
+  auto ptrVT = GetPointerType();
   switch (inst->GetReg()) {
     // Stack pointer.
     case Register::SP: {
       return LowerSetSP(value);
     }
-    // TLS base.
-    case Register::FS: {
-      Error(inst, "Cannot rewrite tls base");
-    }
-    // Frame address.
-    case Register::FRAME_ADDR: {
-      Error(inst, "Cannot rewrite frame address");
-    }
-    // Return address.
-    case Register::RET_ADDR: {
-      Error(inst, "Cannot rewrite return address");
-    }
-    case Register::X86_CR2: {
-      llvm_unreachable("not implemented");
-    }
-    case Register::X86_CR3: {
-      llvm_unreachable("not implemented");
-    }
+    case Register::X86_CR0: return LowerSetReg("mov $0, %cr0", ptrVT, value);
+    case Register::X86_CR2: return LowerSetReg("mov $0, %cr2", ptrVT, value);
+    case Register::X86_CR3: return LowerSetReg("mov $0, %cr3", ptrVT, value);
+    case Register::X86_CS:  return LowerSetReg("mov $0, %cs", MVT::i32, value);
+    case Register::X86_DS:  return LowerSetReg("mov $0, %ds", MVT::i32, value);
+    case Register::X86_ES:  return LowerSetReg("mov $0, %es", MVT::i32, value);
+    case Register::X86_SS:  return LowerSetReg("mov $0, %ss", MVT::i32, value);
+    case Register::X86_FS:  return LowerSetReg("mov $0, %fs", MVT::i32, value);
+    case Register::X86_GS:  return LowerSetReg("mov $0, %gs", MVT::i32, value);
     // Architecture-specific registers.
+    case Register::FS:
+    case Register::FRAME_ADDR:
+    case Register::RET_ADDR:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:
     case Register::PPC_FPSCR:  {
-      llvm_unreachable("invalid register");
+      llvm::report_fatal_error("cannot rewrite immutable register");
     }
   }
 }
@@ -395,17 +388,18 @@ bool X86ISel::Finalize(llvm::MachineFunction &MF)
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LoadRegArch(Register reg)
+SDValue X86ISel::GetRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
   auto &MRI = MF.getRegInfo();
-  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
-  auto mov = [&, this] (const char *code)
+  auto mov = [&, this] (const char *code, MVT ty)
   {
-    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-    auto node = LowerInlineAsm(
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(ty));
+    auto n = LowerInlineAsm(
         ISD::INLINEASM,
         DAG.getRoot(),
         code,
@@ -415,22 +409,16 @@ SDValue X86ISel::LoadRegArch(Register reg)
         { reg }
     );
 
-    auto copy = DAG.getCopyFromReg(
-        node.getValue(0),
-        SDL_,
-        reg,
-        MVT::i64,
-        node.getValue(1)
-    );
-
+    auto copy = DAG.getCopyFromReg(n.getValue(0), SDL_, reg, ty, n.getValue(1));
     DAG.setRoot(copy.getValue(1));
     return copy.getValue(0);
   };
 
   switch (reg) {
-    case Register::FS:      return mov("mov %fs:0, $0");
-    case Register::X86_CR2: return mov("mov %cr2, $0");
-    case Register::X86_CR3: return mov("mov %cr3, $0");
+    case Register::FS:      return mov("mov %fs:0, $0", ptrVT);
+    case Register::X86_CR0: return mov("mov  %cr0, $0", ptrVT);
+    case Register::X86_CR2: return mov("mov  %cr2, $0", ptrVT);
+    case Register::X86_CR3: return mov("mov  %cr3, $0", ptrVT);
     default: {
       llvm_unreachable("invalid register");
     }
@@ -1447,98 +1435,23 @@ void X86ISel::Lower(const X86_HltInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_LgdtInst *inst)
 {
-  auto &DAG = GetDAG();
-  auto &MF = DAG.getMachineFunction();
-  auto &MRI = MF.getRegInfo();
-  const auto &STI = MF.getSubtarget();
-  const auto &TLI = *STI.getTargetLowering();
-
-  // Copy in the new stack pointer and code pointer.
-  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue addrNode = DAG.getCopyToReg(
-      DAG.getRoot(),
-      SDL_,
-      value,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
-      SDValue()
-  );
-
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      addrNode.getValue(0),
-      "lgdtq ($0)",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { value },
-      { },
-      { },
-      addrNode.getValue(1)
-  ));
+  LowerSetReg("lgdt ($0)", GetPointerType(), GetValue(inst->GetValue()));
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_LidtInst *inst)
 {
-  auto &DAG = GetDAG();
-  auto &MF = DAG.getMachineFunction();
-  auto &MRI = MF.getRegInfo();
-  const auto &STI = MF.getSubtarget();
-  const auto &TLI = *STI.getTargetLowering();
-
-  // Copy in the new stack pointer and code pointer.
-  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue addrNode = DAG.getCopyToReg(
-      DAG.getRoot(),
-      SDL_,
-      value,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
-      SDValue()
-  );
-
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      addrNode.getValue(0),
-      "lidt ($0)",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { value },
-      { },
-      { },
-      addrNode.getValue(1)
-  ));
+  LowerSetReg("lidt ($0)", GetPointerType(), GetValue(inst->GetValue()));
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_LtrInst *inst)
 {
-  auto &DAG = GetDAG();
-  auto &MF = DAG.getMachineFunction();
-  auto &MRI = MF.getRegInfo();
-  const auto &STI = MF.getSubtarget();
-  const auto &TLI = *STI.getTargetLowering();
-
-  // Copy in the new stack pointer and code pointer.
-  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i16));
-  SDValue addrNode = DAG.getCopyToReg(
-      DAG.getRoot(),
-      SDL_,
-      value,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i16),
-      SDValue()
-  );
-
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      addrNode.getValue(0),
-      "ltr $0",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { value },
-      { },
-      { },
-      addrNode.getValue(1)
-  ));
+  LowerSetReg("ltr $0", MVT::i16, GetValue(inst->GetValue()));
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::Lower(const X86_SetCsInst *inst)
+void X86ISel::LowerSetReg(const char *code, MVT type, SDValue value)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -1547,57 +1460,21 @@ void X86ISel::Lower(const X86_SetCsInst *inst)
   const auto &TLI = *STI.getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
-  auto addr = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(type));
   SDValue addrNode = DAG.getCopyToReg(
       DAG.getRoot(),
       SDL_,
-      addr,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      reg,
+      DAG.getAnyExtOrTrunc(value, SDL_, type),
       SDValue()
   );
 
   DAG.setRoot(LowerInlineAsm(
       ISD::INLINEASM,
       addrNode.getValue(0),
-      "pushq $0;\n"
-      "pushq $$1f;\n"
-      "lretq;\n"
-      "1:\n",
+      code,
       llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { addr },
-      { },
-      { },
-      addrNode.getValue(1)
-  ));
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::Lower(const X86_SetDsInst *inst)
-{
-  auto &DAG = GetDAG();
-  auto &MF = DAG.getMachineFunction();
-  auto &MRI = MF.getRegInfo();
-  const auto &STI = MF.getSubtarget();
-  const auto &TLI = *STI.getTargetLowering();
-
-  // Copy in the new stack pointer and code pointer.
-  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i32));
-  SDValue addrNode = DAG.getCopyToReg(
-      DAG.getRoot(),
-      SDL_,
-      value,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i32),
-      SDValue()
-  );
-
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      addrNode.getValue(0),
-      "movl $0, %ss;\n"
-      "movl $0, %ds;\n"
-      "movl $0, %es;\n",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { value },
+      { reg },
       { },
       { },
       addrNode.getValue(1)

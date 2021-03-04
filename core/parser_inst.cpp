@@ -605,8 +605,6 @@ Inst *Parser::CreateInst(
       if (opc == "x86_lgdt")    return new X86_LgdtInst(op(0), std::move(annot));
       if (opc == "x86_lidt")    return new X86_LidtInst(op(0), std::move(annot));
       if (opc == "x86_ltr")     return new X86_LtrInst(op(0), std::move(annot));
-      if (opc == "x86_set_cs")  return new X86_SetCsInst(op(0), std::move(annot));
-      if (opc == "x86_set_ds")  return new X86_SetDsInst(op(0), std::move(annot));
       if (opc == "x86_in")      return new X86_InInst(t(0), op(1), std::move(annot));
       if (opc == "x86_out")     return new X86_OutInst(op(0), op(1), std::move(annot));
       if (opc == "x86_wr_msr")  return new X86_WrMsrInst(op(0), op(1), op(2), std::move(annot));

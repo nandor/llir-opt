@@ -113,7 +113,7 @@ void VerifierPass::CheckPointer(
     ConstRef<Inst> ref,
     const char *msg)
 {
-  if (ref.GetType() != Type::I64 && ref.GetType() != Type::V64) {
+  if (!Compatible(ref.GetType(), ptrTy_)) {
     Error(i, msg);
   }
 };
@@ -369,12 +369,24 @@ void VerifierPass::VisitFrameInst(const FrameInst &i)
 void VerifierPass::VisitSetInst(const SetInst &i)
 {
   switch (i.GetReg()) {
+    case Register::X86_CS:
+    case Register::X86_DS:
+    case Register::X86_ES:
+    case Register::X86_SS:
+    case Register::X86_FS:
+    case Register::X86_GS: {
+      CheckType(i, i.GetValue(), Type::I32);
+      return;
+    }
+    case Register::FS: {
+      // TODO: ban writes to FS on X86.
+      CheckPointer(i, i.GetValue(), "set expects a pointer");
+      return;
+    }
     case Register::SP:
-    case Register::FS:
+    case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
-    case Register::RET_ADDR:
-    case Register::FRAME_ADDR:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::RISCV_FFLAGS:
@@ -387,6 +399,11 @@ void VerifierPass::VisitSetInst(const SetInst &i)
       CheckType(i, i.GetValue(), Type::F64);
       return;
     }
+    case Register::RET_ADDR:
+    case Register::FRAME_ADDR: {
+      Error(i, "Cannot overwrite immutable register");
+      return;
+    }
   }
   llvm_unreachable("invalid register kind");
 }
@@ -395,8 +412,18 @@ void VerifierPass::VisitSetInst(const SetInst &i)
 void VerifierPass::VisitGetInst(const GetInst &get)
 {
   switch (get.GetReg()) {
+    case Register::X86_CS:
+    case Register::X86_DS:
+    case Register::X86_ES:
+    case Register::X86_SS:
+    case Register::X86_FS:
+    case Register::X86_GS: {
+      CheckType(get, &get, Type::I32);
+      return;
+    }
     case Register::SP:
     case Register::FS:
+    case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
     case Register::RET_ADDR:
