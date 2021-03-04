@@ -135,34 +135,36 @@ $(function() {
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classLexer.html#a5c091b6121ae8f2aa54e529e11031521">   70</a></span>&#160;  <a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> <a class="code" href="classLexer.html#a5c091b6121ae8f2aa54e529e11031521">GetToken</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> tk_; }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> <a class="code" href="classLexer.html#a44d88c4f085313a5fb63785af6e2b8d5">NextToken</a>();</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">char</span> <a class="code" href="classLexer.html#abb80f3167cf54603689b86e8e1aa2355">NextChar</a>();</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a1486fce5de7bc45c7f59420fff9a5bad">Expect</a>(<a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> type);</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a66a7eca49808a3828d22659748f8fa8c">Check</a>(<a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> type);</div>
-<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">   80</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">AtEnd</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> tk_ == Token::END; }</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::string_view <a class="code" href="classLexer.html#a5490a2ab01ddf3b2270f8bfb8fdb15ea">String</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  int64_t <a class="code" href="classLexer.html#a7affc484b66259585f10fc324a70a258">Int</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  Register <a class="code" href="classLexer.html#aeddd2489e5a7ef72ef749d4f5c124cfd">Reg</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  uint64_t <a class="code" href="classLexer.html#a52f01b5b5aab30d834c33a73aec4f7c0">VReg</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <a class="code" href="classSExp.html">SExp</a> <a class="code" href="classLexer.html#a086e969b6ab9e5f5160114d2164dfde7">ParseSExp</a>();</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<span class="keyword">const</span> std::string &amp;msg);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<a class="code" href="classFunc.html">Func</a> *f, <span class="keyword">const</span> std::string &amp;msg);</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<a class="code" href="classFunc.html">Func</a> *f, <a class="code" href="classBlock.html">Block</a> *b, <span class="keyword">const</span> std::string &amp;msg);</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  llvm::StringRef buf_;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *ptr_;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">char</span> char_;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> tk_;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">unsigned</span> row_;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">unsigned</span> col_;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  std::string str_;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  Register reg_;</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  uint64_t vreg_;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  int64_t int_;</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;};</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a1486fce5de7bc45c7f59420fff9a5bad">Expect</a>(<a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> type);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a66a7eca49808a3828d22659748f8fa8c">Check</a>(<a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> type);</div>
+<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">   78</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">AtEnd</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> tk_ == Token::END; }</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  std::string_view <a class="code" href="classLexer.html#a5490a2ab01ddf3b2270f8bfb8fdb15ea">String</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  int64_t <a class="code" href="classLexer.html#a7affc484b66259585f10fc324a70a258">Int</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  Register <a class="code" href="classLexer.html#aeddd2489e5a7ef72ef749d4f5c124cfd">Reg</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  uint64_t <a class="code" href="classLexer.html#a52f01b5b5aab30d834c33a73aec4f7c0">VReg</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <a class="code" href="classSExp.html">SExp</a> <a class="code" href="classLexer.html#a086e969b6ab9e5f5160114d2164dfde7">ParseSExp</a>();</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<span class="keyword">const</span> std::string &amp;msg);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<a class="code" href="classFunc.html">Func</a> *f, <span class="keyword">const</span> std::string &amp;msg);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  [[noreturn]] <span class="keywordtype">void</span> <a class="code" href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Error</a>(<a class="code" href="classFunc.html">Func</a> *f, <a class="code" href="classBlock.html">Block</a> *b, <span class="keyword">const</span> std::string &amp;msg);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keywordtype">char</span> NextChar();</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  llvm::StringRef buf_;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *ptr_;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <span class="keywordtype">char</span> char_;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <a class="code" href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Token</a> tk_;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">unsigned</span> row_;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keywordtype">unsigned</span> col_;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  std::string str_;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  Register reg_;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  uint64_t vreg_;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  int64_t int_;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassSExp_html"><div class="ttname"><a href="classSExp.html">SExp</a></div><div class="ttdef"><b>Definition:</b> sexp.h:17</div></div>
 <div class="ttc" id="aclassLexer_html_a66a7eca49808a3828d22659748f8fa8c"><div class="ttname"><a href="classLexer.html#a66a7eca49808a3828d22659748f8fa8c">Lexer::Check</a></div><div class="ttdeci">void Check(Token type)</div><div class="ttdoc">Checks if the current token is of a specific type.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:306</div></div>
@@ -171,8 +173,7 @@ $(function() {
 <div class="ttc" id="aclassLexer_html_a52f01b5b5aab30d834c33a73aec4f7c0"><div class="ttname"><a href="classLexer.html#a52f01b5b5aab30d834c33a73aec4f7c0">Lexer::VReg</a></div><div class="ttdeci">uint64_t VReg() const</div><div class="ttdoc">Returns the current virtual register.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:353</div></div>
 <div class="ttc" id="aclassLexer_html_a63d7de177b1a8887d2fb2c5963357430"><div class="ttname"><a href="classLexer.html#a63d7de177b1a8887d2fb2c5963357430">Lexer::Error</a></div><div class="ttdeci">void Error(const std::string &amp;msg)</div><div class="ttdoc">Error reporting.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:393</div></div>
 <div class="ttc" id="aclassLexer_html_ad26a84af23d8d303723e36e83fc4e556"><div class="ttname"><a href="classLexer.html#ad26a84af23d8d303723e36e83fc4e556">Lexer::~Lexer</a></div><div class="ttdeci">~Lexer()</div><div class="ttdoc">Cleanup.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:105</div></div>
-<div class="ttc" id="aclassLexer_html_a33f9a1aa67c439289118a60d54fb970a"><div class="ttname"><a href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">Lexer::AtEnd</a></div><div class="ttdeci">bool AtEnd() const</div><div class="ttdoc">Checks whether the end of stream was reached.</div><div class="ttdef"><b>Definition:</b> lexer.h:80</div></div>
-<div class="ttc" id="aclassLexer_html_abb80f3167cf54603689b86e8e1aa2355"><div class="ttname"><a href="classLexer.html#abb80f3167cf54603689b86e8e1aa2355">Lexer::NextChar</a></div><div class="ttdeci">char NextChar()</div><div class="ttdoc">Fetches the next character.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:281</div></div>
+<div class="ttc" id="aclassLexer_html_a33f9a1aa67c439289118a60d54fb970a"><div class="ttname"><a href="classLexer.html#a33f9a1aa67c439289118a60d54fb970a">Lexer::AtEnd</a></div><div class="ttdeci">bool AtEnd() const</div><div class="ttdoc">Checks whether the end of stream was reached.</div><div class="ttdef"><b>Definition:</b> lexer.h:78</div></div>
 <div class="ttc" id="aclassLexer_html_a1d27830295ba22502fc32203898f2f6b"><div class="ttname"><a href="classLexer.html#a1d27830295ba22502fc32203898f2f6b">Lexer::Token</a></div><div class="ttdeci">Token</div><div class="ttdoc">Enumeration of tokens extracted from the stream.</div><div class="ttdef"><b>Definition:</b> lexer.h:27</div></div>
 <div class="ttc" id="aclassLexer_html_a44d88c4f085313a5fb63785af6e2b8d5"><div class="ttname"><a href="classLexer.html#a44d88c4f085313a5fb63785af6e2b8d5">Lexer::NextToken</a></div><div class="ttdeci">Token NextToken()</div><div class="ttdoc">Fetches the next token.</div><div class="ttdef"><b>Definition:</b> lexer.cpp:110</div></div>
 <div class="ttc" id="aclassLexer_html"><div class="ttname"><a href="classLexer.html">Lexer</a></div><div class="ttdef"><b>Definition:</b> lexer.h:24</div></div>
