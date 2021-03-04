@@ -203,22 +203,20 @@ $(function() {
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">bool</span> VisitX86_LgdtInst(X86_LgdtInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  <span class="keywordtype">bool</span> VisitX86_LidtInst(X86_LidtInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordtype">bool</span> VisitX86_LtrInst(X86_LtrInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  <span class="keywordtype">bool</span> VisitX86_SetCsInst(X86_SetCsInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">bool</span> VisitX86_SetDsInst(X86_SetDsInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="keywordtype">bool</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keywordtype">bool</span> VisitX86_RdTscInst(X86_RdTscInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <a class="code" href="classID.html">ID&lt;SymbolicFrame&gt;</a> GetFrame();</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <a class="code" href="classSymbolicValue.html#a1ef58d2266e96fda77207588d4558ab9">SymbolicValue::Origin</a> GetOrigin();</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <a class="code" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;heap_;</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <a class="code" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;frame_;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <a class="code" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs_;</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  <a class="code" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx_;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  <a class="code" href="classInst.html">Inst</a> &amp;inst_;</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;};</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  <span class="keywordtype">bool</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">bool</span> VisitX86_RdTscInst(X86_RdTscInst &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <a class="code" href="classID.html">ID&lt;SymbolicFrame&gt;</a> GetFrame();</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <a class="code" href="classSymbolicValue.html#a1ef58d2266e96fda77207588d4558ab9">SymbolicValue::Origin</a> GetOrigin();</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <a class="code" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;heap_;</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <a class="code" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;frame_;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <a class="code" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs_;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <a class="code" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx_;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  <a class="code" href="classInst.html">Inst</a> &amp;inst_;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassReferenceGraph_html"><div class="ttname"><a href="classReferenceGraph.html">ReferenceGraph</a></div><div class="ttdef"><b>Definition:</b> reference_graph.h:25</div></div>
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
