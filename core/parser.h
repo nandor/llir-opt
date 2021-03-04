@@ -6,12 +6,13 @@
 
 #include <llvm/ADT/StringRef.h>
 
-#include <list>
-#include <string>
 #include <fstream>
+#include <list>
 #include <optional>
-#include <unordered_set>
+#include <stack>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "core/adt/hash.h"
 #include "core/adt/sexp.h"
@@ -43,6 +44,23 @@ private:
   /// Mapping from instructions to their corresponding vregs.
   using VRegMap = std::unordered_map<ConstRef<Inst>, unsigned>;
 
+  struct Section {
+    /// Alignment for some functions.
+    std::optional<unsigned> Align;
+    /// Current data segment.
+    Data *D = nullptr;
+    /// Current object.
+    Object *O = nullptr;
+    /// Current atom.
+    Atom *A = nullptr;
+    /// Current function.
+    Func *F = nullptr;
+    /// Current mapping of vregs to instructions.
+    VRegMap VRegs;
+
+    Section(Data *data) : D(data) {}
+  };
+
 public:
   /**
    * Initialises the parser.
@@ -65,7 +83,7 @@ private:
   /// Parses a directive.
   void ParseDirective(const std::string_view op);
   // Segment directives.
-  void ParseSection();
+  void ParseSection(bool push);
   // Other directives.
   void ParseAlign();
   void ParseP2Align();
@@ -88,6 +106,7 @@ private:
   void ParseHidden();
   void ParseWeak();
   void ParseThreadLocal();
+  void ParsePopSection();
   // Ignored directives.
   void ParseFile();
   void ParseLocal();
@@ -101,23 +120,21 @@ private:
   /// Constructors/Destructors.
   void ParseXtor(Xtor::Kind kind);
 
-  /// Ensures we are in a data segment.
-  void InData();
-
   /// Create a new block.
   void CreateBlock(Func *func, const std::string_view name);
 
+  /// Returns the current section.
+  Section &GetSection();
   /// Returns the current object.
   Object *GetOrCreateObject();
   /// Returns the current atom.
   Atom *GetOrCreateAtom();
   /// Returns the current function.
   Func *GetFunction();
-
   /// Ends parsing a function, fixing up vregs.
   void EndFunction();
   /// Ends the current function or atom.
-  void EndItem();
+  void Align(int64_t alignment);
   /// Ends everything.
   void End();
 
@@ -189,9 +206,11 @@ private:
   };
 
   /// Parses an instruction.
-  void ParseInstruction(const std::string_view op);
-  /// Parses an annotation.
-  void ParseAnnotation(const std::string_view name, AnnotSet &annot);
+  void ParseInstruction(
+      const std::string_view op,
+      Func *func,
+      VRegMap &vregs
+  );
   /// Factory method for instructions.
   Inst *CreateInst(
       Func *func,
@@ -205,6 +224,8 @@ private:
       bool strict,
       AnnotSet &&annot
   );
+  /// Parses an annotation.
+  void ParseAnnotation(const std::string_view name, AnnotSet &annot);
 
 private:
   /// Underlying lexer.
@@ -219,17 +240,6 @@ private:
   std::unordered_set<std::string> hidden_;
   /// Set of weak symbols.
   std::unordered_set<std::string> weak_;
-
-  /// Alignment for some functions.
-  std::optional<unsigned> align_;
-  /// Current data segment.
-  Data *data_;
-  /// Current object.
-  Object *object_;
-  /// Current atom.
-  Atom *atom_;
-  /// Current function.
-  Func *func_;
-  /// Current mapping of vregs to instructions.
-  VRegMap vregs_;
+  /// Stack of sections.
+  std::stack<Section> stk_;
 };

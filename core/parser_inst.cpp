@@ -11,11 +11,11 @@
 
 
 // -----------------------------------------------------------------------------
-void Parser::ParseInstruction(const std::string_view opcode)
+void Parser::ParseInstruction(
+    const std::string_view opcode,
+    Func *func,
+    VRegMap &vregs)
 {
-  // Make sure we have a correct function.
-  Func *func = GetFunction();
-
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = opcode.find('.');
   std::string op(opcode.substr(0, dot));
@@ -237,7 +237,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
   );
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
     if (auto vreg = ops[idx].ToVReg()) {
-      vregs_[i->GetSubValue(idx)] = *vreg >> 1;
+      vregs[i->GetSubValue(idx)] = *vreg >> 1;
     } else {
       l_.Error("vreg expected");
     }

@@ -29,10 +29,8 @@ Parser::Parser(llvm::StringRef buf, std::string_view ident)
   : l_(buf)
   , prog_(new Prog(ident))
   , nextLabel_(0)
-  , data_(nullptr)
-  , atom_(nullptr)
-  , func_(nullptr)
 {
+  stk_.emplace(nullptr);
 }
 
 // -----------------------------------------------------------------------------
@@ -52,38 +50,40 @@ std::unique_ptr<Prog> Parser::Parse()
       case Token::IDENT: {
         std::string name(ParseName(l_.String()));
         if (l_.NextToken() == Token::COLON) {
-          if (data_ == nullptr) {
-            if (func_) {
+          auto &s = GetSection();
+
+          llvm::Align align(s.Align ? *s.Align : 1);
+          s.Align = std::nullopt;
+          if (s.D == nullptr) {
+            if (s.F) {
               // Start a new basic block.
               if (auto *g = prog_->GetGlobal(name)) {
                 if (auto *ext = ::cast_or_null<Extern>(g)) {
-                  CreateBlock(func_, name);
+                  CreateBlock(s.F, name);
                 } else {
-                  l_.Error(func_, "redefinition of '" + name + "'");
+                  l_.Error(s.F, "redefinition of '" + name + "'");
                 }
               } else {
-                CreateBlock(func_, name);
+                CreateBlock(s.F, name);
               }
             } else {
               // Start a new function.
-              func_ = new Func(name);
-              prog_->AddFunc(func_);
-              func_->SetAlignment(llvm::Align(align_ ? *align_ : 1));
-              align_ = std::nullopt;
+              s.F = new Func(name);
+              s.F->SetAlignment(align);
+              prog_->AddFunc(s.F);
             }
           } else {
             // New atom in a data segment.
-            atom_ = new Atom(name);
-            atom_->SetAlignment(llvm::Align(align_ ? *align_ : 1));
-            align_ = std::nullopt;
-            GetOrCreateObject()->AddAtom(atom_);
+            s.A = new Atom(name);
+            s.A->SetAlignment(align);
+            GetOrCreateObject()->AddAtom(s.A);
           }
           l_.Expect(Token::NEWLINE);
         } else {
           if (!name.empty() && name[0] == '.') {
             ParseDirective(name);
           } else {
-            ParseInstruction(name);
+            ParseInstruction(name, GetFunction(), GetSection().VRegs);
           }
           l_.Check(Token::NEWLINE);
         }
@@ -95,7 +95,10 @@ std::unique_ptr<Prog> Parser::Parse()
     }
   }
 
-  End();
+  while (!stk_.empty()) {
+    End();
+    stk_.pop();
+  }
 
   // Fix up function visibility attributes.
   {
@@ -358,8 +361,10 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'p': {
+      if (op == ".pushsection") return ParseSection(true);
       if (op == ".p2align") return ParseP2Align();
       if (op == ".protected") return ParseProtected();
+      if (op == ".popsection") return ParsePopSection();
       break;
     }
     case 'q': {
@@ -370,7 +375,7 @@ void Parser::ParseDirective(const std::string_view op)
       if (op == ".short") return ParseItem(Type::I16);
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
-      if (op == ".section") return ParseSection();
+      if (op == ".section") return ParseSection(false);
       if (op == ".set") return ParseSet();
       break;
     }
@@ -393,10 +398,8 @@ void Parser::ParseDirective(const std::string_view op)
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseSection()
+void Parser::ParseSection(bool push)
 {
-  End();
-
   std::string name;
   switch (l_.GetToken()) {
     case Token::STRING:
@@ -437,10 +440,15 @@ void Parser::ParseSection()
     }
   }
 
+  if (!push && !stk_.empty()) {
+    End();
+    stk_.pop();
+  }
+
   if (name.substr(0, 5) == ".text") {
-    data_ = nullptr;
+    stk_.emplace(nullptr);
   } else {
-    data_ = prog_->GetOrCreateData(name);
+    stk_.emplace(prog_->GetOrCreateData(name));
   }
 }
 
@@ -449,6 +457,17 @@ void Parser::ParseThreadLocal()
 {
   End();
   GetOrCreateObject()->SetThreadLocal();
+  l_.Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParsePopSection()
+{
+  if (stk_.empty()) {
+    l_.Error("no section to pop");
+  }
+  End();
+  stk_.pop();
   l_.Check(Token::NEWLINE);
 }
 
@@ -465,8 +484,7 @@ void Parser::ParseAlign()
     l_.Error("Alignment out of bounds");
   }
 
-  EndItem();
-  align_ = v;
+  Align(v);
   l_.Expect(Token::NEWLINE);
 }
 
@@ -478,8 +496,7 @@ void Parser::ParseP2Align()
   if (v > std::numeric_limits<uint32_t>::max()) {
     l_.Error("Alignment out of bounds");
   }
-  EndItem();
-  align_ = 1u << v;
+  Align(1u << v);
   l_.Expect(Token::NEWLINE);
 }
 
@@ -495,7 +512,6 @@ void Parser::ParseSpace()
 {
   l_.Check(Token::NUMBER);
   unsigned length = l_.Int();
-  InData();
   Atom *atom = GetOrCreateAtom();
   switch (l_.NextToken()) {
     case Token::NEWLINE: {
@@ -593,14 +609,14 @@ void Parser::ParseVisibility()
 {
   l_.Check(Token::IDENT);
   auto vis = ParseVisibility(l_.String());
-  if (atom_) {
-    atom_->SetVisibility(vis);
+  auto &s = GetSection();
+  if (s.A) {
+    s.A->SetVisibility(vis);
   } else {
-    auto *f = GetFunction();
-    if (!f->empty()) {
-      f->rbegin()->SetVisibility(vis);
+    if (!s.F->empty()) {
+      s.F->rbegin()->SetVisibility(vis);
     } else {
-      f->SetVisibility(vis);
+      s.F->SetVisibility(vis);
     }
   }
   l_.Expect(Token::NEWLINE);
@@ -754,7 +770,6 @@ void Parser::ParseAddrsigSym()
 void Parser::ParseAscii()
 {
   l_.Check(Token::STRING);
-  InData();
   GetOrCreateAtom()->AddItem(Item::CreateString(l_.String()));
   l_.Expect(Token::NEWLINE);
 }
@@ -763,7 +778,6 @@ void Parser::ParseAscii()
 void Parser::ParseAsciz()
 {
   l_.Check(Token::STRING);
-  InData();
   Atom *atom = GetOrCreateAtom();
   atom->AddItem(Item::CreateString(l_.String()));
   atom->AddItem(Item::CreateInt8(0));
@@ -771,97 +785,110 @@ void Parser::ParseAsciz()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::InData()
+Parser::Section &Parser::GetSection()
 {
-  if (data_ == nullptr || func_ != nullptr) {
-    l_.Error("not in a data segment");
+  if (stk_.empty()) {
+    l_.Error("missing section");
   }
+  return stk_.top();
 }
 
 // -----------------------------------------------------------------------------
 Object *Parser::GetOrCreateObject()
 {
-  if (object_) {
-    return object_;
+  auto &s = GetSection();
+  if (s.O) {
+    return s.O;
   }
-
-  object_ = new Object();
-  data_->AddObject(object_);
-  return object_;
+  s.O = new Object();
+  s.D->AddObject(s.O);
+  return s.O;
 }
 
 // -----------------------------------------------------------------------------
 Atom *Parser::GetOrCreateAtom()
 {
-  InData();
+  auto &s = GetSection();
 
-  if (!atom_) {
-    if (!object_) {
-      object_ = new Object();
-      data_->AddObject(object_);
+  if (s.D == nullptr || s.F != nullptr) {
+    l_.Error("not in a data segment");
+  }
+
+  if (!s.A) {
+    if (!s.O) {
+      s.O = new Object();
+      s.D->AddObject(s.O);
     }
-    atom_ = new Atom((".L" + data_->getName() + "$begin").str());
-    object_->AddAtom(atom_);
+    s.A = new Atom((".L" + s.D->getName() + "$begin").str());
+    s.O->AddAtom(s.A);
 
-    if (align_) {
-      atom_->SetAlignment(llvm::Align(*align_));
-      align_ = std::nullopt;
+    if (s.Align) {
+      s.A->SetAlignment(llvm::Align(*s.Align));
+      s.Align = std::nullopt;
     }
   }
 
-  return atom_;
+  return s.A;
 }
 
 // -----------------------------------------------------------------------------
 Func *Parser::GetFunction()
 {
-  if (data_ != nullptr || !func_) {
+  auto &s = GetSection();
+  if (s.D != nullptr || !s.F) {
     l_.Error("not in a text segment");
   }
-  return func_;
+  return s.F;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::EndFunction()
 {
+  auto &s = GetSection();
+
   // Check if function is ill-defined.
-  if (func_->empty()) {
-    l_.Error(func_, "Empty function");
-  } else if (!func_->rbegin()->GetTerminator()) {
-    l_.Error(func_, "Function not terminated");
+  if (s.F->empty()) {
+    l_.Error(s.F, "Empty function");
+  } else if (!s.F->rbegin()->GetTerminator()) {
+    l_.Error(s.F, "Function not terminated");
   }
 
-  if (auto err = PhiPlacement(*func_, vregs_)) {
+  if (auto err = PhiPlacement(*s.F, s.VRegs)) {
     llvm::handleAllErrors(std::move(err), [&](const llvm::ErrorInfoBase &e) {
-      l_.Error(func_, e.message());
+      l_.Error(s.F, e.message());
     });
   }
 
-  func_ = nullptr;
-
-  vregs_.clear();
+  s.F = nullptr;
+  s.VRegs.clear();
 }
 
 // -----------------------------------------------------------------------------
-void Parser::EndItem()
+void Parser::Align(int64_t alignment)
 {
-  if (func_) {
+  auto &s = GetSection();
+  if (s.F) {
     EndFunction();
   }
-  atom_ = nullptr;
+  s.A = nullptr;
+  s.Align = alignment;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::End()
 {
-  EndItem();
-  object_ = nullptr;
+  auto &s = GetSection();
+  if (s.F) {
+    EndFunction();
+  }
+  s.A = nullptr;
+  s.Align = std::nullopt;
+  s.O = nullptr;
 }
 
 // -----------------------------------------------------------------------------
 int64_t Parser::Number()
 {
-  InData();
   int64_t val;
   if (l_.GetToken() == Token::MINUS) {
     l_.Expect(Token::NUMBER);
