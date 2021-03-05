@@ -170,6 +170,7 @@ void X86ISel::LowerSet(const SetInst *inst)
     case Register::X86_CR0: return LowerSetReg("mov $0, %cr0", ptrVT, value);
     case Register::X86_CR2: return LowerSetReg("mov $0, %cr2", ptrVT, value);
     case Register::X86_CR3: return LowerSetReg("mov $0, %cr3", ptrVT, value);
+    case Register::X86_CR4: return LowerSetReg("mov $0, %cr4", ptrVT, value);
     case Register::X86_CS:  return LowerSetReg("mov $0, %cs", MVT::i32, value);
     case Register::X86_DS:  return LowerSetReg("mov $0, %ds", MVT::i32, value);
     case Register::X86_ES:  return LowerSetReg("mov $0, %es", MVT::i32, value);
@@ -274,7 +275,8 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
     case CallingConv::XEN:
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       Error(func_, "vararg call not supported");
     }
   }
@@ -419,6 +421,7 @@ SDValue X86ISel::GetRegArch(Register reg)
     case Register::X86_CR0: return mov("mov  %cr0, $0", ptrVT);
     case Register::X86_CR2: return mov("mov  %cr2, $0", ptrVT);
     case Register::X86_CR3: return mov("mov  %cr3, $0", ptrVT);
+    case Register::X86_CR4: return mov("mov  %cr4, $0", ptrVT);
     default: {
       llvm_unreachable("invalid register");
     }
@@ -429,10 +432,11 @@ SDValue X86ISel::GetRegArch(Register reg)
 void X86ISel::LowerSetSP(SDValue value)
 {
   auto &DAG = GetDAG();
+  const auto &STI = DAG.getMachineFunction().getSubtarget<llvm::X86Subtarget>();
   DAG.setRoot(DAG.getCopyToReg(
       DAG.getRoot(),
       SDL_,
-      X86::RSP,
+      STI.is64Bit() ? X86::RSP : X86::ESP,
       value
   ));
 }

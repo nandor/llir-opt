@@ -164,6 +164,7 @@ Lexer::Token Lexer::NextToken()
           std::make_pair("x86_cr0",      Register::X86_CR0     ),
           std::make_pair("x86_cr2",      Register::X86_CR2     ),
           std::make_pair("x86_cr3",      Register::X86_CR3     ),
+          std::make_pair("x86_cr4",      Register::X86_CR4     ),
           std::make_pair("x86_cs",       Register::X86_CS      ),
           std::make_pair("x86_ds",       Register::X86_DS      ),
           std::make_pair("x86_ss",       Register::X86_SS      ),

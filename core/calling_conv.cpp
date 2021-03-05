@@ -17,6 +17,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv)
     case CallingConv::SETJMP:     return os << "setjmp";
     case CallingConv::XEN:        return os << "xen";
     case CallingConv::INTR:       return os << "intr";
+    case CallingConv::MULTIBOOT:  return os << "multiboot";
   }
   llvm_unreachable("invalid calling convention");
 }

@@ -370,7 +370,6 @@ void SCCPSolver::VisitCmpInst(CmpInst &inst)
           return;
         }
         case Lattice::Kind::POINTER: {
-          auto *g = rhs.GetGlobalSymbol();
           if (lhs.GetInt().isNullValue()) {
             Mark(inst, IntOrder(true));
           } else {

@@ -990,6 +990,7 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
     std::make_pair("setjmp",     CallingConv::SETJMP),
     std::make_pair("xen",        CallingConv::XEN),
     std::make_pair("intr",       CallingConv::INTR),
+    std::make_pair("multiboot",  CallingConv::MULTIBOOT),
   };
 
   return ParseToken<CallingConv>(kCallingConv, str);

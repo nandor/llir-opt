@@ -387,6 +387,7 @@ void VerifierPass::VisitSetInst(const SetInst &i)
     case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CR4:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::RISCV_FFLAGS:
@@ -426,6 +427,7 @@ void VerifierPass::VisitGetInst(const GetInst &get)
     case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CR4:
     case Register::RET_ADDR:
     case Register::FRAME_ADDR:
     case Register::AARCH64_FPSR:

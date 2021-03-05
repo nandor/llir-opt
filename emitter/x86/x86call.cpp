@@ -122,6 +122,13 @@ static const std::vector<unsigned> kXenRetGPR64 = {
 };
 
 // -----------------------------------------------------------------------------
+// Registers used by multiboot.
+// -----------------------------------------------------------------------------
+static const std::vector<unsigned> kMultiboot = {
+  X86::EAX, X86::EBX
+};
+
+// -----------------------------------------------------------------------------
 static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 {
   switch (type) {
@@ -330,6 +337,34 @@ void X86Call::AssignArgXen(unsigned i, FlaggedType type)
     case Type::V64: {
       if (argRegs_ < kXenGPR64.size()) {
         AssignArgReg(loc, MVT::i64, kXenGPR64[argRegs_++]);
+      } else {
+        llvm_unreachable("Too many arguments");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgMultiboot(unsigned i, FlaggedType type)
+{
+  ArgLoc &loc = args_.emplace_back(i, type);
+  switch (type.GetType()) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I64:
+    case Type::V64:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::I32: {
+      if (argRegs_ < kMultiboot.size()) {
+        AssignArgReg(loc, MVT::i32, kMultiboot[argRegs_++]);
       } else {
         llvm_unreachable("Too many arguments");
       }
@@ -600,7 +635,8 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       llvm_unreachable("cannot call interrupts");
     }
   }
@@ -626,7 +662,8 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       llvm_unreachable("cannot call interrupts");
     }
   }

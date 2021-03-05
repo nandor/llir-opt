@@ -24,6 +24,8 @@ enum class Register : uint8_t {
   X86_CR2,
   /// X86 CR3 register.
   X86_CR3,
+  /// X86 CR4 register.
+  X86_CR4,
   /// X86 Data Segment.
   X86_DS,
   /// X86 Extra Segment.

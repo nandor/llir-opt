@@ -198,7 +198,8 @@ bool ValueNumberingPass::Run(Prog &prog)
       case CallingConv::C:
       case CallingConv::SETJMP:
       case CallingConv::XEN:
-      case CallingConv::INTR: {
+      case CallingConv::INTR:
+      case CallingConv::MULTIBOOT:  {
         changed = GlobalValueNumbering(func).Run() || changed;
         continue;
       }

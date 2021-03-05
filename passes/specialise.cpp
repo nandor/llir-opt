@@ -27,6 +27,23 @@ const char *SpecialisePass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
+static bool CanSpecialise(Func &func)
+{
+  if (!func.IsLocal() || func.IsNoInline()) {
+    return false;
+  }
+  if (func.getName().contains("$specialised$")) {
+    return false;
+  }
+  for (const Block &block : func) {
+    if (!block.IsLocal()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
 bool SpecialisePass::Run(Prog &prog)
 {
   /// Mapping from parameters to call sites.
@@ -94,13 +111,7 @@ bool SpecialisePass::Run(Prog &prog)
         continue;
       }
       auto *func = call->GetDirectCallee();
-      if (!func) {
-        continue;
-      }
-      if (anchored.count(func) || !func->IsLocal() || func->IsNoInline()) {
-        continue;
-      }
-      if (func->getName().contains("$specialised$")) {
+      if (!func || anchored.count(func) || !CanSpecialise(*func)) {
         continue;
       }
       uses[func]++;

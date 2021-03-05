@@ -15,6 +15,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Register reg)
     case Register::X86_CR0:      return os << "$x86_cr0";
     case Register::X86_CR2:      return os << "$x86_cr2";
     case Register::X86_CR3:      return os << "$x86_cr3";
+    case Register::X86_CR4:      return os << "$x86_cr4";
     case Register::X86_CS:       return os << "$x86_cs";
     case Register::X86_DS:       return os << "$x86_ds";
     case Register::X86_SS:       return os << "$x86_ss";

@@ -171,7 +171,6 @@ static void AddOpt1(PassManager &mngr)
     < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
-    , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass

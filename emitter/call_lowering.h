@@ -171,6 +171,11 @@ protected:
   virtual void AssignArgOCamlGc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Xen hypercalls.
   virtual void AssignArgXen(unsigned i, FlaggedType type) = 0;
+  /// Location assignment for multiboot.
+  virtual void AssignArgMultiboot(unsigned i, FlaggedType type)
+  {
+    llvm_unreachable("no args to multiboot");
+  }
 
   /// Location assignment for C.
   virtual void AssignRetC(unsigned i, FlaggedType type) = 0;

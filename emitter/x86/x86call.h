@@ -87,6 +87,8 @@ private:
   void AssignArgOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
   void AssignArgXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for multiboot.
+  void AssignArgMultiboot(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, FlaggedType type) override;

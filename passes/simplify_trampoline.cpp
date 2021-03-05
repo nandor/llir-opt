@@ -32,14 +32,17 @@ static bool CheckCallingConv(CallingConv conv)
 {
   switch (conv) {
     case CallingConv::C:
-    case CallingConv::CAML:
+    case CallingConv::CAML: {
       return true;
+    }
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
     case CallingConv::SETJMP:
     case CallingConv::XEN:
     case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       return false;
+    }
   }
   llvm_unreachable("invalid calling conv");
 }

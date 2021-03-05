@@ -76,7 +76,8 @@ static bool ReturnsTwice(CallingConv conv)
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
     case CallingConv::XEN:
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       return false;
     }
     case CallingConv::SETJMP: {
@@ -343,6 +344,7 @@ static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
     case CallingConv::CAML_ALLOC: return llvm::CallingConv::LLIR_CAML_ALLOC;
     case CallingConv::CAML_GC:    return llvm::CallingConv::LLIR_CAML_GC;
     case CallingConv::XEN:        return llvm::CallingConv::LLIR_XEN;
+    case CallingConv::MULTIBOOT:  return llvm::CallingConv::LLIR_MULTIBOOT;
     case CallingConv::INTR:       return llvm::CallingConv::X86_INTR;
   }
   llvm_unreachable("invalid calling convention");
@@ -1478,7 +1480,8 @@ llvm::SDValue ISel::LowerGCFrame(
     }
     case CallingConv::SETJMP:
     case CallingConv::XEN:
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       llvm_unreachable("invalid frame");
     }
   }
@@ -1573,7 +1576,8 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC:
       case CallingConv::XEN:
-      case CallingConv::INTR: {
+      case CallingConv::INTR:
+      case CallingConv::MULTIBOOT: {
         break;
       }
     }
@@ -1592,6 +1596,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
     case CallingConv::CAML_GC:    return { false, LLIR_CAML_GC };
     case CallingConv::SETJMP:     return { false, LLIR_SETJMP };
     case CallingConv::XEN:        return { false, LLIR_XEN };
+    case CallingConv::MULTIBOOT:  return { false, LLIR_MULTIBOOT };
     case CallingConv::INTR:       return { false, X86_INTR };
   }
   llvm_unreachable("invalid calling convention");
@@ -2538,6 +2543,7 @@ void ISel::LowerGet(const GetInst *get)
     case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CR4:
     case Register::X86_CS:
     case Register::X86_DS:
     case Register::X86_ES:

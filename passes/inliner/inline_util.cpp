@@ -44,7 +44,8 @@ bool CanInline(const Func *caller, const Func *callee)
     case CallingConv::CAML_ALLOC:
     case CallingConv::SETJMP:
     case CallingConv::XEN:
-    case CallingConv::INTR: {
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT: {
       return false;
     }
   }

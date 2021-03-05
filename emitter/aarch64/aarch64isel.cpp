@@ -771,6 +771,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
+    case Register::X86_CR4:
     case Register::X86_CS:
     case Register::X86_DS:
     case Register::X86_ES:

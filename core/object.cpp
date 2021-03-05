@@ -173,7 +173,7 @@ static Value *LoadFloat(
       return nullptr;
     }
     case APFloat::S_x87DoubleExtended: {
-      llvm_unreachable("not implemented");
+      return nullptr;
     }
     case APFloat::S_IEEEquad: {
       llvm_unreachable("not implemented");

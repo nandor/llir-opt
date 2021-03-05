@@ -28,6 +28,8 @@ enum class CallingConv : uint8_t {
   XEN,
   // Interrupt handler.
   INTR,
+  // Multiboot entry.
+  MULTIBOOT,
 };
 
 /**
