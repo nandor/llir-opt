@@ -18,6 +18,19 @@ using MVT = llvm::MVT;
 // -----------------------------------------------------------------------------
 // Registers used by C and FAST to pass arguments.
 // -----------------------------------------------------------------------------
+static const std::vector<unsigned> k32CRetGPR8 = {
+  X86::AL, X86::DL
+};
+static const std::vector<unsigned> k32CRetGPR16 = {
+  X86::AX, X86::DX
+};
+static const std::vector<unsigned> k32CRetGPR32 = {
+  X86::EAX, X86::EDX
+};
+static const std::vector<unsigned> k32CRetFP = {
+  X86::FP0, X86::FP1
+};
+
 static const std::vector<unsigned> kCGPR8 = {
   X86::DIL, X86::SIL, X86::DL,
   X86::CL, X86::R8B, X86::R9B
@@ -38,16 +51,16 @@ static const std::vector<unsigned> kCXMM = {
   X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
-static const std::vector<unsigned> kCRetGPR8 = {
+static const std::vector<unsigned> k64CRetGPR8 = {
   X86::AL, X86::DL
 };
-static const std::vector<unsigned> kCRetGPR16 = {
+static const std::vector<unsigned> k64CRetGPR16 = {
   X86::AX, X86::DX
 };
-static const std::vector<unsigned> kCRetGPR32 = {
+static const std::vector<unsigned> k64CRetGPR32 = {
   X86::EAX, X86::EDX
 };
-static const std::vector<unsigned> kCRetGPR64 = {
+static const std::vector<unsigned> k64CRetGPR64 = {
   X86::RAX, X86::RDX
 };
 static const std::vector<unsigned> kCRetF80 = {
@@ -147,7 +160,196 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgC(unsigned i, FlaggedType type)
+llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
+{
+  return GetGPRs().drop_front(argRegs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUsedGPRs() const
+{
+  return GetGPRs().take_front(argRegs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUnusedXMMs() const
+{
+  return GetXMMs().drop_front(argXMMs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
+{
+  return GetXMMs().take_front(argXMMs_);
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
+{
+  loc.Parts.emplace_back(vt, reg);
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
+{
+  stack_ = llvm::alignTo(stack_, llvm::Align(8));
+  loc.Parts.emplace_back(vt, stack_, size);
+  stack_ = stack_ + size;
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgByVal(
+    ArgLoc &loc,
+    llvm::MVT vt,
+    unsigned size,
+    llvm::Align align)
+{
+  stack_ = llvm::alignTo(stack_, align);
+  loc.Parts.emplace_back(vt, stack_, size, align);
+  stack_ = stack_ + size;
+  maxAlign_ = std::max(maxAlign_, align);
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignRetReg(RetLoc &loc, llvm::MVT vt, llvm::Register reg)
+{
+  loc.Parts.emplace_back(vt, reg);
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgC(unsigned i, FlaggedType type)
+{
+  ArgLoc &loc = args_.emplace_back(i, type);
+  Type ty = type.GetType();
+  AssignArgStack(loc, GetVT(ty), GetSize(ty));
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgOCaml(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgXen(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignArgMultiboot(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetC(unsigned i, FlaggedType type)
+{
+  RetLoc &loc = rets_.emplace_back(i);
+  switch (auto ty = type.GetType()) {
+    case Type::I8: {
+      if (retRegs_ < k32CRetGPR8.size()) {
+        AssignRetReg(loc, MVT::i8, k32CRetGPR8[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I16: {
+      if (retRegs_ < k32CRetGPR16.size()) {
+        AssignRetReg(loc, MVT::i16, k32CRetGPR16[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I32: {
+      if (retRegs_ < k32CRetGPR32.size()) {
+        AssignRetReg(loc, MVT::i32, k32CRetGPR32[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::V64:
+    case Type::I64: {
+      if (retRegs_ + 1 < k32CRetGPR32.size()) {
+        AssignRetReg(loc, MVT::i32, k32CRetGPR32[retRegs_++]);
+        AssignRetReg(loc, MVT::i32, k32CRetGPR32[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::F32: 
+    case Type::F64: 
+    case Type::F80: {
+      if (retRegs_ < k32CRetGPR32.size()) {
+        AssignRetReg(loc, GetVT(ty), k32CRetFP[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I128:
+    case Type::F128: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetOCaml(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetXen(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86_32Call::GetGPRs() const
+{
+  return {};
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86_32Call::GetXMMs() const
+{
+  return {};
+}
+
+
+// -----------------------------------------------------------------------------
+void X86_64Call::AssignArgC(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -218,7 +420,7 @@ void X86Call::AssignArgC(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCaml(unsigned i, FlaggedType type)
+void X86_64Call::AssignArgOCaml(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -263,7 +465,7 @@ void X86Call::AssignArgOCaml(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
+void X86_64Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -291,7 +493,7 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
+void X86_64Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -319,7 +521,7 @@ void X86Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgXen(unsigned i, FlaggedType type)
+void X86_64Call::AssignArgXen(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -347,7 +549,7 @@ void X86Call::AssignArgXen(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgMultiboot(unsigned i, FlaggedType type)
+void X86_64Call::AssignArgMultiboot(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type.GetType()) {
@@ -375,29 +577,29 @@ void X86Call::AssignArgMultiboot(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetC(unsigned i, FlaggedType type)
+void X86_64Call::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
   switch (type.GetType()) {
     case Type::I8: {
-      if (retRegs_ < kCRetGPR8.size()) {
-        AssignRetReg(loc, MVT::i8, kCRetGPR8[retRegs_++]);
+      if (retRegs_ < k64CRetGPR8.size()) {
+        AssignRetReg(loc, MVT::i8, k64CRetGPR8[retRegs_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
       return;
     }
     case Type::I16: {
-      if (retRegs_ < kCRetGPR16.size()) {
-        AssignRetReg(loc, MVT::i16, kCRetGPR16[retRegs_++]);
+      if (retRegs_ < k64CRetGPR16.size()) {
+        AssignRetReg(loc, MVT::i16, k64CRetGPR16[retRegs_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
       return;
     }
     case Type::I32: {
-      if (retRegs_ < kCRetGPR32.size()) {
-        AssignRetReg(loc, MVT::i32, kCRetGPR32[retRegs_++]);
+      if (retRegs_ < k64CRetGPR32.size()) {
+        AssignRetReg(loc, MVT::i32, k64CRetGPR32[retRegs_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -405,8 +607,8 @@ void X86Call::AssignRetC(unsigned i, FlaggedType type)
     }
     case Type::V64:
     case Type::I64: {
-      if (retRegs_ < kCRetGPR64.size()) {
-        AssignRetReg(loc, MVT::i64, kCRetGPR64[retRegs_++]);
+      if (retRegs_ < k64CRetGPR64.size()) {
+        AssignRetReg(loc, MVT::i64, k64CRetGPR64[retRegs_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -445,7 +647,7 @@ void X86Call::AssignRetC(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCaml(unsigned i, FlaggedType type)
+void X86_64Call::AssignRetOCaml(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
   switch (type.GetType()) {
@@ -508,7 +710,7 @@ void X86Call::AssignRetOCaml(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
+void X86_64Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
   switch (type.GetType()) {
@@ -536,7 +738,7 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
+void X86_64Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
   switch (type.GetType()) {
@@ -564,7 +766,7 @@ void X86Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetXen(unsigned i, FlaggedType type)
+void X86_64Call::AssignRetXen(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
   switch (type.GetType()) {
@@ -592,31 +794,7 @@ void X86Call::AssignRetXen(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
-{
-  return GetGPRs().drop_front(argRegs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUsedGPRs() const
-{
-  return GetGPRs().take_front(argRegs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUnusedXMMs() const
-{
-  return GetXMMs().drop_front(argXMMs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
-{
-  return GetXMMs().take_front(argXMMs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
+llvm::ArrayRef<unsigned> X86_64Call::GetGPRs() const
 {
   switch (conv_) {
     case CallingConv::C:
@@ -644,7 +822,7 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
 }
 
 // -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
+llvm::ArrayRef<unsigned> X86_64Call::GetXMMs() const
 {
   switch (conv_) {
     case CallingConv::C:
@@ -668,37 +846,4 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     }
   }
   llvm_unreachable("invalid calling convention");
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
-{
-  loc.Parts.emplace_back(vt, reg);
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
-{
-  stack_ = llvm::alignTo(stack_, llvm::Align(8));
-  loc.Parts.emplace_back(vt, stack_, size);
-  stack_ = stack_ + size;
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::AssignArgByVal(
-    ArgLoc &loc,
-    llvm::MVT vt,
-    unsigned size,
-    llvm::Align align)
-{
-  stack_ = llvm::alignTo(stack_, align);
-  loc.Parts.emplace_back(vt, stack_, size, align);
-  stack_ = stack_ + size;
-  maxAlign_ = std::max(maxAlign_, align);
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::AssignRetReg(RetLoc &loc, llvm::MVT vt, llvm::Register reg)
-{
-  loc.Parts.emplace_back(vt, reg);
 }

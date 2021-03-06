@@ -74,7 +74,7 @@ llvm::StringRef X86AnnotPrinter::GetRegisterName(unsigned reg)
 // -----------------------------------------------------------------------------
 llvm::Register X86AnnotPrinter::GetStackPointer()
 {
-  return X86::RSP;
+  return layout_.getPointerSizeInBits() == 32 ? X86::ESP : X86::RSP;
 }
 
 // -----------------------------------------------------------------------------

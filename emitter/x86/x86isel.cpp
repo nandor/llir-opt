@@ -133,6 +133,18 @@ void X86ISel::LowerArch(const Inst *i)
 }
 
 // -----------------------------------------------------------------------------
+template <typename T>
+std::unique_ptr<X86Call> GetCallLowering(SelectionDAG &DAG, T *inst)
+{
+  auto &STI = DAG.getMachineFunction().getSubtarget<llvm::X86Subtarget>();
+  if (STI.is32Bit()) {
+    return std::make_unique<X86_32Call>(inst);
+  } else {
+    return std::make_unique<X86_64Call>(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerReturn(const ReturnInst *retInst)
 {
   auto &DAG = GetDAG();
@@ -144,8 +156,8 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     assert(retInst->arg_size() == 0 && "nothing to return");
     DAG.setRoot(DAG.getNode(X86ISD::IRET, SDL_, MVT::Other, ops));
   } else {
-    X86Call ci(retInst);
-    auto [chain, flag] = LowerRets(ops[0], ci, retInst, ops);
+    std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), retInst));
+    auto [chain, flag] = LowerRets(ops[0], *ci, retInst, ops);
 
     ops[0] = chain;
     if (flag.getNode()) {
@@ -239,17 +251,18 @@ void X86ISel::LowerFPUControl(
 // -----------------------------------------------------------------------------
 void X86ISel::LowerArguments(bool hasVAStart)
 {
-  X86Call lowering(func_);
+  std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), func_));
   if (hasVAStart) {
-    LowerVASetup(lowering);
+    LowerVASetup(*ci);
   }
-  LowerArgs(lowering);
+  LowerArgs(*ci);
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerLandingPad(const LandingPadInst *inst)
 {
-  LowerPad(X86Call(inst), inst);
+  std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), inst));
+  LowerPad(*ci, inst);
 }
 
 // -----------------------------------------------------------------------------
@@ -257,11 +270,15 @@ void X86ISel::LowerVASetup(const X86Call &ci)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
+  auto &STI = MF.getSubtarget<llvm::X86Subtarget>();
   auto &FuncInfo = *MF.getInfo<llvm::X86MachineFunctionInfo>();
   llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
-  auto &STI = MF.getSubtarget<llvm::X86Subtarget>();
   const auto &TLI = *STI.getTargetLowering();
   auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
+
+  if (!STI.is64Bit()) {
+    return;
+  }
 
   // Get the size of the stack, plus alignment to store the return
   // address for tail calls for the fast calling convention.
@@ -432,11 +449,10 @@ SDValue X86ISel::GetRegArch(Register reg)
 void X86ISel::LowerSetSP(SDValue value)
 {
   auto &DAG = GetDAG();
-  const auto &STI = DAG.getMachineFunction().getSubtarget<llvm::X86Subtarget>();
   DAG.setRoot(DAG.getCopyToReg(
       DAG.getRoot(),
       SDL_,
-      STI.is64Bit() ? X86::RSP : X86::ESP,
+      GetStackRegister(),
       value
   ));
 }
@@ -510,15 +526,15 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool wasTailCall = isTailCall;
-  X86Call locs(call);
+  std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), call));
 
   // Find the number of bytes allocated to hold arguments.
-  unsigned stackSize = locs.GetFrameSize();
+  unsigned stackSize = ci->GetFrameSize();
 
   // Compute the stack difference for tail calls.
   int fpDiff = 0;
   if (isTailCall) {
-    X86Call callee(func);
+    std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), func));
     int bytesToPop;
     switch (func->GetCallingConv()) {
       default: {
@@ -526,7 +542,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
       case CallingConv::C: {
         if (func->IsVarArg()) {
-          bytesToPop = callee.GetFrameSize();
+          bytesToPop = ci->GetFrameSize();
         } else {
           bytesToPop = 0;
         }
@@ -563,7 +579,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
-  chain = LowerCallArguments(chain, call, locs, regArgs);
+  chain = LowerCallArguments(chain, call, *ci, regArgs);
 
   if (isVarArg) {
     // If XMM regs are used, their count needs to be passed in AL.
@@ -579,7 +595,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   if (isTailCall) {
     // Shuffle arguments on the stack.
-    for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
+    for (auto it = ci->arg_begin(); it != ci->arg_end(); ++it) {
       for (auto &part : it->Parts) {
         switch (part.K) {
           case CallLowering::ArgPart::Kind::REG: {
@@ -692,7 +708,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
       for (unsigned i = 0, n = call->type_size(); i < n; ++i) {
         if (used[i]) {
-          returns.push_back(locs.Return(i));
+          returns.push_back(ci->Return(i));
         }
       }
     }
@@ -748,13 +764,21 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSyscall(const SyscallInst *inst)
 {
-  static std::vector<llvm::Register> kRetRegs = { X86::RAX };
-  static std::vector<llvm::Register> kArgRegs = {
+  // 32-bit registers.
+  static std::vector<llvm::Register> kRetRegs32 = { X86::EAX };
+  static std::vector<llvm::Register> kArgRegs32 = {
+    X86::EBX, X86::ECX, X86::EDX, X86::ESI, X86::EDI, X86::EBP
+  };
+  // 64-bit registers.
+  static std::vector<llvm::Register> kRetRegs64 = { X86::RAX };
+  static std::vector<llvm::Register> kArgRegs64 = {
       X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8, X86::R9
   };
 
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
+  auto PtrVT = GetPointerType();
+  bool is32Bit = PtrVT == MVT::i32;
 
   llvm::SmallVector<SDValue, 7> ops;
   SDValue chain = DAG.getRoot();
@@ -764,18 +788,22 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   unsigned args = 0;
   {
     for (ConstRef<Inst> arg : inst->args()) {
-      if (args >= kArgRegs.size()) {
-        Error(inst, "too many arguments to syscall");
+      llvm::Register reg;
+      if (is32Bit) {
+        if (args >= kArgRegs32.size()) {
+          Error(inst, "too many arguments to syscall");
+        }
+        reg = kArgRegs32[args++];
+      } else {
+        if (args >= kArgRegs64.size()) {
+          Error(inst, "too many arguments to syscall");
+        }
+        reg = kArgRegs64[args++];
       }
-
-      ops.push_back(DAG.getRegister(kArgRegs[args], MVT::i64));
-      SDValue copy = DAG.getCopyToReg(
-          chain,
-          SDL_,
-          kArgRegs[args++],
-          DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, MVT::i64),
-          glue
-      );
+      
+      SDValue value = DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, PtrVT);
+      ops.push_back(DAG.getRegister(reg, PtrVT));
+      SDValue copy = DAG.getCopyToReg(chain, SDL_, reg, value, glue);
       chain = copy.getValue(0);
       glue = copy.getValue(1);
     }
@@ -783,16 +811,16 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
 
   /// Lower to the syscall.
   {
-    ops.push_back(DAG.getRegister(X86::RAX, MVT::i64));
+    ops.push_back(DAG.getRegister(X86::RAX, PtrVT));
 
     SDValue copy = DAG.getCopyToReg(
         chain,
         SDL_,
-        X86::RAX,
+        is32Bit ? X86::EAX : X86::RAX,
         DAG.getZExtOrTrunc(
             GetValue(inst->GetSyscall()),
             SDL_,
-            MVT::i64
+            PtrVT
         ),
         glue
     );
@@ -816,19 +844,23 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   /// Copy the return value into a vreg and export it.
   for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
     auto ty = inst->type(i);
-    if (ty != Type::I64 || i >= kRetRegs.size()) {
-      Error(inst, "invalid syscall type");
+    llvm::Register reg;
+    if (is32Bit) {
+      if (ty != Type::I32 || i >= kRetRegs32.size()) {
+        Error(inst, "invalid syscall type");
+      }
+      reg = kRetRegs32[i];
+    } else {
+      if (ty != Type::I64 || i >= kRetRegs64.size()) {
+        Error(inst, "invalid syscall type");
+      }
+      reg = kRetRegs64[i];
     }
 
-    chain = DAG.getCopyFromReg(
-        chain,
-        SDL_,
-        kRetRegs[i],
-        MVT::i64,
-        chain.getValue(1)
-    ).getValue(1);
-
-    Export(inst->GetSubValue(i), chain.getValue(0));
+    SDValue copy = DAG.getCopyFromReg(chain, SDL_, reg, PtrVT, glue);
+    chain = copy.getValue(1);
+    glue = copy.getValue(2);
+    Export(inst->GetSubValue(i), copy.getValue(0));
   }
 
   DAG.setRoot(chain);
@@ -935,9 +967,10 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
   auto &MRI = MF.getRegInfo();
   const auto &STI = MF.getSubtarget();
   const auto &TLI = *STI.getTargetLowering();
+  auto PtrVT = GetPointerType();
 
   // Copy in the new stack pointer and code pointer.
-  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(PtrVT));
   SDValue stkNode = DAG.getCopyToReg(
       DAG.getRoot(),
       SDL_,
@@ -945,7 +978,7 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       GetValue(inst->GetStack()),
       SDValue()
   );
-  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(PtrVT));
   SDValue pcNode = DAG.getCopyToReg(
       stkNode,
       SDL_,
@@ -959,9 +992,10 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
   SDValue chain = DAG.getRoot();
   llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
+    std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), inst));
     std::tie(chain, glue) = LowerRaises(
         chain,
-        X86Call(inst),
+        *ci,
         inst,
         regs,
         glue
@@ -972,17 +1006,31 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
     }
   }
 
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM_BR,
-      chain,
-      "movq $0, %rsp\n"
-      "jmp *$1",
-      0,
-      regs,
-      { },
-      { },
-      glue
-  ));
+  if (MF.getSubtarget<llvm::X86Subtarget>().is64Bit()) {
+    DAG.setRoot(LowerInlineAsm(
+        ISD::INLINEASM_BR,
+        chain,
+        "movq $0, %rsp\n"
+        "jmp *$1",
+        0,
+        regs,
+        { },
+        { },
+        glue
+    ));
+  } else {
+    DAG.setRoot(LowerInlineAsm(
+        ISD::INLINEASM_BR,
+        chain,
+        "movl $0, %esp\n"
+        "jmp *$1",
+        0,
+        regs,
+        { },
+        { },
+        glue
+    ));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1542,4 +1590,10 @@ void X86ISel::LowerContextMask(bool store, unsigned op, SDValue addr, SDValue ma
       llvm::Align(1),
       store ? llvm::MachineMemOperand::MOStore : llvm::MachineMemOperand::MOLoad
   ));
+}
+
+// -----------------------------------------------------------------------------
+llvm::Register X86ISel::GetStackRegister() const
+{
+  return GetPointerType() == MVT::i64 ? X86::RSP : X86::ESP;
 }

@@ -178,7 +178,7 @@ private:
   void Select(SDNode *node) override { m_->Select(node); }
 
   /// Returns the stack pointer.
-  llvm::Register GetStackRegister() const override { return llvm::X86::RSP; }
+  llvm::Register GetStackRegister() const override;
 
 private:
   /// Lowers a call instruction.

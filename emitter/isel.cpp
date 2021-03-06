@@ -127,7 +127,7 @@ bool ISel::runOnModule(llvm::Module &Module)
     lva_ = nullptr;
     frameIndex_ = 0;
     stackIndices_.clear();
-
+    
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
     // Register a handler for more verbose debug info.
@@ -1053,7 +1053,6 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
     MVT valVT = value.getSimpleValueType();
     for (unsigned i = 0, n = regs.size(); i < n; ++i) {
       auto &[reg, regVT] = regs[i];
-
       SDValue part;
       if (n == 1) {
         if (valVT == regVT) {
@@ -1123,7 +1122,7 @@ ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
   auto regClass = TLI.getRegClassFor(regVT);
   unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
-
+  
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
     regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);
@@ -1146,7 +1145,7 @@ ISel::RegParts ISel::ExportValue(llvm::SDValue value)
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
   auto regClass = TLI.getRegClassFor(regVT);
   unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
-
+  
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
     regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);
@@ -1553,7 +1552,7 @@ bool ISel::IsExported(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MVT ISel::GetPointerType()
+llvm::MVT ISel::GetPointerType() const
 {
   auto &DAG = GetDAG();
   auto &STI = DAG.getMachineFunction().getSubtarget();
@@ -2440,7 +2439,7 @@ void ISel::LowerAlloca(const AllocaInst *inst)
   );
 
   DAG.setRoot(node.getValue(1));
-  Export(inst, node);
+  Export(inst, node.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

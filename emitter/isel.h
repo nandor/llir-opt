@@ -191,7 +191,7 @@ protected:
   /// Check if the value is exported from its defining block.
   bool IsExported(ConstRef<Inst> inst);
   /// Return the pointer type.
-  MVT GetPointerType();
+  MVT GetPointerType() const;
 
 protected:
   /// Prepare LLVM globals.

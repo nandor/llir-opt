@@ -168,7 +168,7 @@ private:
   /// Emits a symbol with an offset.
   void EmitOffset(llvm::MCSymbol *symbol, int64_t off);
 
-private:
+protected:
   /// Instruction selector pass containing info for annotations.
   const ISelMapping &mapping_;
   /// LLVM context.
