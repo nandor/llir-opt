@@ -618,6 +618,7 @@ Inst *Parser::CreateInst(
           return new X86_CpuIdInst(t(0), t(1), t(2), t(3), op(4), std::move(annot));
         }
       }
+      if (opc == "x86_get_xcr")  return new X86_GetXcrInst(t(0), t(1), op(2), std::move(annot));
       if (opc == "x86_fsave") return new X86_FSaveInst(op(0), std::move(annot));
       if (opc == "x86_fxsave") return new X86_FXSaveInst(op(0), std::move(annot));
       if (opc == "x86_xsave") return new X86_XSaveInst(op(0), op(1), std::move(annot));

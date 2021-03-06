@@ -127,7 +127,7 @@ bool ISel::runOnModule(llvm::Module &Module)
     lva_ = nullptr;
     frameIndex_ = 0;
     stackIndices_.clear();
-    
+
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
     // Register a handler for more verbose debug info.
@@ -527,6 +527,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_S_FENCE:
     case Inst::Kind::X86_BARRIER:
     case Inst::Kind::X86_CPU_ID:
+    case Inst::Kind::X86_GET_XCR:
     case Inst::Kind::X86_WR_MSR:
     case Inst::Kind::X86_RD_MSR:
     case Inst::Kind::X86_IN:
@@ -1122,7 +1123,7 @@ ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
   auto regClass = TLI.getRegClassFor(regVT);
   unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
-  
+
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
     regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);
@@ -1145,7 +1146,7 @@ ISel::RegParts ISel::ExportValue(llvm::SDValue value)
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
   auto regClass = TLI.getRegClassFor(regVT);
   unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
-  
+
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
     regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);

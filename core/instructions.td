@@ -607,6 +607,12 @@ def X86_CPU_ID : Inst
   let IsConstant = 1;
 }
 
+def X86_GET_XCR : Inst
+{
+  let Fields = [ InstField<"Reg"> ];
+  let NumTypes = 2;
+}
+
 class X86_FPUControlInst : Inst
 {
   let Fields = [ InstField<"Addr"> ];

@@ -36,9 +36,7 @@ X86Target::X86Target(
           getCPU(),
           getFS(),
           opt,
-          triple.isArch32Bit() ?
-            llvm::Reloc::Model::Static :
-            llvm::Reloc::Model::PIC_,
+          llvm::Reloc::PIC_,
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
