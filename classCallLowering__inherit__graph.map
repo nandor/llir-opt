@@ -4,4 +4,6 @@
 <area shape="rect" id="node3" href="$classPPCCall.html" title=" " alt="" coords="131,80,203,107"/>
 <area shape="rect" id="node4" href="$classRISCVCall.html" title=" " alt="" coords="227,80,314,107"/>
 <area shape="rect" id="node5" href="$classX86Call.html" title=" " alt="" coords="339,80,411,107"/>
+<area shape="rect" id="node6" href="$classX86__32Call.html" title=" " alt="" coords="267,155,362,181"/>
+<area shape="rect" id="node7" href="$classX86__64Call.html" title=" " alt="" coords="386,155,481,181"/>
 </map>

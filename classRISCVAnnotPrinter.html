@@ -88,9 +88,10 @@ Collaboration diagram for RISCVAnnotPrinter:</div>
 <div class="dyncontent">
 <div class="center"><img src="classRISCVAnnotPrinter__coll__graph.png" border="0" usemap="#RISCVAnnotPrinter_coll__map" alt="Collaboration graph"/></div>
 <map name="RISCVAnnotPrinter_coll__map" id="RISCVAnnotPrinter_coll__map">
-<area shape="rect" title=" " alt="" coords="5,155,147,181"/>
-<area shape="rect" href="classAnnotPrinter.html" title=" " alt="" coords="25,80,127,107"/>
-<area shape="rect" title=" " alt="" coords="27,5,125,32"/>
+<area shape="rect" title=" " alt="" coords="47,171,188,197"/>
+<area shape="rect" href="classAnnotPrinter.html" title=" " alt="" coords="66,95,169,121"/>
+<area shape="rect" title=" " alt="" coords="5,5,104,32"/>
+<area shape="rect" href="classISelMapping.html" title=" " alt="" coords="129,5,231,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -127,6 +128,51 @@ Additional Inherited Members</h2></td></tr>
 virtual int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a67626693e5c5794af23f4c84af6baa42">GetFrameOffset</a> (const llvm::MachineInstr &amp;MI) const</td></tr>
 <tr class="memdesc:a67626693e5c5794af23f4c84af6baa42 inherit pro_methods_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the offset to apply to a label. <br /></td></tr>
 <tr class="separator:a67626693e5c5794af23f4c84af6baa42 inherit pro_methods_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_classAnnotPrinter"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classAnnotPrinter')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classAnnotPrinter.html">AnnotPrinter</a></td></tr>
+<tr class="memitem:a43d0af9a7e00030f6f4366215719ce3d inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a43d0af9a7e00030f6f4366215719ce3d"></a>
+const <a class="el" href="classISelMapping.html">ISelMapping</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a43d0af9a7e00030f6f4366215719ce3d">mapping_</a></td></tr>
+<tr class="memdesc:a43d0af9a7e00030f6f4366215719ce3d inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Instruction selector pass containing info for annotations. <br /></td></tr>
+<tr class="separator:a43d0af9a7e00030f6f4366215719ce3d inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a340204a1e4c9c28553c7406f015f7e93 inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a340204a1e4c9c28553c7406f015f7e93"></a>
+llvm::MCContext *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a340204a1e4c9c28553c7406f015f7e93">ctx_</a></td></tr>
+<tr class="memdesc:a340204a1e4c9c28553c7406f015f7e93 inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">LLVM context. <br /></td></tr>
+<tr class="separator:a340204a1e4c9c28553c7406f015f7e93 inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68c8ab1dc8ebaaa2454b95addb47cdf6 inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a68c8ab1dc8ebaaa2454b95addb47cdf6"></a>
+llvm::MCStreamer *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a68c8ab1dc8ebaaa2454b95addb47cdf6">os_</a></td></tr>
+<tr class="memdesc:a68c8ab1dc8ebaaa2454b95addb47cdf6 inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Streamer to emit output to. <br /></td></tr>
+<tr class="separator:a68c8ab1dc8ebaaa2454b95addb47cdf6 inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d307808964b8a401f0eb6cbaa01f72b inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a9d307808964b8a401f0eb6cbaa01f72b"></a>
+const llvm::MCObjectFileInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a9d307808964b8a401f0eb6cbaa01f72b">objInfo_</a></td></tr>
+<tr class="memdesc:a9d307808964b8a401f0eb6cbaa01f72b inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object-file specific information. <br /></td></tr>
+<tr class="separator:a9d307808964b8a401f0eb6cbaa01f72b inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7277613ac1556ce132bbd78018628c10 inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a7277613ac1556ce132bbd78018628c10"></a>
+const llvm::DataLayout&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a7277613ac1556ce132bbd78018628c10">layout_</a></td></tr>
+<tr class="memdesc:a7277613ac1556ce132bbd78018628c10 inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classData.html">Data</a> layout. <br /></td></tr>
+<tr class="separator:a7277613ac1556ce132bbd78018628c10 inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dbe0621391053c9550bddcd859069cb inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a5dbe0621391053c9550bddcd859069cb"></a>
+std::vector&lt; FrameInfo &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a5dbe0621391053c9550bddcd859069cb">frames_</a></td></tr>
+<tr class="memdesc:a5dbe0621391053c9550bddcd859069cb inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">List of frames to emit information for. <br /></td></tr>
+<tr class="separator:a5dbe0621391053c9550bddcd859069cb inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cfee53e9ce8caded3a5075ec647f75a inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a8cfee53e9ce8caded3a5075ec647f75a"></a>
+std::vector&lt; RootInfo &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a8cfee53e9ce8caded3a5075ec647f75a">roots_</a></td></tr>
+<tr class="memdesc:a8cfee53e9ce8caded3a5075ec647f75a inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">List of root frames. <br /></td></tr>
+<tr class="separator:a8cfee53e9ce8caded3a5075ec647f75a inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addca249bb0a1593a948dfedabd1c622b inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="addca249bb0a1593a948dfedabd1c622b"></a>
+std::unordered_map&lt; DebugKey, DebugInfos, DebugKeyHash &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#addca249bb0a1593a948dfedabd1c622b">debug_</a></td></tr>
+<tr class="memdesc:addca249bb0a1593a948dfedabd1c622b inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping of debug objects. <br /></td></tr>
+<tr class="separator:addca249bb0a1593a948dfedabd1c622b inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18ce32ecaf63c28dd588b746b580a5c5 inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a18ce32ecaf63c28dd588b746b580a5c5"></a>
+std::unordered_map&lt; std::pair&lt; std::string, std::string &gt;, DefinitionInfo &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a18ce32ecaf63c28dd588b746b580a5c5">defs_</a></td></tr>
+<tr class="memdesc:a18ce32ecaf63c28dd588b746b580a5c5 inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping from definitions to labels. <br /></td></tr>
+<tr class="separator:a18ce32ecaf63c28dd588b746b580a5c5 inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d950ef7445c0b30b859946032a39edf inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a7d950ef7445c0b30b859946032a39edf"></a>
+std::unordered_map&lt; std::string, llvm::MCSymbol * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a7d950ef7445c0b30b859946032a39edf">files_</a></td></tr>
+<tr class="memdesc:a7d950ef7445c0b30b859946032a39edf inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping from file names to labels. <br /></td></tr>
+<tr class="separator:a7d950ef7445c0b30b859946032a39edf inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7126a2c1a30cd7d742288263a5588938 inherit pro_attribs_classAnnotPrinter"><td class="memItemLeft" align="right" valign="top"><a id="a7126a2c1a30cd7d742288263a5588938"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAnnotPrinter.html#a7126a2c1a30cd7d742288263a5588938">shared_</a></td></tr>
+<tr class="memdesc:a7126a2c1a30cd7d742288263a5588938 inherit pro_attribs_classAnnotPrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag to indicate whether a shared library is emitted. <br /></td></tr>
+<tr class="separator:a7126a2c1a30cd7d742288263a5588938 inherit pro_attribs_classAnnotPrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Annotation emitter pass. </p>
