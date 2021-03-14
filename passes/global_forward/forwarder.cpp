@@ -315,7 +315,8 @@ bool GlobalForwarder::Forward()
         }
         // Approximate raise.
         case Inst::Kind::RAISE: {
-          llvm_unreachable("not implemented");
+          Raise(node, reverse);
+          break;
         }
       }
     }
