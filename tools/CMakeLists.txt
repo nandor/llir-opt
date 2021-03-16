@@ -11,3 +11,5 @@ add_subdirectory(llir-objcopy)
 add_subdirectory(llir-ranlib)
 add_subdirectory(llir-reducer)
 add_subdirectory(llir-strip)
+add_subdirectory(llir-size)
+

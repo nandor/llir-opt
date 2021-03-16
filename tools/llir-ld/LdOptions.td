@@ -174,6 +174,12 @@ def: Flag<["-"], "N">, Alias<omagic>;
 
 defm Map: Eq<"Map", "Print a link map to the specified file">;
 
+defm cref: YesNo
+  < "cref"
+  , "Output cross reference table"
+  , "Do not output cross reference table"
+  >;
+
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;
 defm mabi: Eq<"mabi", "Specify the target ABI">;

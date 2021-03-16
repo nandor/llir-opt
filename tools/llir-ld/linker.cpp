@@ -375,8 +375,13 @@ void Linker::Resolve(llvm::lto::InputFile &obj)
   }
 
   for (const auto &sym : obj.symbols()) {
+    std::string name(sym.getName());
     if (!sym.isUndefined()) {
-      Resolve(sym.getName().str());
+      Resolve(name);
+    } else {
+      if (!resolved_.count(name)) {
+        unresolved_.insert(name);
+      }
     }
   }
 
@@ -509,6 +514,7 @@ llvm::TargetOptions Linker::CreateTargetOptions()
 {
   llvm::TargetOptions Options;
   Options.MCOptions = CreateMCTargetOptions();
+  Options.DisableIntegratedAS = true;
   return Options;
 }
 
