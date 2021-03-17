@@ -68,7 +68,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="structReferenceGraph_1_1Node-members.html">List of all members</a>  </div>
@@ -82,13 +81,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">core/analysis/reference_graph.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:af370418cb833f160dc8393e3b3292927"><td class="memItemLeft" align="right" valign="top"><a id="af370418cb833f160dc8393e3b3292927"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> = std::set&lt; std::pair&lt; int64_t, int64_t &gt; &gt;</td></tr>
-<tr class="memdesc:af370418cb833f160dc8393e3b3292927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of start-end offsets for stores and loads. <br /></td></tr>
-<tr class="separator:af370418cb833f160dc8393e3b3292927"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a168232c7067bddd4c688aa7a381751a3"><td class="memItemLeft" align="right" valign="top"><a id="a168232c7067bddd4c688aa7a381751a3"></a>
@@ -123,7 +115,7 @@ std::unordered_set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#
 <tr class="memdesc:abb88549305d904fdc054dfa90f797bff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced symbols. <br /></td></tr>
 <tr class="separator:abb88549305d904fdc054dfa90f797bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa405210f88d3879a6abab7955034bda"><td class="memItemLeft" align="right" valign="top"><a id="afa405210f88d3879a6abab7955034bda"></a>
-std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, <a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda">ReadOffsets</a></td></tr>
+std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, OffsetSet &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda">ReadOffsets</a></td></tr>
 <tr class="memdesc:afa405210f88d3879a6abab7955034bda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced offsets in objects. <br /></td></tr>
 <tr class="separator:afa405210f88d3879a6abab7955034bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abea47a9ba622219e619826f4feea60ca"><td class="memItemLeft" align="right" valign="top"><a id="abea47a9ba622219e619826f4feea60ca"></a>
@@ -131,7 +123,7 @@ std::unordered_set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#
 <tr class="memdesc:abea47a9ba622219e619826f4feea60ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of written symbols. <br /></td></tr>
 <tr class="separator:abea47a9ba622219e619826f4feea60ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a18caff93d7a73748c43b667b0e3f379d"><td class="memItemLeft" align="right" valign="top"><a id="a18caff93d7a73748c43b667b0e3f379d"></a>
-std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, <a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a18caff93d7a73748c43b667b0e3f379d">WrittenOffsets</a></td></tr>
+std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, OffsetSet &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a18caff93d7a73748c43b667b0e3f379d">WrittenOffsets</a></td></tr>
 <tr class="memdesc:a18caff93d7a73748c43b667b0e3f379d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of written offsets in symbols. <br /></td></tr>
 <tr class="separator:a18caff93d7a73748c43b667b0e3f379d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ce0f2f2873b21b7799f3a9f4219e3c6"><td class="memItemLeft" align="right" valign="top"><a id="a6ce0f2f2873b21b7799f3a9f4219e3c6"></a>

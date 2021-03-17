@@ -17,7 +17,7 @@ var searchData=
   ['float_5fzero_274',['FLOAT_ZERO',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a5bacd79532a39630d0e4f4277c19a27e',1,'Lattice']]],
   ['floatval_5f_275',['floatVal_',['../classSymbolicValue.html#ac665ac5915a7d080c8f479cb8af06ddf',1,'SymbolicValue::floatVal_()'],['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice::floatVal_()']]],
   ['forward_276',['Forward',['../classGlobalForwarder.html#acd03c6d3e31e99ae54e3c04633f93b11',1,'GlobalForwarder']]],
-  ['frame_277',['FRAME',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()'],['../classSymbolicAddress_1_1AddrStack.html#aa725edec0175f162c04b895ad73b1a72',1,'SymbolicAddress::AddrStack::Frame()'],['../classSymbolicHeap.html#ad54889397ffa7fcc583c0092b3e65195',1,'SymbolicHeap::Frame()']]],
+  ['frame_277',['Frame',['../classSymbolicAddress_1_1AddrStack.html#aa725edec0175f162c04b895ad73b1a72',1,'SymbolicAddress::AddrStack::Frame()'],['../classSymbolicHeap.html#ad54889397ffa7fcc583c0092b3e65195',1,'SymbolicHeap::Frame()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()']]],
   ['frame_5fbegin_278',['frame_begin',['../classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38',1,'SymbolicContext']]],
   ['frame_5fiterator_279',['frame_iterator',['../classSymbolicContext_1_1frame__iterator.html',1,'SymbolicContext']]],
   ['frameexports_280',['FrameExports',['../classISel.html#a0286b6dfe0159dbdadb8a4ceb8302b14',1,'ISel']]],

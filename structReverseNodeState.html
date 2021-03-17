@@ -90,30 +90,28 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ReverseNodeState</b> (<a class="el" href="structDAGBlock.html">DAGBlock</a> &amp;node)</td></tr>
 <tr class="separator:a9ef25d299137e7baf9c14a6ac239a86c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ee041169d15dbc6bf50d4b8d219e09f"><td class="memItemLeft" align="right" valign="top"><a id="a8ee041169d15dbc6bf50d4b8d219e09f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Merge</b> (const <a class="el" href="structReverseNodeState.html">ReverseNodeState</a> &amp;that)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a8ee041169d15dbc6bf50d4b8d219e09f">Merge</a> (const <a class="el" href="structReverseNodeState.html">ReverseNodeState</a> &amp;that)</td></tr>
+<tr class="memdesc:a8ee041169d15dbc6bf50d4b8d219e09f"><td class="mdescLeft">&#160;</td><td class="mdescRight">LUB operator of two nodes. <br /></td></tr>
 <tr class="separator:a8ee041169d15dbc6bf50d4b8d219e09f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75f2503a7534496325c084da8171a547"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a75f2503a7534496325c084da8171a547">Store</a> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id)</td></tr>
 <tr class="separator:a75f2503a7534496325c084da8171a547"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a38bf87fa909153198efdd65241c93fdb"><td class="memItemLeft" align="right" valign="top"><a id="a38bf87fa909153198efdd65241c93fdb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id, uint64_t start, uint64_t end, MemoryStoreInst *store=nullptr)</td></tr>
 <tr class="separator:a38bf87fa909153198efdd65241c93fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c312bf2303c7b83e7ac56535e5d6821"><td class="memItemLeft" align="right" valign="top"><a id="a2c312bf2303c7b83e7ac56535e5d6821"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;stored)</td></tr>
-<tr class="separator:a2c312bf2303c7b83e7ac56535e5d6821"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52482bb0a46e642b93f0ed0e64c0c5c9"><td class="memItemLeft" align="right" valign="top"><a id="a52482bb0a46e642b93f0ed0e64c0c5c9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;imprecise, const ObjectOffsetMap &amp;precise)</td></tr>
+<tr class="separator:a52482bb0a46e642b93f0ed0e64c0c5c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abac0a0b18d83aaee193a33dd5bc4f34e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#abac0a0b18d83aaee193a33dd5bc4f34e">Load</a> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id)</td></tr>
 <tr class="separator:abac0a0b18d83aaee193a33dd5bc4f34e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abff1f1c8f97205b4abe5263a0510a406"><td class="memItemLeft" align="right" valign="top"><a id="abff1f1c8f97205b4abe5263a0510a406"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id, uint64_t start, uint64_t end)</td></tr>
 <tr class="separator:abff1f1c8f97205b4abe5263a0510a406"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af6d64fa81059bc2ae01e593f9614870d"><td class="memItemLeft" align="right" valign="top"><a id="af6d64fa81059bc2ae01e593f9614870d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;loaded)</td></tr>
-<tr class="separator:af6d64fa81059bc2ae01e593f9614870d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78f32d4a73c135ea3af9132ddf002f1a"><td class="memItemLeft" align="right" valign="top"><a id="a78f32d4a73c135ea3af9132ddf002f1a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a78f32d4a73c135ea3af9132ddf002f1a">Taint</a> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;changed)</td></tr>
-<tr class="memdesc:a78f32d4a73c135ea3af9132ddf002f1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximates the whole set. <br /></td></tr>
-<tr class="separator:a78f32d4a73c135ea3af9132ddf002f1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ca7b8fe56fe47f9aa98f9658838694d"><td class="memItemLeft" align="right" valign="top"><a id="a0ca7b8fe56fe47f9aa98f9658838694d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;imprecise, const ObjectOffsetMap &amp;precise)</td></tr>
+<tr class="separator:a0ca7b8fe56fe47f9aa98f9658838694d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac91e4bdf664790120297b8094c09e9bd"><td class="memItemLeft" align="right" valign="top"><a id="ac91e4bdf664790120297b8094c09e9bd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>dump</b> (llvm::raw_ostream &amp;os)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#ac91e4bdf664790120297b8094c09e9bd">dump</a> (llvm::raw_ostream &amp;os)</td></tr>
+<tr class="memdesc:ac91e4bdf664790120297b8094c09e9bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print information about the node to a stream. <br /></td></tr>
 <tr class="separator:ac91e4bdf664790120297b8094c09e9bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>

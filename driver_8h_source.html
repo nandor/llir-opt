@@ -148,26 +148,27 @@ $(function() {
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keyword">const</span> std::string output_;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">bool</span> static_;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <span class="keywordtype">bool</span> relocatable_;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">bool</span> exportDynamic_;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  std::string targetCPU_;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  std::string targetABI_;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  std::string targetFS_;</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  std::string entry_;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  std::string rpath_;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  OptLevel optLevel_;</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  std::vector&lt;std::string&gt; libraryPaths_;</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  std::vector&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt; buffers_;</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;  std::vector&lt;llvm::sys::fs::TempFile&gt; tempFiles_;</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;  std::vector&lt;std::string&gt; externLibs_;</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;  llvm::opt::ArgStringList forwarded_;</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;};</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <span class="keywordtype">bool</span> noShared_;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">bool</span> relocatable_;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">bool</span> exportDynamic_;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  std::string targetCPU_;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  std::string targetABI_;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  std::string targetFS_;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  std::string entry_;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  std::string rpath_;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  OptLevel optLevel_;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;  std::vector&lt;std::string&gt; libraryPaths_;</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;  std::vector&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt; buffers_;</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;  std::vector&lt;llvm::sys::fs::TempFile&gt; tempFiles_;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;  std::vector&lt;std::string&gt; externLibs_;</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;  llvm::opt::ArgStringList forwarded_;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassDriver_html_a32306393bc6695df62c7b064b2188c20"><div class="ttname"><a href="classDriver.html#a32306393bc6695df62c7b064b2188c20">Driver::Driver</a></div><div class="ttdeci">Driver(const llvm::Triple &amp;triple, const llvm::Triple &amp;base, llvm::opt::InputArgList &amp;args)</div><div class="ttdoc">Set up the driver.</div><div class="ttdef"><b>Definition:</b> driver.cpp:66</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
-<div class="ttc" id="aclassDriver_html_a53483de82f7412424d81352394a538b8"><div class="ttname"><a href="classDriver.html#a53483de82f7412424d81352394a538b8">Driver::Link</a></div><div class="ttdeci">llvm::Error Link()</div><div class="ttdoc">Run the linker.</div><div class="ttdef"><b>Definition:</b> driver.cpp:254</div></div>
-<div class="ttc" id="aclassDriver_html_ac7645eea8d3ce2bc39ddbda5e840297a"><div class="ttname"><a href="classDriver.html#ac7645eea8d3ce2bc39ddbda5e840297a">Driver::~Driver</a></div><div class="ttdeci">~Driver()</div><div class="ttdoc">Cleanup.</div><div class="ttdef"><b>Definition:</b> driver.cpp:91</div></div>
+<div class="ttc" id="aclassDriver_html_a53483de82f7412424d81352394a538b8"><div class="ttname"><a href="classDriver.html#a53483de82f7412424d81352394a538b8">Driver::Link</a></div><div class="ttdeci">llvm::Error Link()</div><div class="ttdoc">Run the linker.</div><div class="ttdef"><b>Definition:</b> driver.cpp:255</div></div>
+<div class="ttc" id="aclassDriver_html_ac7645eea8d3ce2bc39ddbda5e840297a"><div class="ttname"><a href="classDriver.html#ac7645eea8d3ce2bc39ddbda5e840297a">Driver::~Driver</a></div><div class="ttdeci">~Driver()</div><div class="ttdoc">Cleanup.</div><div class="ttdef"><b>Definition:</b> driver.cpp:92</div></div>
 <div class="ttc" id="aclassDriver_html"><div class="ttname"><a href="classDriver.html">Driver</a></div><div class="ttdef"><b>Definition:</b> driver.h:41</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

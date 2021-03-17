@@ -92,9 +92,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0291184436615080be97d6b9daf45af8"><td class="memItemLeft" align="right" valign="top"><a id="a0291184436615080be97d6b9daf45af8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Merge</b> (const <a class="el" href="structNodeState.html">NodeState</a> &amp;that)</td></tr>
 <tr class="separator:a0291184436615080be97d6b9daf45af8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac33c62565fc45dbfcc07195cfcf8427b"><td class="memItemLeft" align="right" valign="top"><a id="ac33c62565fc45dbfcc07195cfcf8427b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Overwrite</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;changed)</td></tr>
-<tr class="separator:ac33c62565fc45dbfcc07195cfcf8427b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a359f610376fe7bf2a3c37220750cd7bb"><td class="memItemLeft" align="right" valign="top"><a id="a359f610376fe7bf2a3c37220750cd7bb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Overwrite</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; changed)</td></tr>
+<tr class="separator:a359f610376fe7bf2a3c37220750cd7bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12933cbfd157db87c960748ecf2e2304"><td class="memItemLeft" align="right" valign="top"><a id="a12933cbfd157db87c960748ecf2e2304"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Overwrite</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;imprecise, const ObjectOffsetMap &amp;precise)</td></tr>
+<tr class="separator:a12933cbfd157db87c960748ecf2e2304"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a361319380f2fc07e27d16977cfb2407f"><td class="memItemLeft" align="right" valign="top"><a id="a361319380f2fc07e27d16977cfb2407f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>dump</b> (llvm::raw_ostream &amp;os)</td></tr>
+<tr class="separator:a361319380f2fc07e27d16977cfb2407f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -106,10 +112,14 @@ Public Attributes</h2></td></tr>
 <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structNodeState.html#aeb8c85eeb58090445537102dd0cf666c">Escaped</a></td></tr>
 <tr class="memdesc:aeb8c85eeb58090445537102dd0cf666c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classID.html">ID</a> of tainted objects. <br /></td></tr>
 <tr class="separator:aeb8c85eeb58090445537102dd0cf666c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac576e4600c90cb91fe649a12a4dd4f34"><td class="memItemLeft" align="right" valign="top"><a id="ac576e4600c90cb91fe649a12a4dd4f34"></a>
-<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structNodeState.html#ac576e4600c90cb91fe649a12a4dd4f34">Stored</a></td></tr>
-<tr class="memdesc:ac576e4600c90cb91fe649a12a4dd4f34"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of objects changed to unknown values. <br /></td></tr>
-<tr class="separator:ac576e4600c90cb91fe649a12a4dd4f34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70eafcb28e2ba540aa3662e03c586515"><td class="memItemLeft" align="right" valign="top"><a id="a70eafcb28e2ba540aa3662e03c586515"></a>
+<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structNodeState.html#a70eafcb28e2ba540aa3662e03c586515">StoredImprecise</a></td></tr>
+<tr class="memdesc:a70eafcb28e2ba540aa3662e03c586515"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of objects changed to unknown values. <br /></td></tr>
+<tr class="separator:a70eafcb28e2ba540aa3662e03c586515"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2638bf2466c3160e9f79a22c4584c6a"><td class="memItemLeft" align="right" valign="top"><a id="af2638bf2466c3160e9f79a22c4584c6a"></a>
+ObjectOffsetMap&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structNodeState.html#af2638bf2466c3160e9f79a22c4584c6a">StoredPrecise</a></td></tr>
+<tr class="memdesc:af2638bf2466c3160e9f79a22c4584c6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of offsets changed. <br /></td></tr>
+<tr class="separator:af2638bf2466c3160e9f79a22c4584c6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada52ff9637cf509ba2b8289ad3f77f47"><td class="memItemLeft" align="right" valign="top"><a id="ada52ff9637cf509ba2b8289ad3f77f47"></a>
 std::unordered_map&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;, std::map&lt; uint64_t, std::pair&lt; Type, <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structNodeState.html#ada52ff9637cf509ba2b8289ad3f77f47">Stores</a></td></tr>
 <tr class="memdesc:ada52ff9637cf509ba2b8289ad3f77f47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accurate stores. <br /></td></tr>
