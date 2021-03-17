@@ -23,7 +23,7 @@ static bool CoalescibleAlignment(
     std::optional<llvm::Align> base,
     llvm::Align align)
 {
-  return base && align < *base;
+  return align == 1 || base && align <= *base;
 }
 
 // -----------------------------------------------------------------------------

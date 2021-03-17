@@ -103,6 +103,8 @@ private:
   bool shared_;
   /// Flag to indicate a static binary is to be built.
   bool static_;
+  /// Flag to ban linking against shared libraries.
+  bool noShared_;
   /// Flag to indicate a relocatable ELF object is to be built.
   bool relocatable_;
   /// Flag to indicate dynamic symbols are to be exported.

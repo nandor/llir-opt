@@ -16,17 +16,12 @@
 // -----------------------------------------------------------------------------
 void PassManager::Run(Prog &prog)
 {
-  if (verbose_) {
-    llvm::outs() << "\n--- Initial code:\n\n";
-    Printer(llvm::outs()).Print(prog);
-  }
-
   for (auto &group : groups_) {
     bool changed;
     do {
       changed = false;
-      if (group.Passes.size() > 1 && time_) {
-        llvm::outs() << "Group Start\n";
+      if (group.Passes.size() > 1 && time_ && verbose_) {
+        llvm::outs() << "-----------\n";
       }
       for (auto &pass : group.Passes) {
         if (Run(pass, prog)) {
@@ -34,14 +29,35 @@ void PassManager::Run(Prog &prog)
           analyses_.clear();
         }
       }
-      if (group.Passes.size() > 1 && time_) {
-        llvm::outs() << "Group End" << (changed ? ", changed" : "") << "\n";
-      }
     } while (group.Repeat && changed);
   }
 
-  if (verbose_) {
-    llvm::outs() << "\n--- Done\n\n";
+  if (time_) {
+    size_t length = 0;
+    for (auto &[key, times] : times_) {
+      length = std::max(length, strlen(key));
+    }
+    llvm::outs() << "\n";
+    llvm::outs() << "===-------------------------------------------------------------------------===";
+    llvm::outs() << "\n";
+    for (auto &[key, times] : times_) {
+      llvm::outs() << key << ": ";
+      for (size_t i = 0; i < length - strlen(key); ++i) {
+        llvm::outs() << ' ';
+      }
+
+      double sum = 0.0f, sqsum = 0.0f;
+      for (auto time :  times) {
+        sum += time;
+        sqsum += time * time;
+      }
+      const size_t n = times.size();
+      const double mean = sum / n;
+      const double stddev = std::sqrt(sqsum / n - mean * mean);
+      llvm::outs() << llvm::format("%10.2f ± %4.2f", mean, stddev) << "\n";
+    }
+    llvm::outs() << "===-------------------------------------------------------------------------===";
+    llvm::outs() << "\n\n";
   }
 }
 
@@ -51,7 +67,7 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
   const auto &name = pass.P->GetPassName();
 
   // Print information.
-  if (time_) {
+  if (time_ && verbose_) {
     llvm::outs() << name << ": ";
   }
 
@@ -68,14 +84,8 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
     ).count() / 1e6;
   }
 
-  // If verbose, print IR after pass.
-  if (verbose_) {
-    llvm::outs() <<"\n--- " << pass.P->GetPassName() << "\n\n";
-    Printer(llvm::outs()).Print(prog);
-  }
-
   // If timed, print duration.
-  if (time_) {
+  if (time_ && verbose_) {
     llvm::outs() << llvm::format("%.5f", elapsed) << "s";
     if (changed) {
       llvm::outs() << ", changed";
@@ -87,6 +97,9 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
   if (pass.ID) {
     analyses_.emplace(pass.ID, pass.P.get());
   }
+
+  // Record running time.
+  times_[pass.P->GetPassName()].push_back(elapsed);
 
   return changed;
 }

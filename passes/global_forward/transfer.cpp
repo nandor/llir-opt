@@ -204,7 +204,9 @@ bool GlobalForwarder::Simplifier::VisitMemoryStoreInst(MemoryStoreInst &store)
         reverse_.Store(id, off, end, &store);
       }
     } else {
-      llvm_unreachable("not implemented");
+      // TODO: only clobber this object.
+      node_.Overwrite(id);
+      reverse_.Store(id);
     }
   } else {
     node_.Overwrite(node_.Escaped);
@@ -285,7 +287,8 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
         return imprecise();
       }
     } else {
-      llvm_unreachable("not implemented");
+      reverse_.Load(id);
+      return imprecise();
     }
   } else {
     // Imprecise load, all pointees should have already been tainted.

@@ -179,6 +179,8 @@ private:
   std::vector<GroupInfo> groups_;
   /// Mapping from named passes to IDs.
   std::unordered_map<const char *, Pass *> analyses_;
+  /// Mapping from pass names to their running times.
+  std::unordered_map<const char *, std::vector<double>> times_;
 };
 
 

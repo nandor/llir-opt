@@ -73,6 +73,7 @@ Driver::Driver(
   , output_(Abspath(args.getLastArgValue(OPT_o, "a.out")))
   , shared_(args.hasArg(OPT_shared))
   , static_(args.hasArg(OPT_static))
+  , noShared_(args.hasFlag(OPT_Bstatic, OPT_Bdynamic, false))
   , relocatable_(args.hasArg(OPT_relocatable))
   , exportDynamic_(args.hasArg(OPT_export_dynamic))
   , targetCPU_(args.getLastArgValue(OPT_mcpu))
@@ -380,7 +381,7 @@ llvm::Error Driver::Link()
             llvm::sys::path::append(path, "lib" + name);
             auto fullPath = Abspath(std::string(path));
 
-            if (!static_) {
+            if (!static_ && !noShared_) {
               std::string pathSO = fullPath + ".so";
               if (llvm::sys::fs::exists(pathSO)) {
                 // Shared libraries are always in executable form,

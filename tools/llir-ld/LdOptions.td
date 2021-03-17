@@ -154,6 +154,10 @@ def:
   Alias<rpath>,
   HelpText<"Alias for --rpath">;
 
+def Bstatic: Flag<["-", "--"], "Bstatic">, HelpText<"Do not link against shared libraries">;
+
+def Bdynamic: Flag<["-", "--"], "Bdynamic">, HelpText<"Link against shared libraries">;
+
 def Ttext_segment:
   Separate<["-", "--"], "Ttext-segment">;
 def:

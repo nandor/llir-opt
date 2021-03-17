@@ -59,7 +59,10 @@ struct NodeState {
 
   void Merge(const NodeState &that);
 
+  void Overwrite(ID<Object> changed);
   void Overwrite(const BitSet<Object> &changed);
+
+  void dump(llvm::raw_ostream &os);
 };
 
 

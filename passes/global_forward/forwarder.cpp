@@ -132,6 +132,10 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
       // The specific item is changed.
       node.Stored.Insert(GetObjectID(written));
     }
+    for (auto &[written, offsets] : rgNode.WrittenOffsets) {
+      // The specific item is changed.
+      node.Stored.Insert(GetObjectID(written));
+    }
     for (auto *g : rgNode.Escapes) {
       switch (g->GetKind()) {
         case Global::Kind::FUNC: {
@@ -206,11 +210,8 @@ bool GlobalForwarder::Forward()
       GetReverseNode(func, pred->Index).Succs.insert(&reverse);
     }
 
-    LLVM_DEBUG(llvm::dbgs()
-        << "===================\n"
-        << "\tStored: " << node.Stored << "\n"
-        << "\tEscaped: " << node.Escaped << "\n"
-    );
+    LLVM_DEBUG(llvm::dbgs() << "===================\n");
+    LLVM_DEBUG(node.dump(llvm::dbgs()));
 
     bool accurate = false;
     if (state.Accurate == active) {

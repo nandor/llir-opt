@@ -59,6 +59,19 @@ void NodeState::Merge(const NodeState &that)
 }
 
 // -----------------------------------------------------------------------------
+void NodeState::Overwrite(ID<Object> changed)
+{
+  Stored.Insert(changed);
+  for (auto it = Stores.begin(); it != Stores.end(); ) {
+    auto id = it->first;
+    if (id == changed) {
+      Stores.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 void NodeState::Overwrite(const BitSet<Object> &changed)
 {
   Stored.Union(changed);
@@ -71,6 +84,20 @@ void NodeState::Overwrite(const BitSet<Object> &changed)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+void NodeState::dump(llvm::raw_ostream &os)
+{
+  os << "\tEscaped: " << Escaped << "\n";
+  os << "\tStored: " << Stored << "\n";
+  for (auto &[id, stores] : Stores) {
+    for (auto &[off, storeAndEnd] : stores) {
+      auto &[store, end] = storeAndEnd;
+      os << "\t\t" << id << " + " << off << "," << end << "\n";
+    }
+  }
+}
+
 
 // -----------------------------------------------------------------------------
 ReverseNodeState::ReverseNodeState(DAGBlock &node) : Node(node) {}
@@ -161,7 +188,7 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
 // -----------------------------------------------------------------------------
 void ReverseNodeState::Store(ID<Object> id)
 {
-  llvm_unreachable("not implemented");
+  StoreImprecise.Insert(id);
 }
 
 // -----------------------------------------------------------------------------
