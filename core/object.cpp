@@ -219,7 +219,7 @@ Value *Object::Load(uint64_t offset, Type type)
 }
 
 // -----------------------------------------------------------------------------
-static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr)
+static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr, Type ty)
 {
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
@@ -230,24 +230,66 @@ static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr)
     }
     case Item::Kind::EXPR32:
     case Item::Kind::INT32: {
-      auto *item = Item::CreateExpr32(expr);
-      it->getParent()->AddItem(item, &*it);
-      it->eraseFromParent();
-      return true;
+      if (ty == Type::I32) {
+        auto *item = Item::CreateExpr32(expr);
+        it->getParent()->AddItem(item, &*it);
+        it->eraseFromParent();
+        return true;
+      } else {
+        return false;
+      }
     }
     case Item::Kind::EXPR64:
     case Item::Kind::INT64:
     case Item::Kind::FLOAT64: {
-      auto *item = Item::CreateExpr64(expr);
-      it->getParent()->AddItem(item, &*it);
-      it->eraseFromParent();
-      return true;
+      if (ty == Type::I64) {
+        auto *item = Item::CreateExpr64(expr);
+        it->getParent()->AddItem(item, &*it);
+        it->eraseFromParent();
+        return true;
+      } else {
+        return false;
+      }
     }
     case Item::Kind::STRING: {
       llvm_unreachable("not implemented");
     }
     case Item::Kind::SPACE: {
-      llvm_unreachable("not implemented");
+      int64_t space = it->GetSpace();
+      int64_t before = off;
+      int64_t after = space - off - GetSize(ty);
+      assert(after >= 0 && "invalid write");
+      auto *atom = it->getParent();
+      if (before > 0) {
+        atom->AddItem(Item::CreateSpace(before), &*it);
+      }
+      switch (ty) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::I32: {
+          atom->AddItem(Item::CreateExpr32(expr), &*it);
+          break;
+        }
+        case Type::I64:
+        case Type::V64: {
+          atom->AddItem(Item::CreateExpr64(expr), &*it);
+          break;
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      if (after > 0) {
+        atom->AddItem(Item::CreateSpace(after), &*it);
+      }
+      it->eraseFromParent();
+      return true;
     }
   }
   llvm_unreachable("invalid item kind");
@@ -343,7 +385,7 @@ static bool StoreInt(
 }
 
 // -----------------------------------------------------------------------------
-bool Object::Store(uint64_t offset, Ref<Value> value, Type type)
+bool Object::Store(uint64_t offset, Ref<Value> value, Type ty)
 {
   auto it = GetItem(this, offset);
   if (!it) {
@@ -356,16 +398,16 @@ bool Object::Store(uint64_t offset, Ref<Value> value, Type type)
     }
     case Value::Kind::GLOBAL: {
       auto *g = &*::cast<Global>(value);
-      return StoreExpr(it->first, it->second, SymbolOffsetExpr::Create(g, 0));
+      return StoreExpr(it->first, it->second, SymbolOffsetExpr::Create(g, 0), ty);
     }
     case Value::Kind::EXPR: {
-      return StoreExpr(it->first, it->second, &*::cast<Expr>(value));
+      return StoreExpr(it->first, it->second, &*::cast<Expr>(value), ty);
     }
     case Value::Kind::CONST: {
       switch (::cast<Constant>(value)->GetKind()) {
         case Constant::Kind::INT: {
           const auto &intValue = ::cast<ConstantInt>(value)->GetValue();
-          return StoreInt(it->first, it->second, type, intValue);
+          return StoreInt(it->first, it->second, ty, intValue);
         }
         case Constant::Kind::FLOAT: {
           llvm_unreachable("not implemented");

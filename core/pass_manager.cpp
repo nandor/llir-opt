@@ -38,7 +38,7 @@ void PassManager::Run(Prog &prog)
       length = std::max(length, strlen(key));
     }
     llvm::outs() << "\n";
-    llvm::outs() << "===-------------------------------------------------------------------------===";
+    llvm::outs() << "===" << std::string(73, '-') << "===";
     llvm::outs() << "\n";
     for (auto &[key, times] : times_) {
       llvm::outs() << key << ": ";
@@ -56,7 +56,7 @@ void PassManager::Run(Prog &prog)
       const double stddev = std::sqrt(sqsum / n - mean * mean);
       llvm::outs() << llvm::format("%10.2f ± %4.2f", mean, stddev) << "\n";
     }
-    llvm::outs() << "===-------------------------------------------------------------------------===";
+    llvm::outs() << "===" << std::string(73, '-') << "===";
     llvm::outs() << "\n\n";
   }
 }

@@ -26,7 +26,10 @@ bool DeadCodeElimPass::Run(Prog &prog)
 {
   bool changed = false;
   for (auto &func : prog) {
-    changed = Run(func) || changed;
+    if (Run(func)) {
+      LLVM_DEBUG(llvm::dbgs() << func.getName() << "\n");
+      changed = true;
+    }
   }
   return changed;
 }

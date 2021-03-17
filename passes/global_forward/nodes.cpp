@@ -89,7 +89,11 @@ void NodeState::Overwrite(
         bool killed = false;
         if (auto pt = precise.find(id); pt != precise.end()) {
           for (auto &[start, end] : pt->second) {
-            llvm_unreachable("not implemented");
+            if (end <= stStart || stEnd <= start) {
+              continue;
+            }
+            killed = true;
+            break;
           }
         }
 

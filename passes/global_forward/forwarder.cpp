@@ -543,6 +543,7 @@ bool GlobalForwarder::Reverse()
         LLVM_DEBUG(llvm::dbgs() << "Folded store: " << *store << "\n");
         store->eraseFromParent();
         NumStoresFolded++;
+        changed = true;
       }
     }
   }
