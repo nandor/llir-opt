@@ -99,71 +99,82 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
 
   CallGraph cg(prog);
   ReferenceGraph rg(prog, cg);
-  for (Func &func : prog) {
-    auto &rgNode = rg[func];
+  for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
+    ID<Func> id = funcs_.size();
+    funcs_.emplace_back(std::make_unique<FuncClosure>());
 
-    auto it = funcToID_.emplace(&func, funcs_.size());
-    if (it.second) {
-      funcs_.emplace_back(std::make_unique<FuncClosure>());
-    }
-    auto &node = *funcs_[it.first->second];
-    node.Raises = rgNode.HasRaise;
-    node.Indirect = rgNode.HasIndirectCalls;
-
-    for (auto *read : rgNode.ReadRanges) {
-      // Entire transitive closure is loaded, only pointees escape.
-      auto id = GetObjectID(read);
-      auto &obj = *objects_[id];
-      node.Funcs.Union(obj.Funcs);
-      node.Escaped.Union(obj.Objects);
-      node.Loaded.Union(obj.Objects);
-      node.Loaded.Insert(id);
-    }
-    for (auto &[read, offsets] : rgNode.ReadOffsets) {
-      // Entire transitive closure is loaded, only pointees escape.
-      auto id = GetObjectID(read);
-      auto &obj = *objects_[id];
-      node.Funcs.Union(obj.Funcs);
-      node.Escaped.Union(obj.Objects);
-      node.Loaded.Union(obj.Objects);
-      node.Loaded.Insert(id);
-    }
-    for (auto *written : rgNode.WrittenRanges) {
-      // The specific item is changed.
-      node.Stored.Insert(GetObjectID(written));
-    }
-    for (auto &[written, offsets] : rgNode.WrittenOffsets) {
-      // The specific item is changed.
-      node.Stored.Insert(GetObjectID(written));
-    }
-    for (auto *g : rgNode.Escapes) {
-      switch (g->GetKind()) {
-        case Global::Kind::FUNC: {
-          auto &func = static_cast<Func &>(*g);
-          node.Funcs.Insert(GetFuncID(func));
-          continue;
-        }
-        case Global::Kind::ATOM: {
-          auto *object = static_cast<Atom &>(*g).getParent();
-          auto id = GetObjectID(object);
-          auto &obj = *objects_[id];
-          // Transitive closure is fully tainted.
-          node.Funcs.Union(obj.Funcs);
-          node.Escaped.Union(obj.Objects);
-          node.Escaped.Insert(id);
-          node.Loaded.Union(obj.Objects);
-          node.Loaded.Insert(id);
-          node.Stored.Union(obj.Objects);
-          node.Stored.Insert(id);
-          continue;
-        }
-        case Global::Kind::BLOCK:
-        case Global::Kind::EXTERN: {
-          // Blocks and externs are not recorded.
-          continue;
-        }
+    for (auto *funcNode : *it) {
+      if (auto *f = funcNode->GetCaller()) {
+        funcToID_.emplace(f, id);
       }
-      llvm_unreachable("invalid global kind");
+    }
+
+    auto &node = *funcs_[id];
+    for (auto *funcNode : *it) {
+      auto *func = funcNode->GetCaller();
+      if (!func) {
+        continue;
+      }
+
+      auto &rgNode = rg[*func];
+      node.Raises = rgNode.HasRaise;
+      node.Indirect = rgNode.HasIndirectCalls;
+
+      for (auto *read : rgNode.ReadRanges) {
+        // Entire transitive closure is loaded, only pointees escape.
+        auto id = GetObjectID(read);
+        auto &obj = *objects_[id];
+        node.Funcs.Union(obj.Funcs);
+        node.Escaped.Union(obj.Objects);
+        node.Loaded.Union(obj.Objects);
+        node.Loaded.Insert(id);
+      }
+      for (auto &[read, offsets] : rgNode.ReadOffsets) {
+        // Entire transitive closure is loaded, only pointees escape.
+        auto id = GetObjectID(read);
+        auto &obj = *objects_[id];
+        node.Funcs.Union(obj.Funcs);
+        node.Escaped.Union(obj.Objects);
+        node.Loaded.Union(obj.Objects);
+        node.Loaded.Insert(id);
+      }
+      for (auto *written : rgNode.WrittenRanges) {
+        // The specific item is changed.
+        node.Stored.Insert(GetObjectID(written));
+      }
+      for (auto &[written, offsets] : rgNode.WrittenOffsets) {
+        // The specific item is changed.
+        node.Stored.Insert(GetObjectID(written));
+      }
+      for (auto *g : rgNode.Escapes) {
+        switch (g->GetKind()) {
+          case Global::Kind::FUNC: {
+            auto &func = static_cast<Func &>(*g);
+            node.Funcs.Insert(GetFuncID(func));
+            continue;
+          }
+          case Global::Kind::ATOM: {
+            auto *object = static_cast<Atom &>(*g).getParent();
+            auto id = GetObjectID(object);
+            auto &obj = *objects_[id];
+            // Transitive closure is fully tainted.
+            node.Funcs.Union(obj.Funcs);
+            node.Escaped.Union(obj.Objects);
+            node.Escaped.Insert(id);
+            node.Loaded.Union(obj.Objects);
+            node.Loaded.Insert(id);
+            node.Stored.Union(obj.Objects);
+            node.Stored.Insert(id);
+            continue;
+          }
+          case Global::Kind::BLOCK:
+          case Global::Kind::EXTERN: {
+            // Blocks and externs are not recorded.
+            continue;
+          }
+        }
+        llvm_unreachable("invalid global kind");
+      }
     }
   }
 }
