@@ -103,12 +103,6 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
     ID<Func> id = funcs_.size();
     funcs_.emplace_back(std::make_unique<FuncClosure>());
 
-    for (auto *funcNode : *it) {
-      if (auto *f = funcNode->GetCaller()) {
-        funcToID_.emplace(f, id);
-      }
-    }
-
     auto &node = *funcs_[id];
     for (auto *funcNode : *it) {
       auto *func = funcNode->GetCaller();
@@ -126,8 +120,8 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
         auto &obj = *objects_[id];
         node.Funcs.Union(obj.Funcs);
         node.Escaped.Union(obj.Objects);
-        node.Loaded.Union(obj.Objects);
-        node.Loaded.Insert(id);
+        node.LoadedImprecise.Union(obj.Objects);
+        node.LoadedImprecise.Insert(id);
       }
       for (auto &[read, offsets] : rgNode.ReadOffsets) {
         // Entire transitive closure is loaded, only pointees escape.
@@ -135,16 +129,20 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
         auto &obj = *objects_[id];
         node.Funcs.Union(obj.Funcs);
         node.Escaped.Union(obj.Objects);
-        node.Loaded.Union(obj.Objects);
-        node.Loaded.Insert(id);
+        for (auto &off : offsets) {
+          node.LoadedPrecise[id].insert(off);
+        }
       }
       for (auto *written : rgNode.WrittenRanges) {
         // The specific item is changed.
-        node.Stored.Insert(GetObjectID(written));
+        node.StoredImprecise.Insert(GetObjectID(written));
       }
       for (auto &[written, offsets] : rgNode.WrittenOffsets) {
         // The specific item is changed.
-        node.Stored.Insert(GetObjectID(written));
+        auto id = GetObjectID(written);
+        for (auto &off : offsets) {
+          node.StoredPrecise[id].insert(off);
+        }
       }
       for (auto *g : rgNode.Escapes) {
         switch (g->GetKind()) {
@@ -161,10 +159,10 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
             node.Funcs.Union(obj.Funcs);
             node.Escaped.Union(obj.Objects);
             node.Escaped.Insert(id);
-            node.Loaded.Union(obj.Objects);
-            node.Loaded.Insert(id);
-            node.Stored.Union(obj.Objects);
-            node.Stored.Insert(id);
+            node.LoadedImprecise.Union(obj.Objects);
+            node.LoadedImprecise.Insert(id);
+            node.StoredImprecise.Union(obj.Objects);
+            node.StoredImprecise.Insert(id);
             continue;
           }
           case Global::Kind::BLOCK:
@@ -242,17 +240,23 @@ bool GlobalForwarder::Forward()
         }
       }
       if (a.Indirect) {
-        Indirect(a.Funcs, a.Escaped, a.Stored, a.Loaded, a.Raises);
+        Indirect(
+            a.Funcs,
+            a.Escaped,
+            a.StoredImprecise,
+            a.StoredPrecise,
+            a.LoadedImprecise,
+            a.LoadedPrecise,
+            a.Raises
+        );
       }
 
       node.Funcs.Union(a.Funcs);
       node.Escaped.Union(a.Escaped);
-      node.Overwrite(a.Stored);
-      node.Overwrite(a.Escaped);
+      node.Overwrite(a.StoredImprecise | a.Escaped, a.StoredPrecise);
 
-      reverse.Taint(node.Escaped);
-      reverse.Taint(a.Stored);
-      reverse.Taint(a.Loaded);
+      reverse.Load(a.LoadedImprecise | node.Escaped, a.LoadedPrecise);
+      reverse.Store(a.StoredImprecise | node.Escaped, a.StoredPrecise);
 
       if (a.Raises) {
         Raise(node, reverse);
@@ -287,29 +291,38 @@ bool GlobalForwarder::Forward()
           } else {
             bool raises = false;
             bool indirect = false;
-            BitSet<Object> stored;
-            BitSet<Object> loaded;
+            BitSet<Object> storedImprecise;
+            ObjectOffsetMap storedPrecise;
+            BitSet<Object> loadedImprecise;
+            ObjectOffsetMap loadedPrecise;
 
             if (f) {
               auto &calleeNode = *funcs_[GetFuncID(*f)];
               node.Funcs.Union(calleeNode.Funcs);
               node.Escaped.Union(calleeNode.Escaped);
-              loaded = calleeNode.Loaded;
+              loadedPrecise = calleeNode.LoadedPrecise;
+              loadedImprecise = calleeNode.LoadedImprecise;
+              storedPrecise = calleeNode.StoredPrecise;
+              storedImprecise = calleeNode.StoredImprecise;
               raises = calleeNode.Raises;
               indirect = calleeNode.Indirect;
-              stored = calleeNode.Stored;
             } else {
               indirect = true;
             }
             if (indirect) {
-              Indirect(node.Funcs, node.Escaped, stored, loaded, raises);
+              Indirect(
+                  node.Funcs,
+                  node.Escaped,
+                  storedImprecise,
+                  storedPrecise,
+                  loadedImprecise,
+                  loadedPrecise,
+                  raises
+              );
             }
-            node.Overwrite(stored);
-            node.Overwrite(node.Escaped);
-
-            reverse.Taint(node.Escaped);
-            reverse.Load(loaded);
-            reverse.Store(stored);
+            node.Overwrite(storedImprecise | node.Escaped, storedPrecise);
+            reverse.Load(loadedImprecise | node.Escaped, loadedPrecise);
+            reverse.Store(storedImprecise | node.Escaped, storedPrecise);
 
             if (raises) {
               if (auto *invoke = ::cast_or_null<InvokeInst>(call)) {
@@ -438,11 +451,13 @@ bool GlobalForwarder::Reverse()
           if (node->StoreImprecise.Contains(id)) {
             continue;
           }
-          bool killed = false;
           auto storeIt = node->StorePrecise.find(id);
-          if (!killed && storeIt != node->StorePrecise.end()) {
-            for (auto &[start, instAndEnd] : stores) {
-              auto &[inst, end] = instAndEnd;
+          auto loadIt = node->LoadPrecise.find(id);
+          for (auto &[start, instAndEnd] : stores) {
+            auto &[inst, end] = instAndEnd;
+
+            bool killed = false;
+            if (!killed && storeIt != node->StorePrecise.end()) {
               for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
                 auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
                 if (end <= nodeStart || nodeEnd <= start) {
@@ -450,18 +465,25 @@ bool GlobalForwarder::Reverse()
                 }
                 if (start == nodeStart && end == nodeEnd) {
                   killed = true;
-                  continue;
+                  break;
                 }
                 llvm_unreachable("not implemented");
               }
             }
-          }
-          auto loadIt = node->LoadPrecise.find(id);
-          if (!killed && loadIt != node->LoadPrecise.end()) {
-            llvm_unreachable("not implemented");
-          }
-          if (!killed) {
-            node->StorePrecise.emplace(id, std::move(stores));
+
+            if (!killed && loadIt != node->LoadPrecise.end()) {
+              for (auto &[nodeStart, nodeEnd] : loadIt->second) {
+                if (end <= nodeStart || nodeEnd <= start) {
+                  continue;
+                }
+                killed = true;
+                break;
+              }
+            }
+
+            if (!killed) {
+              node->StorePrecise[id].emplace(start, instAndEnd);
+            }
           }
         }
         for (auto &[id, loads] : merged->LoadPrecise) {
@@ -604,10 +626,30 @@ void GlobalForwarder::Escape(
 void GlobalForwarder::Indirect(
     BitSet<Func> &funcs,
     BitSet<Object> &escaped,
-    BitSet<Object> &stored,
-    BitSet<Object> &loaded,
+    BitSet<Object> &storedImprecise,
+    ObjectOffsetMap &storedPrecise,
+    BitSet<Object> &loadedImprecise,
+    ObjectOffsetMap &loadedPrecise,
     bool &raise)
 {
+  LLVM_DEBUG({
+    llvm::dbgs()
+        << "Indirect:\n"
+        << "\tfuncs: " << funcs << "\n"
+        << "\tescaped: " << escaped << "\n";
+    llvm::dbgs() << "\tstored: " << storedImprecise << "\n";
+    for (auto &[id, offsets] : storedPrecise) {
+      for (auto [start, end] : offsets) {
+        llvm::dbgs() << "\t\t" << id << " + " << start << "-" << end << "\n";
+      }
+    }
+    llvm::dbgs() << "\tloaded: " << loadedImprecise << "\n";
+    for (auto &[id, offsets] : loadedPrecise) {
+      for (auto [start, end] : offsets) {
+        llvm::dbgs() << "\t\t" << id << " + " << start << "-" << end << "\n";
+      }
+    }
+  });
   std::queue<ID<Func>> q;
   for (auto f : funcs) {
     q.push(f);
@@ -624,8 +666,18 @@ void GlobalForwarder::Indirect(
 
     funcs.Union(func.Funcs);
     escaped.Union(func.Escaped);
-    stored.Union(func.Stored);
-    loaded.Union(func.Loaded);
+    storedImprecise.Union(func.StoredImprecise);
+    loadedImprecise.Union(func.LoadedImprecise);
+    for (auto &[id, offsets] : func.StoredPrecise) {
+      for (auto &off : offsets) {
+        storedPrecise[id].insert(off);
+      }
+    }
+    for (auto &[id, offsets] : func.LoadedPrecise) {
+      for (auto &off : offsets) {
+        loadedPrecise[id].insert(off);
+      }
+    }
     raise = raise || func.Raises;
   }
 }

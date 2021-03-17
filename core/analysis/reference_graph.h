@@ -16,8 +16,14 @@ class Func;
 class Global;
 class Prog;
 class MovInst;
+class Object;
 
 
+
+/**
+ * Set of start-end offsets for stores and loads.
+ */
+using OffsetSet = std::set<std::pair<int64_t, int64_t>>;
 
 /**
  * Class caching the set of symbols transitively referenced by a function.
@@ -26,9 +32,6 @@ class ReferenceGraph {
 public:
   /// Information about this node.
   struct Node {
-    /// Set of start-end offsets for stores and loads.
-    using OffsetSet = std::set<std::pair<int64_t, int64_t>>;
-
     /// Flag to indicate whether any reachable node has indirect calls.
     bool HasIndirectCalls = false;
     /// Flag to indicate whether any reachable node raises.

@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "passes/global_forward/nodes.h"
+#include "core/inst.h"
 
 
 
@@ -11,7 +12,13 @@ void NodeState::Merge(const NodeState &that)
 {
   Funcs.Union(that.Funcs);
   Escaped.Union(that.Escaped);
-  Stored.Union(that.Stored);
+
+  StoredImprecise.Union(that.StoredImprecise);
+  for (auto &[object, offsets] : that.StoredPrecise) {
+    for (auto &off : offsets) {
+      StoredPrecise[object].insert(off);
+    }
+  }
 
   auto thisIt = Stores.begin();
   auto thatIt = that.Stores.begin();
@@ -59,28 +66,44 @@ void NodeState::Merge(const NodeState &that)
 }
 
 // -----------------------------------------------------------------------------
-void NodeState::Overwrite(ID<Object> changed)
+void NodeState::Overwrite(
+    const BitSet<Object> &imprecise,
+    const ObjectOffsetMap &precise)
 {
-  Stored.Insert(changed);
-  for (auto it = Stores.begin(); it != Stores.end(); ) {
-    auto id = it->first;
-    if (id == changed) {
-      Stores.erase(it++);
-    } else {
-      ++it;
+  StoredImprecise.Union(imprecise);
+  for (auto &[object, offsets] : precise) {
+    for (auto &off : offsets) {
+      StoredPrecise[object].insert(off);
     }
   }
-}
-// -----------------------------------------------------------------------------
-void NodeState::Overwrite(const BitSet<Object> &changed)
-{
-  Stored.Union(changed);
+
   for (auto it = Stores.begin(); it != Stores.end(); ) {
     auto id = it->first;
-    if (changed.Contains(id) || Escaped.Contains(id)) {
+    if (imprecise.Contains(id)) {
       Stores.erase(it++);
     } else {
-      ++it;
+      for (auto et = it->second.begin(); et != it->second.end(); ) {
+        auto stStart = et->first;
+        const auto stEnd = stStart + GetSize(et->second.first);
+
+        bool killed = false;
+        if (auto pt = precise.find(id); pt != precise.end()) {
+          for (auto &[start, end] : pt->second) {
+            llvm_unreachable("not implemented");
+          }
+        }
+
+        if (killed) {
+          it->second.erase(et++);
+        } else {
+          ++et;
+        }
+      }
+      if (it->second.empty()) {
+        Stores.erase(it++);
+      } else {
+        ++it;
+      }
     }
   }
 }
@@ -89,11 +112,20 @@ void NodeState::Overwrite(const BitSet<Object> &changed)
 void NodeState::dump(llvm::raw_ostream &os)
 {
   os << "\tEscaped: " << Escaped << "\n";
-  os << "\tStored: " << Stored << "\n";
+  os << "\tStored: " << StoredImprecise << "\n";
+  for (auto &[id, offsets] : StoredPrecise) {
+    for (auto [start, end] : offsets) {
+      os << "\t\t" << id << " + " << start << "," << end << "\n";
+    }
+  }
   for (auto &[id, stores] : Stores) {
     for (auto &[off, storeAndEnd] : stores) {
-      auto &[store, end] = storeAndEnd;
-      os << "\t\t" << id << " + " << off << "," << end << "\n";
+      auto &[ty, inst] = storeAndEnd;
+      os << "\t\t" << id << " + " << off << "," << off + GetSize(ty);
+      if (inst) {
+        os << *inst;
+      }
+      os << "\n";
     }
   }
 }
@@ -114,18 +146,25 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
     auto thatLoadIt = that.LoadPrecise.find(it->first);
     auto thatStoreIt = that.StorePrecise.find(it->first);
     for (auto jt = it->second.begin(); jt != it->second.end(); ) {
+      auto start = jt->first;
       auto &[store, end] = jt->second;
       bool killed = false;
       if (!killed && thatLoadIt != that.LoadPrecise.end()) {
-        llvm_unreachable("not implemented");
+        for (auto [thatStart, thatEnd] : thatLoadIt->second) {
+          if (end <= thatStart || thatEnd <= start) {
+            continue;
+          }
+          killed = true;
+          break;
+        }
       }
       if (!killed && thatStoreIt != that.StorePrecise.end()) {
         for (auto &[thatStart, thatStoreAndEnd] : thatStoreIt->second) {
           auto &[thatStore, thatEnd] = thatStoreAndEnd;
-          if (end <= thatStart || thatEnd <= jt->first) {
+          if (end <= thatStart || thatEnd <= start) {
             continue;
           }
-          if (jt->first == thatStart && end == thatEnd) {
+          if (start == thatStart && end == thatEnd) {
             continue;
           }
           llvm_unreachable("not implemented");
@@ -155,7 +194,13 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
       auto &[store, end] = storeAndEnd;
       bool killed = false;
       if (!killed && thisLoadIt != LoadPrecise.end()) {
-        llvm_unreachable("not implemented");
+        for (auto [thisStart, thisEnd] : thisLoadIt->second) {
+          if (end <= thisStart || thisEnd <= start) {
+            continue;
+          }
+          killed = true;
+          break;
+        }
       }
       if (!killed && thisStoreIt != StorePrecise.end()) {
         for (auto &[thisStart, thisStoreAndEnd] : thisStoreIt->second) {
@@ -228,14 +273,32 @@ void ReverseNodeState::Store(
 }
 
 // -----------------------------------------------------------------------------
-void ReverseNodeState::Store(const BitSet<Object> &stored)
+void ReverseNodeState::Store(
+    const BitSet<Object> &imprecise,
+    const ObjectOffsetMap &precise)
 {
-  StoreImprecise.Union(stored);
+  StoreImprecise.Union(imprecise);
+  for (auto it = StorePrecise.begin(); it != StorePrecise.end(); ) {
+    if (StoreImprecise.Contains(it->first)) {
+      StorePrecise.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+  for (auto &[object, offsets] : precise) {
+    for (auto &off : offsets) {
+      StorePrecise[object].emplace(
+          off.first,
+          std::make_pair(nullptr, off.second)
+      );
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
 void ReverseNodeState::Load(ID<Object> id)
 {
+  LoadPrecise.erase(id);
   LoadImprecise.Insert(id);
 }
 
@@ -249,26 +312,30 @@ void ReverseNodeState::Load(ID<Object> id, uint64_t start, uint64_t end)
 }
 
 // -----------------------------------------------------------------------------
-void ReverseNodeState::Load(const BitSet<Object> &loaded)
+void ReverseNodeState::Load(
+    const BitSet<Object> &imprecise,
+    const ObjectOffsetMap &precise)
 {
-  for (auto it = LoadPrecise.begin(); it != LoadPrecise.end(); ) {
-    if (loaded.Contains(it->first)) {
-      LoadPrecise.erase(it++);
-    } else {
-      ++it;
+  for (auto &[object, offsets] : precise) {
+    for (auto &off : offsets) {
+      bool shadowed = false;
+      if (auto pt = StorePrecise.find(object); pt != StorePrecise.end()) {
+        for (auto &[start, storeAndEnd] : pt->second) {
+          if (off.first == start && off.second == storeAndEnd.second) {
+            shadowed = true;
+          }
+        }
+      }
+      if (!shadowed) {
+        for (auto &off : offsets) {
+          LoadPrecise[object].insert(off);
+        }
+      }
     }
   }
-  LoadImprecise.Union(loaded);
-}
-
-// -----------------------------------------------------------------------------
-void ReverseNodeState::Taint(const BitSet<Object> &changed)
-{
-  StoreImprecise.Union(changed);
-  LoadImprecise.Union(changed);
-
+  LoadImprecise.Union(imprecise);
   for (auto it = LoadPrecise.begin(); it != LoadPrecise.end(); ) {
-    if (changed.Contains(it->first)) {
+    if (LoadImprecise.Contains(it->first)) {
       LoadPrecise.erase(it++);
     } else {
       ++it;

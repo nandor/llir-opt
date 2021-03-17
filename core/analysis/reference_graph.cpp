@@ -435,7 +435,7 @@ void ReferenceGraph::Classify(
         continue;
       }
       case Inst::Kind::MOV: {
-        if (*start) {
+        if (start) {
           accurate(i, *start);
         } else {
           inaccurate(i);

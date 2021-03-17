@@ -270,17 +270,42 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
         }
 
         auto constInt = ::cast_or_null<ConstantInt>(mov->GetArg());
-        if (!constInt || mov.GetType() != Type::I64) {
+        if (!constInt) {
           isTautological = false;
           break;
         }
         const auto &v = constInt->GetValue();
 
+        auto integer = [&] (Type ty, int64_t val)
+        {
+          if (mov.GetType() != ty) {
+            isTautological = false;
+            return;
+          }
+          if (val != v.getSExtValue()) {
+            isTautological = false;
+            return;
+          }
+        };
+
         Item &item = *atom.begin();
         switch (item.GetKind()) {
-          case Item::Kind::INT8:
-          case Item::Kind::INT16:
-          case Item::Kind::INT32:
+          case Item::Kind::INT8: {
+            integer(Type::I8, item.GetInt8());
+            break;
+          }
+          case Item::Kind::INT16: {
+            integer(Type::I16, item.GetInt16());
+            break;
+          }
+          case Item::Kind::INT32: {
+            integer(Type::I32, item.GetInt32());
+            break;
+          }
+          case Item::Kind::INT64: {
+            integer(Type::I64, item.GetInt64());
+            break;
+          }
           case Item::Kind::STRING:
           case Item::Kind::EXPR32:
           case Item::Kind::EXPR64:
@@ -288,14 +313,11 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
             isTautological = false;
             break;
           }
-          case Item::Kind::INT64: {
-            if (item.GetInt64() != v.getSExtValue()) {
+          case Item::Kind::SPACE: {
+            if (GetSize(mov.GetType()) > item.GetSpace()) {
               isTautological = false;
               break;
             }
-            break;
-          }
-          case Item::Kind::SPACE: {
             if (v.getSExtValue() != 0) {
               isTautological = false;
               break;
@@ -311,6 +333,7 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
         continue;
       }
       for (auto *store : stores) {
+        LLVM_DEBUG(llvm::dbgs() << "Tautological: " << atom.getName() << "\n");
         NumStoresErased++;
         store->eraseFromParent();
       }

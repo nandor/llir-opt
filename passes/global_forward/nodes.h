@@ -7,15 +7,19 @@
 #include <set>
 
 #include "core/adt/bitset.h"
+#include "core/analysis/reference_graph.h"
 #include "core/dag.h"
-#include "core/type.h"
 #include "core/ref.h"
+#include "core/type.h"
 
 class Object;
 class Inst;
 class MemoryStoreInst;
 
 
+
+/// Map of offsets into an object.
+using ObjectOffsetMap = std::unordered_map<ID<Object>, OffsetSet>;
 
 /// Transitive closure of an object.
 struct ObjectClosure {
@@ -34,9 +38,13 @@ struct FuncClosure {
   /// Set of escaped objects.
   BitSet<Object> Escaped;
   /// Set of changed objects.
-  BitSet<Object> Stored;
+  BitSet<Object> StoredImprecise;
+  /// Set of changed offsets.
+  std::unordered_map<ID<Object>, OffsetSet> StoredPrecise;
   /// Set of dereferenced objects.
-  BitSet<Object> Loaded;
+  BitSet<Object> LoadedImprecise;
+  /// Set of dereferenced offsets.
+  std::unordered_map<ID<Object>, OffsetSet> LoadedPrecise;
   /// Flag to indicate whether any function raises.
   bool Raises;
   /// Flag to indicate whether any function has indirect calls.
@@ -50,7 +58,9 @@ struct NodeState {
   /// ID of tainted objects.
   BitSet<Object> Escaped;
   /// Set of objects changed to unknown values.
-  BitSet<Object> Stored;
+  BitSet<Object> StoredImprecise;
+  /// Set of offsets changed.
+  ObjectOffsetMap StoredPrecise;
   /// Accurate stores.
   std::unordered_map
     < ID<Object>
@@ -59,8 +69,17 @@ struct NodeState {
 
   void Merge(const NodeState &that);
 
-  void Overwrite(ID<Object> changed);
-  void Overwrite(const BitSet<Object> &changed);
+  void Overwrite(ID<Object> changed)
+  {
+    BitSet<Object> imprecise;
+    imprecise.Insert(changed);
+    return Overwrite(imprecise, {});
+  }
+
+  void Overwrite(
+      const BitSet<Object> &imprecise,
+      const ObjectOffsetMap &precise
+  );
 
   void dump(llvm::raw_ostream &os);
 };
@@ -92,6 +111,7 @@ struct ReverseNodeState {
 
   ReverseNodeState(DAGBlock &node);
 
+  /// LUB operator of two nodes.
   void Merge(const ReverseNodeState &that);
 
   /// @section Stores
@@ -102,15 +122,13 @@ struct ReverseNodeState {
       uint64_t end,
       MemoryStoreInst *store = nullptr
   );
-  void Store(const BitSet<Object> &stored);
+  void Store(const BitSet<Object> &imprecise, const ObjectOffsetMap &precise);
 
   /// @section Loads
   void Load(ID<Object> id);
   void Load(ID<Object> id, uint64_t start, uint64_t end);
-  void Load(const BitSet<Object> &loaded);
+  void Load(const BitSet<Object> &imprecise, const ObjectOffsetMap &precise);
 
-  /// Over-approximates the whole set.
-  void Taint(const BitSet<Object> &changed);
-
+  /// Print information about the node to a stream.
   void dump(llvm::raw_ostream &os);
 };
