@@ -15,64 +15,6 @@
 
 
 // -----------------------------------------------------------------------------
-ReferenceGraph::ReferenceGraph(Prog &prog, CallGraph &graph)
-  : graph_(graph)
-  , built_(false)
-{
-}
-
-// -----------------------------------------------------------------------------
-void ReferenceGraph::Build()
-{
-  for (auto it = llvm::scc_begin(&graph_); !it.isAtEnd(); ++it) {
-    auto &node = *nodes_.emplace_back(std::make_unique<Node>());
-    for (auto *sccNode : *it) {
-      if (auto *func = sccNode->GetCaller()) {
-        ExtractReferences(*func, node);
-      }
-    }
-    for (auto *sccNode : *it) {
-      if (auto *func = sccNode->GetCaller()) {
-        funcToNode_.emplace(func, &node);
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-static bool HasIndirectUses(MovInst *inst)
-{
-  std::queue<MovInst *> q;
-  q.push(inst);
-  while (!q.empty()) {
-    MovInst *i = q.front();
-    q.pop();
-    for (User *user : i->users()) {
-      if (auto *mov = ::cast_or_null<MovInst>(user)) {
-        q.push(mov);
-      } else if (auto *call = ::cast_or_null<CallSite>(user)) {
-        if (call->GetCallee().Get() != i) {
-          return true;
-        }
-      } else {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-const ReferenceGraph::Node &ReferenceGraph::operator[](Func &func)
-{
-  if (!built_) {
-    Build();
-    built_ = true;
-  }
-  return *funcToNode_[&func];
-}
-
-// -----------------------------------------------------------------------------
 void ReferenceGraph::Node::Merge(const Node &that)
 {
   HasIndirectCalls |= that.HasIndirectCalls;
@@ -142,6 +84,7 @@ void ReferenceGraph::Node::AddRead(Object *object)
     }
   }
 }
+
 // -----------------------------------------------------------------------------
 void ReferenceGraph::Node::AddWrite(Object *object)
 {
@@ -153,6 +96,128 @@ void ReferenceGraph::Node::AddWrite(Object *object)
       ++it;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Node::dump(llvm::raw_ostream &os) const
+{
+  os << "\tindirect: " << HasIndirectCalls << "\n";
+  os << "\traise: " << HasRaise << "\n";
+  os << "\tbarrier: " << HasBarrier << "\n";
+  os << "\tread:\n";
+  for (Object *obj : ReadRanges) {
+    os << "\t\t";
+    for (Atom &atom : *obj) {
+      os << atom.getName() << " ";
+    }
+    os << "\n";
+  }
+  for (auto &[obj, offsets] : ReadOffsets) {
+    os << "\t\t";
+    for (Atom &atom : *obj) {
+      os << atom.getName() << " ";
+    }
+    os << " + ";
+    for (auto [start, end] : offsets) {
+      os << start << "," << end << ":";
+    }
+    os << "\n";
+  }
+  os << "\twritten:\n";
+  for (Object *obj : WrittenRanges) {
+    os << "\t\t";
+    for (Atom &atom : *obj) {
+      os << atom.getName() << " ";
+    }
+    os << "\n";
+  }
+  for (auto &[obj, offsets] : WrittenOffsets) {
+    os << "\t\t";
+    for (Atom &atom : *obj) {
+      os << atom.getName() << " ";
+    }
+    os << " + ";
+    for (auto [start, end] : offsets) {
+      os << start << "," << end << ":";
+    }
+    os << "\n";
+  }
+  if (!Escapes.empty()) {
+    os << "\tcalled:\n";
+    for (auto *g : Escapes) {
+      os << "\t" << g->getName() << "\n";
+    }
+  }
+  if (!Called.empty()) {
+    os << "\tcalled:\n";
+    for (auto *f : Called) {
+      os << "\t" << f->getName() << "\n";
+    }
+  }
+  if (!Blocks.empty()) {
+    os << "\tblocks:\n";
+    for (auto *b : Blocks) {
+      os << "\t" << b->getName() << "\n";
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+ReferenceGraph::ReferenceGraph(Prog &prog, CallGraph &graph)
+  : graph_(graph)
+  , built_(false)
+{
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Build()
+{
+  for (auto it = llvm::scc_begin(&graph_); !it.isAtEnd(); ++it) {
+    auto &node = *nodes_.emplace_back(std::make_unique<Node>());
+    for (auto *sccNode : *it) {
+      if (auto *func = sccNode->GetCaller()) {
+        ExtractReferences(*func, node);
+      }
+    }
+    for (auto *sccNode : *it) {
+      if (auto *func = sccNode->GetCaller()) {
+        funcToNode_.emplace(func, &node);
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+static bool HasIndirectUses(MovInst *inst)
+{
+  std::queue<MovInst *> q;
+  q.push(inst);
+  while (!q.empty()) {
+    MovInst *i = q.front();
+    q.pop();
+    for (User *user : i->users()) {
+      if (auto *mov = ::cast_or_null<MovInst>(user)) {
+        q.push(mov);
+      } else if (auto *call = ::cast_or_null<CallSite>(user)) {
+        if (call->GetCallee().Get() != i) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+const ReferenceGraph::Node &ReferenceGraph::operator[](Func &func)
+{
+  if (!built_) {
+    Build();
+    built_ = true;
+  }
+  return *funcToNode_[&func];
 }
 
 // -----------------------------------------------------------------------------

@@ -149,11 +149,9 @@ private:
   /// Return the ID of a function.
   ID<Func> GetFuncID(Func &func)
   {
-    auto it = funcToID_.emplace(&func, funcs_.size());
-    if (it.second) {
-      funcs_.emplace_back(std::make_unique<FuncClosure>());
-    }
-    return it.first->second;
+    auto it = funcToID_.find(&func);
+    assert(it != funcToID_.end() && "missing function");
+    return it->second;
   }
 
   /// Return the ID of an object.

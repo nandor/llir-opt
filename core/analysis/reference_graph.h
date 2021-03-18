@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include <llvm/Support/raw_ostream.h>
 
 class Block;
 class CallGraph;
@@ -59,6 +60,9 @@ public:
     void AddRead(Object *object);
     /// Add an inaccurate write.
     void AddWrite(Object *object);
+
+    /// Dump a representation of the node.
+    void dump(llvm::raw_ostream &os) const;
   };
 
   /// Build reference information.
@@ -91,3 +95,14 @@ private:
   /// Flag to indicate whether graph was built.
   bool built_;
 };
+
+/**
+ * Helper to print a node.
+ */
+inline llvm::raw_ostream &operator<<(
+    llvm::raw_ostream &os,
+    const ReferenceGraph::Node &node)
+{
+  node.dump(os);
+  return os;
+}

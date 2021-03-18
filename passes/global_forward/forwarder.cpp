@@ -22,7 +22,7 @@
 #define DEBUG_TYPE "global-forward"
 
 STATISTIC(NumStoresFolded, "Stores folded");
-
+STATISTIC(NumStoresKilled, "Dead stores removed");
 
 
 // -----------------------------------------------------------------------------
@@ -48,6 +48,22 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
   , entry_(entry)
 {
   ObjectGraph og(prog);
+  CallGraph cg(prog);
+  ReferenceGraph rg(prog, cg);
+
+  for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
+    // Create a node for the entire SCC.
+    ID<Func> id = funcs_.size();
+    funcs_.emplace_back(std::make_unique<FuncClosure>());
+    for (auto *funcNode : *it) {
+      auto *func = funcNode->GetCaller();
+      if (!func) {
+        continue;
+      }
+      funcToID_.emplace(func, id);
+    }
+  }
+
   for (auto it = llvm::scc_begin(&og); !it.isAtEnd(); ++it) {
     ID<Object> id = objects_.size();
     auto &node = *objects_.emplace_back(std::make_unique<ObjectClosure>());
@@ -97,40 +113,34 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
     }
   }
 
-  CallGraph cg(prog);
-  ReferenceGraph rg(prog, cg);
   for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
-    ID<Func> id = funcs_.size();
-    funcs_.emplace_back(std::make_unique<FuncClosure>());
-
-    auto &node = *funcs_[id];
     for (auto *funcNode : *it) {
       auto *func = funcNode->GetCaller();
       if (!func) {
         continue;
       }
-
+      auto &node = *funcs_[GetFuncID(*func)];
       auto &rgNode = rg[*func];
       node.Raises = rgNode.HasRaise;
       node.Indirect = rgNode.HasIndirectCalls;
 
       for (auto *read : rgNode.ReadRanges) {
         // Entire transitive closure is loaded, only pointees escape.
-        auto id = GetObjectID(read);
-        auto &obj = *objects_[id];
+        auto objectID = GetObjectID(read);
+        auto &obj = *objects_[objectID];
         node.Funcs.Union(obj.Funcs);
         node.Escaped.Union(obj.Objects);
         node.LoadedImprecise.Union(obj.Objects);
-        node.LoadedImprecise.Insert(id);
+        node.LoadedImprecise.Insert(objectID);
       }
       for (auto &[read, offsets] : rgNode.ReadOffsets) {
         // Entire transitive closure is loaded, only pointees escape.
-        auto id = GetObjectID(read);
-        auto &obj = *objects_[id];
+        auto objectID = GetObjectID(read);
+        auto &obj = *objects_[objectID];
         node.Funcs.Union(obj.Funcs);
         node.Escaped.Union(obj.Objects);
         for (auto &off : offsets) {
-          node.LoadedPrecise[id].insert(off);
+          node.LoadedPrecise[objectID].insert(off);
         }
       }
       for (auto *written : rgNode.WrittenRanges) {
@@ -139,9 +149,9 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
       }
       for (auto &[written, offsets] : rgNode.WrittenOffsets) {
         // The specific item is changed.
-        auto id = GetObjectID(written);
+        auto objectID = GetObjectID(written);
         for (auto &off : offsets) {
-          node.StoredPrecise[id].insert(off);
+          node.StoredPrecise[objectID].insert(off);
         }
       }
       for (auto *g : rgNode.Escapes) {
@@ -153,16 +163,16 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
           }
           case Global::Kind::ATOM: {
             auto *object = static_cast<Atom &>(*g).getParent();
-            auto id = GetObjectID(object);
-            auto &obj = *objects_[id];
+            auto objectID = GetObjectID(object);
+            auto &obj = *objects_[objectID];
             // Transitive closure is fully tainted.
             node.Funcs.Union(obj.Funcs);
             node.Escaped.Union(obj.Objects);
-            node.Escaped.Insert(id);
+            node.Escaped.Insert(objectID);
             node.LoadedImprecise.Union(obj.Objects);
-            node.LoadedImprecise.Insert(id);
+            node.LoadedImprecise.Insert(objectID);
             node.StoredImprecise.Union(obj.Objects);
-            node.StoredImprecise.Insert(id);
+            node.StoredImprecise.Insert(objectID);
             continue;
           }
           case Global::Kind::BLOCK:
@@ -415,6 +425,7 @@ bool GlobalForwarder::Forward()
 // -----------------------------------------------------------------------------
 bool GlobalForwarder::Reverse()
 {
+  std::vector<ReverseNodeState *> nodes;
   std::unordered_set<ReverseNodeState *> visited;
   std::function<void(ReverseNodeState *node)> dfs =
     [&, this] (ReverseNodeState *node)
@@ -426,104 +437,158 @@ bool GlobalForwarder::Reverse()
       for (auto *succ : node->Succs) {
         dfs(succ);
       }
-      LLVM_DEBUG(llvm::dbgs() << "===================\n");
-      LLVM_DEBUG(llvm::dbgs() << node->Node << "\n");
-      LLVM_DEBUG(llvm::dbgs() << "===================\n");
-      // Merge information from successors.
-      std::optional<ReverseNodeState> merged;
-      LLVM_DEBUG(llvm::dbgs() << "Merged:\n");
-      for (auto *succ : node->Succs) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << succ->Node << "\n");
-        if (merged) {
-          merged->Merge(*succ);
-        } else {
-          merged.emplace(*succ);
-        }
-      }
-      #ifndef DEBUG
-      if (merged) {
-        LLVM_DEBUG(merged->dump(llvm::dbgs()));
-      }
-      #endif
-      // Apply the transfer function.
-      if (merged) {
-        for (auto &&[id, stores] : merged->StorePrecise) {
-          if (node->StoreImprecise.Contains(id)) {
-            continue;
-          }
-          auto storeIt = node->StorePrecise.find(id);
-          auto loadIt = node->LoadPrecise.find(id);
-          for (auto &[start, instAndEnd] : stores) {
-            auto &[inst, end] = instAndEnd;
-
-            bool killed = false;
-            if (!killed && storeIt != node->StorePrecise.end()) {
-              for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
-                auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
-                if (end <= nodeStart || nodeEnd <= start) {
-                  continue;
-                }
-                if (start == nodeStart && end == nodeEnd) {
-                  killed = true;
-                  break;
-                }
-                llvm_unreachable("not implemented");
-              }
-            }
-
-            if (!killed && loadIt != node->LoadPrecise.end()) {
-              for (auto &[nodeStart, nodeEnd] : loadIt->second) {
-                if (end <= nodeStart || nodeEnd <= start) {
-                  continue;
-                }
-                killed = true;
-                break;
-              }
-            }
-
-            if (!killed) {
-              node->StorePrecise[id].emplace(start, instAndEnd);
-            }
-          }
-        }
-        for (auto &[id, loads] : merged->LoadPrecise) {
-          if (node->LoadImprecise.Contains(id)) {
-            continue;
-          }
-
-          auto storeIt = node->StorePrecise.find(id);
-          for (auto [ldStart, ldEnd] : loads) {
-            bool killed = false;
-            if (storeIt != node->StorePrecise.end()) {
-              for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
-                auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
-                if (ldEnd <= nodeStart || nodeEnd <= ldStart) {
-                  continue;
-                }
-                if (ldStart == nodeStart && ldEnd == nodeEnd) {
-                  killed = true;
-                  continue;
-                }
-                llvm_unreachable("not implemented");
-              }
-            }
-            if (!killed) {
-              node->LoadPrecise[id].emplace(ldStart, ldEnd);
-            }
-          }
-        }
-        node->LoadImprecise.Union(merged->LoadImprecise);
-      }
-      LLVM_DEBUG(llvm::dbgs() << "Final:\n");
-      #ifndef DEBUG
-      LLVM_DEBUG(node->dump(llvm::dbgs()));
-      #endif
+      nodes.push_back(node);
     };
 
   auto *entry = &GetReverseNode(entry_, GetDAG(entry_).rbegin()->Index);
   dfs(entry);
 
+  LLVM_DEBUG(llvm::dbgs() << "===================\n");
+  LLVM_DEBUG(llvm::dbgs() << "Reverse:\n");
+  LLVM_DEBUG(llvm::dbgs() << "===================\n");
+
   bool changed = false;
+  for (ReverseNodeState *node : nodes) {
+    LLVM_DEBUG(llvm::dbgs() << "===================\n");
+    LLVM_DEBUG(llvm::dbgs() << node->Node << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "===================\n");
+    // Merge information from successors.
+    std::optional<ReverseNodeState> merged;
+    LLVM_DEBUG(llvm::dbgs() << "Merged:\n");
+    for (auto *succ : node->Succs) {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << succ->Node << "\n");
+      if (merged) {
+        merged->Merge(*succ);
+      } else {
+        merged.emplace(*succ);
+      }
+    }
+    #ifndef DEBUG
+    if (merged) {
+      LLVM_DEBUG(merged->dump(llvm::dbgs()));
+    }
+    #endif
+    // Apply the transfer function.
+    if (merged) {
+      for (auto &&[id, stores] : merged->StorePrecise) {
+        if (node->StoreImprecise.Contains(id)) {
+          continue;
+        }
+        auto storeIt = node->StorePrecise.find(id);
+        auto loadIt = node->LoadPrecise.find(id);
+        for (auto &[start, instAndEnd] : stores) {
+          auto &[inst, end] = instAndEnd;
+
+          bool killed = false;
+          if (!killed && storeIt != node->StorePrecise.end()) {
+            for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
+              auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
+              if (end <= nodeStart || nodeEnd <= start) {
+                continue;
+              }
+              if (start == nodeStart && end == nodeEnd) {
+                killed = true;
+                break;
+              }
+              llvm_unreachable("not implemented");
+            }
+          }
+
+          if (!killed && loadIt != node->LoadPrecise.end()) {
+            for (auto &[nodeStart, nodeEnd] : loadIt->second) {
+              if (end <= nodeStart || nodeEnd <= start) {
+                continue;
+              }
+              killed = true;
+              break;
+            }
+          }
+
+          if (!killed) {
+            node->StorePrecise[id].emplace(start, instAndEnd);
+          }
+        }
+      }
+
+      for (auto &[id, loads] : merged->LoadPrecise) {
+        if (node->LoadImprecise.Contains(id)) {
+          continue;
+        }
+
+        auto storeIt = node->StorePrecise.find(id);
+        for (auto [ldStart, ldEnd] : loads) {
+          bool killed = false;
+          if (storeIt != node->StorePrecise.end()) {
+            for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
+              auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
+              if (ldEnd <= nodeStart || nodeEnd <= ldStart) {
+                continue;
+              }
+              killed = true;
+              break;
+            }
+          }
+          if (!killed) {
+            node->LoadPrecise[id].emplace(ldStart, ldEnd);
+          }
+        }
+      }
+
+      node->LoadImprecise.Union(merged->LoadImprecise);
+
+
+      for (auto *inst : node->KilledStores) {
+        llvm_unreachable("not implemented");
+      }
+      for (auto &[id, stores] : node->KillableStores) {
+        if (merged->LoadImprecise.Contains(id)) {
+          continue;
+        }
+        auto loadIt = merged->LoadPrecise.find(id);
+        auto storeIt = node->StorePrecise.find(id);
+        for (auto &[start, instAndEnd] : stores) {
+          auto [inst, end] = instAndEnd;
+          bool killed = true;
+          if (loadIt != merged->LoadPrecise.end()) {
+            for (auto [loadStart, loadEnd] : loadIt->second) {
+              if (end <= loadStart || loadEnd <= start) {
+                continue;
+              }
+              killed = false;
+              break;
+            }
+          }
+          if (killed) {
+            /*
+            LLVM_DEBUG(llvm::dbgs()
+                << "Dead store: " << id << " + " << start << "," << end
+                << ": " << *inst->GetAddr() << '\n'
+            );
+            inst->eraseFromParent();
+            NumStoresKilled++;
+            changed = true;
+
+            if (storeIt != node->StorePrecise.end()) {
+              for (auto et = storeIt->second.begin(); et != storeIt->second.end(); ) {
+                if (et->second.first == inst) {
+                  storeIt->second.erase(et++);
+                } else {
+                  ++et;
+                }
+              }
+            }
+            */
+          }
+        }
+      }
+      node->KillableStores.clear();
+    }
+    LLVM_DEBUG(llvm::dbgs() << "Final:\n");
+    #ifndef DEBUG
+    LLVM_DEBUG(node->dump(llvm::dbgs()));
+    #endif
+  };
+
   for (auto &[id, stores] : entry->StorePrecise) {
     auto *object = idToObject_[id];
     if (!object) {
@@ -544,8 +609,6 @@ bool GlobalForwarder::Reverse()
         store->eraseFromParent();
         NumStoresFolded++;
         changed = true;
-      } else {
-        llvm::errs() << "FAILED: " << *store << "\n";
       }
     }
   }
@@ -558,9 +621,21 @@ void GlobalForwarder::Escape(
     BitSet<Object> &escaped,
     MovInst &mov)
 {
-  auto g = ::cast_or_null<Global>(mov.GetArg());
-  if (!g) {
-    return;
+  Ref<Global> g;
+  auto arg = mov.GetArg();
+  switch (arg->GetKind()) {
+    case Value::Kind::CONST:
+    case Value::Kind::INST: {
+      return;
+    }
+    case Value::Kind::GLOBAL: {
+      g = ::cast<Global>(arg);
+      break;
+    }
+    case Value::Kind::EXPR: {
+      g = ::cast<SymbolOffsetExpr>(arg)->GetSymbol();
+      break;
+    }
   }
 
   bool escapes = false;
@@ -607,10 +682,13 @@ void GlobalForwarder::Escape(
       }
       case Global::Kind::ATOM: {
         auto id = GetObjectID(::cast<Atom>(g)->getParent());
-        LLVM_DEBUG(llvm::dbgs()
-          << "\t\tEscape: " << g->getName() << " as " << id << "\n"
-        );
         auto &obj = *objects_[id];
+        LLVM_DEBUG(llvm::dbgs()
+            << "\t\tEscape: " << g->getName() << " as " << id
+            << ", " << obj.Funcs
+            << ", " << obj.Objects
+            << "\n"
+        );
         funcs.Union(obj.Funcs);
         escaped.Union(obj.Objects);
         escaped.Insert(id);

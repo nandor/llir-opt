@@ -135,11 +135,13 @@ void NodeState::dump(llvm::raw_ostream &os)
 {
   os << "\tEscaped: " << Escaped << "\n";
   os << "\tStored: " << StoredImprecise << "\n";
+  /*
   for (auto &[id, offsets] : StoredPrecise) {
     for (auto [start, end] : offsets) {
       os << "\t\t" << id << " + " << start << "," << end << "\n";
     }
   }
+  */
   for (auto &[id, stores] : Stores) {
     for (auto &[off, storeAndEnd] : stores) {
       auto &[ty, inst] = storeAndEnd;
@@ -411,10 +413,22 @@ void ReverseNodeState::Load(
     } else {
       if (auto pt = precise.find(it->first); pt != precise.end()) {
         for (auto et = it->second.begin(); et != it->second.end(); ) {
+          bool killed = false;
+
           auto etStart = et->first;
-          auto etEnd = et->second.first;
+          auto etEnd = et->second.second;
           for (auto [start, end] : pt->second) {
-            llvm_unreachable("not implemented");
+            if (end <= etStart || etEnd <= start) {
+              continue;
+            }
+            killed = true;
+            break;
+          }
+
+          if (killed) {
+            it->second.erase(et++);
+          } else {
+            ++et;
           }
         }
       }
@@ -436,7 +450,9 @@ void ReverseNodeState::dump(llvm::raw_ostream &os)
       os << "\t\t" << id << " + " << start << "," << end << "\n";
     }
   }
+
   os << "\tStore: " << StoreImprecise << "\n";
+  /*
   for (auto &[id, stores] : StorePrecise) {
     for (auto &[off, storeAndEnd] : stores) {
       auto &[store, end] = storeAndEnd;
@@ -458,4 +474,5 @@ void ReverseNodeState::dump(llvm::raw_ostream &os)
       os << "\n";
     }
   }
+  */
 }
