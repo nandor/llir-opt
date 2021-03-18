@@ -208,24 +208,22 @@ bool GlobalForwarder::Simplifier::VisitMemoryStoreInst(MemoryStoreInst &store)
       auto off = *ptr->second;
       auto end = off + GetSize(ty);
       node_.StoredPrecise[id].emplace(off, end);
-      if (node_.Escaped.Contains(id)) {
-        reverse_.Store(id, off, end);
-      } else {
-        auto &stores = node_.Stores[id];
-        for (auto it = stores.begin(); it != stores.end(); ) {
-          auto prevStart = it->first;
-          auto prevEnd = prevStart + GetSize(it->second.first);
-          if (prevEnd <= off || end <= prevStart) {
-            ++it;
-          } else {
-            stores.erase(it++);
-          }
+
+      auto &stores = node_.Stores[id];
+      for (auto it = stores.begin(); it != stores.end(); ) {
+        auto prevStart = it->first;
+        auto prevEnd = prevStart + GetSize(it->second.first);
+        if (prevEnd <= off || end <= prevStart) {
+          ++it;
+        } else {
+          stores.erase(it++);
         }
-        auto v = store.GetValue();
-        LLVM_DEBUG(llvm::dbgs() << "\t\t\tforward " << *v << "\n");
-        stores.emplace(*ptr->second, std::make_pair(ty, v));
-        reverse_.Store(id, off, end, &store);
       }
+
+      auto v = store.GetValue();
+      LLVM_DEBUG(llvm::dbgs() << "\t\t\tforward " << *v << "\n");
+      stores.emplace(*ptr->second, std::make_pair(ty, v));
+      reverse_.Store(id, off, end, &store);
     } else {
       node_.StoredImprecise.Insert(id);
       node_.Overwrite(id);
@@ -278,15 +276,7 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
               load.replaceAllUsesWith(mov);
               load.eraseFromParent();
               return true;
-            } else {
-              // Cannot forward - non-static move.
-              reverse_.Load(id, off, end);
-              return imprecise();
             }
-          } else {
-            // Cannot forward - dynamic value produced in another frame.
-            reverse_.Load(id, off, end);
-            return imprecise();
           }
         } else {
           llvm_unreachable("not implemented");
@@ -303,29 +293,20 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
           }
         }
 
-        if (killed) {
-          reverse_.Load(id);
-          return imprecise();
-        } else {
-          // Value not yet mutated, load from static data.
-          if (auto *v = ptr->first->Load(off, ty)) {
-            ++NumLoadsFolded;
-            auto *mov = new MovInst(ty, v, load.GetAnnots());
-            LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
-            load.getParent()->AddInst(mov, &load);
-            load.replaceAllUsesWith(mov);
-            load.eraseFromParent();
-            return true;
-          } else {
-            reverse_.Load(id);
-            return imprecise();
-          }
+        // Value not yet mutated, load from static data.
+        if (auto *v = ptr->first->Load(off, ty); v && !killed) {
+          ++NumLoadsFolded;
+          auto *mov = new MovInst(ty, v, load.GetAnnots());
+          LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
+          load.getParent()->AddInst(mov, &load);
+          load.replaceAllUsesWith(mov);
+          load.eraseFromParent();
+          return true;
         }
-      } else {
-        // De-referencing an object. Add pointees to tainted set.
-        reverse_.Load(id);
-        return imprecise();
       }
+      // Cannot forward - non-static move.
+      reverse_.Load(id, off, end);
+      return imprecise();
     } else {
       reverse_.Load(id);
       return imprecise();
@@ -349,12 +330,22 @@ bool GlobalForwarder::Simplifier::VisitMemoryExchangeInst(MemoryExchangeInst &xc
     node_.Funcs.Union(obj.Funcs);
 
     if (ptr->second) {
-      // TODO: only delete overlapping stores.
-      node_.StoredImprecise.Insert(id);
-      node_.Stores[id].clear();
+      auto off = *ptr->second;
+      auto end = off + GetSize(ty);
+
+      node_.StoredPrecise[id].emplace(off, end);
+      if (auto it = node_.Stores.find(id); it != node_.Stores.end()) {
+        llvm_unreachable("not implemented");
+      }
+
+      reverse_.Load(id, off, end);
+      reverse_.Store(id, off, end);
     } else {
       node_.StoredImprecise.Insert(id);
       node_.Stores[id].clear();
+
+      reverse_.Load(id);
+      reverse_.Store(id);
     }
 
     return false;

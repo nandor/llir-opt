@@ -101,6 +101,14 @@ struct ReverseNodeState {
   /// Imprecise, tainted locations.
   BitSet<Object> StoreImprecise;
 
+  /// Set of potentially dead stores.
+  std::unordered_map
+    < ID<Object>
+    , std::map<uint64_t, std::pair<MemoryStoreInst *, uint64_t>>
+    > KillableStores;
+  /// Set of stores definitely killed.
+  std::set<MemoryStoreInst *> KilledStores;
+
   /// Set of accurate loads.
   std::unordered_map
     < ID<Object>

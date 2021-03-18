@@ -222,27 +222,14 @@ Value *Object::Load(uint64_t offset, Type type)
 static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr, Type ty)
 {
   switch (it->GetKind()) {
-    case Item::Kind::INT8: {
-      llvm_unreachable("not implemented");
-    }
-    case Item::Kind::INT16: {
-      llvm_unreachable("not implemented");
-    }
-    case Item::Kind::EXPR32:
-    case Item::Kind::INT32: {
-      if (ty == Type::I32) {
-        auto *item = Item::CreateExpr32(expr);
-        it->getParent()->AddItem(item, &*it);
-        it->eraseFromParent();
-        return true;
-      } else {
-        return false;
-      }
-    }
-    case Item::Kind::EXPR64:
+    case Item::Kind::INT8:
+    case Item::Kind::INT16:
+    case Item::Kind::INT32:
     case Item::Kind::INT64:
+    case Item::Kind::EXPR32:
+    case Item::Kind::EXPR64:
     case Item::Kind::FLOAT64: {
-      if (ty == Type::I64) {
+      if (it->GetSize() == GetSize(ty)) {
         auto *item = Item::CreateExpr64(expr);
         it->getParent()->AddItem(item, &*it);
         it->eraseFromParent();
@@ -346,17 +333,19 @@ static bool StoreInt(
         atom->AddItem(Item::CreateSpace(before), &*it);
       }
       switch (type) {
-        case Type::I8:
-        case Type::I16:
-        case Type::I128: {
-          llvm_unreachable("not implemented");
+        case Type::I8: {
+          atom->AddItem(Item::CreateInt8(value.getSExtValue()), &*it);
+          break;
+        }
+        case Type::I16:{
+          atom->AddItem(Item::CreateInt16(value.getSExtValue()), &*it);
+          break;
         }
         case Type::I32: {
           atom->AddItem(Item::CreateInt32(value.getSExtValue()), &*it);
           break;
         }
-        case Type::I64:
-        case Type::V64: {
+        case Type::I64: case Type::V64: {
           atom->AddItem(Item::CreateInt64(value.getSExtValue()), &*it);
           break;
         }
@@ -364,6 +353,9 @@ static bool StoreInt(
         case Type::F64:
         case Type::F80:
         case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::I128: {
           llvm_unreachable("not implemented");
         }
       }

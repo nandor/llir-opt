@@ -544,6 +544,8 @@ bool GlobalForwarder::Reverse()
         store->eraseFromParent();
         NumStoresFolded++;
         changed = true;
+      } else {
+        llvm::errs() << "FAILED: " << *store << "\n";
       }
     }
   }

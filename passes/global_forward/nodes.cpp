@@ -15,8 +15,17 @@ void NodeState::Merge(const NodeState &that)
 
   StoredImprecise.Union(that.StoredImprecise);
   for (auto &[object, offsets] : that.StoredPrecise) {
-    for (auto &off : offsets) {
-      StoredPrecise[object].insert(off);
+    if (!StoredImprecise.Contains(object)) {
+      for (auto &off : offsets) {
+        StoredPrecise[object].insert(off);
+      }
+    }
+  }
+  for (auto it = StoredPrecise.begin(); it != StoredPrecise.end(); ) {
+    if (StoredImprecise.Contains(it->first)) {
+      StoredPrecise.erase(it++);
+    } else {
+      ++it;
     }
   }
 
@@ -72,8 +81,17 @@ void NodeState::Overwrite(
 {
   StoredImprecise.Union(imprecise);
   for (auto &[object, offsets] : precise) {
-    for (auto &off : offsets) {
-      StoredPrecise[object].insert(off);
+    if (!StoredImprecise.Contains(object)) {
+      for (auto &off : offsets) {
+        StoredPrecise[object].insert(off);
+      }
+    }
+  }
+  for (auto it = StoredPrecise.begin(); it != StoredPrecise.end(); ) {
+    if (StoredImprecise.Contains(it->first)) {
+      StoredPrecise.erase(it++);
+    } else {
+      ++it;
     }
   }
 
@@ -238,6 +256,7 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
 void ReverseNodeState::Store(ID<Object> id)
 {
   StoreImprecise.Insert(id);
+  KillableStores.erase(id);
 }
 
 // -----------------------------------------------------------------------------
@@ -256,7 +275,7 @@ void ReverseNodeState::Store(
         continue;
       }
       if (start == ldStart && end == ldEnd) {
-        continue;
+        return;
       }
       llvm_unreachable("not implemented");
     }
@@ -273,7 +292,19 @@ void ReverseNodeState::Store(
       }
     }
   }
+  if (auto it = KillableStores.find(id); it != KillableStores.end()) {
+    for (auto et = it->second.begin(); et != it->second.end(); ) {
+      auto stStart = et->first;
+      auto stEnd = et->second.second;
+      if (stEnd <= start || end <= stStart) {
+        ++et;
+        continue;
+      }
+      llvm_unreachable("not implemented");
+    }
+  }
   StorePrecise[id].emplace(start, std::make_pair(store, end));
+  KillableStores[id].emplace(start, std::make_pair(store, end));
 }
 
 // -----------------------------------------------------------------------------
@@ -297,6 +328,23 @@ void ReverseNodeState::Store(
       );
     }
   }
+
+  for (auto it = KillableStores.begin(); it != KillableStores.end(); ) {
+    if (imprecise.Contains(it->first)) {
+      KillableStores.erase(it++);
+    } else {
+      if (auto pt = precise.find(it->first); pt != precise.end()) {
+        for (auto et = it->second.begin(); et != it->second.end(); ) {
+          llvm_unreachable("not implemented");
+        }
+      }
+      if (it->second.empty()) {
+        KillableStores.erase(it++);
+      } else {
+        ++it;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -304,14 +352,25 @@ void ReverseNodeState::Load(ID<Object> id)
 {
   LoadPrecise.erase(id);
   LoadImprecise.Insert(id);
+  KillableStores.erase(id);
 }
 
 // -----------------------------------------------------------------------------
 void ReverseNodeState::Load(ID<Object> id, uint64_t start, uint64_t end)
 {
-  auto storeIt = StorePrecise.find(id);
-  if (storeIt == StorePrecise.end()) {
+  if (auto storeIt = StorePrecise.find(id); storeIt == StorePrecise.end()) {
     LoadPrecise[id].emplace(start, end);
+  }
+  if (auto killIt = KillableStores.find(id); killIt != KillableStores.end()) {
+    for (auto et = killIt->second.begin(); et != killIt->second.end(); ) {
+      auto stStart = et->first;
+      auto stEnd = et->second.second;
+      if (end <= stStart || stEnd <= start) {
+        ++et;
+      } else {
+        killIt->second.erase(et++);
+      }
+    }
   }
 }
 
@@ -345,6 +404,27 @@ void ReverseNodeState::Load(
       ++it;
     }
   }
+
+  for (auto it = KillableStores.begin(); it != KillableStores.end(); ) {
+    if (imprecise.Contains(it->first)) {
+      KillableStores.erase(it++);
+    } else {
+      if (auto pt = precise.find(it->first); pt != precise.end()) {
+        for (auto et = it->second.begin(); et != it->second.end(); ) {
+          auto etStart = et->first;
+          auto etEnd = et->second.first;
+          for (auto [start, end] : pt->second) {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
+      if (it->second.empty()) {
+        KillableStores.erase(it++);
+      } else {
+        ++it;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -353,14 +433,29 @@ void ReverseNodeState::dump(llvm::raw_ostream &os)
   os << "\tLoad: " << LoadImprecise << "\n";
   for (auto &[id, loads] : LoadPrecise) {
     for (auto &[start, end] : loads) {
-      os << "\t\t" << id << " + " << start << "," << end << "\t";
+      os << "\t\t" << id << " + " << start << "," << end << "\n";
     }
   }
   os << "\tStore: " << StoreImprecise << "\n";
   for (auto &[id, stores] : StorePrecise) {
     for (auto &[off, storeAndEnd] : stores) {
       auto &[store, end] = storeAndEnd;
-      os << "\t\t" << id << " + " << off << "," << end << "\n";
+      os << "\t\t" << id << " + " << off << "," << end;
+      if (store) {
+        os << ": " << *store->GetAddr();
+      }
+      os << "\n";
+    }
+  }
+  os << "\tKillable: \n";
+  for (auto &[id, stores] : KillableStores) {
+    for (auto &[off, storeAndEnd] : stores) {
+      auto &[store, end] = storeAndEnd;
+      os << "\t\t" << id << " + " << off << "," << end;
+      if (store) {
+        os << ": " << *store->GetAddr();
+      }
+      os << "\n";
     }
   }
 }
