@@ -166,6 +166,8 @@ private:
   void LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue);
   /// Lower a context instruction with a mask.
   void LowerContextMask(bool store, unsigned op, SDValue addr, SDValue mask);
+  /// Emit a code section to set %cs.
+  void LowerSetCs(SDValue value);
 
 private:
   /// Returns the current DAG.

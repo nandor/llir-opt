@@ -183,7 +183,7 @@ void X86ISel::LowerSet(const SetInst *inst)
     case Register::X86_CR2: return LowerSetReg("mov $0, %cr2", ptrVT, value);
     case Register::X86_CR3: return LowerSetReg("mov $0, %cr3", ptrVT, value);
     case Register::X86_CR4: return LowerSetReg("mov $0, %cr4", ptrVT, value);
-    case Register::X86_CS:  return LowerSetReg("mov $0, %cs", MVT::i32, value);
+    case Register::X86_CS:  return LowerSetCs(value);
     case Register::X86_DS:  return LowerSetReg("mov $0, %ds", MVT::i32, value);
     case Register::X86_ES:  return LowerSetReg("mov $0, %es", MVT::i32, value);
     case Register::X86_SS:  return LowerSetReg("mov $0, %ss", MVT::i32, value);
@@ -202,6 +202,40 @@ void X86ISel::LowerSet(const SetInst *inst)
       llvm::report_fatal_error("cannot rewrite immutable register");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSetCs(SDValue value)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto addr = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      addr,
+      DAG.getAnyExtOrTrunc(value, SDL_, MVT::i64),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "pushq $0;\n"
+      "pushq $$1f;\n"
+      "lretq;\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { addr },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -800,7 +834,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
         }
         reg = kArgRegs64[args++];
       }
-      
+
       SDValue value = DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, PtrVT);
       ops.push_back(DAG.getRegister(reg, PtrVT));
       SDValue copy = DAG.getCopyToReg(chain, SDL_, reg, value, glue);
