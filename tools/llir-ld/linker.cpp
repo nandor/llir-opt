@@ -114,6 +114,8 @@ llvm::Error Linker::LinkObject(Unit &&unit)
       return llvm::Error::success();
     }
     case Unit::Kind::BITCODE: {
+      InitialiseLTO();
+
       auto &obj = *unit.s_.B;
       for (auto s : obj.getComdatTable()) {
         llvm_unreachable("not implemented");
@@ -178,6 +180,8 @@ llvm::Error Linker::LinkGroup(std::list<Linker::Unit> &&units)
             if (!Resolves(b)) {
               ++it;
             } else {
+              InitialiseLTO();
+
               // Merge the new object from the archive.
               if (linked_.insert(b.getName()).second) {
                 Resolve(b);
@@ -237,6 +241,19 @@ bool Linker::Resolves(llvm::lto::InputFile &obj)
     llvm_unreachable("not implemented");
   }
   return false;
+}
+
+// -----------------------------------------------------------------------------
+void Linker::InitialiseLTO()
+{
+  if (lto_) {
+    return;
+  }
+
+  lto_ = true;
+
+  unresolved_.insert("memmove");
+  unresolved_.insert("memcpy");
 }
 
 // -----------------------------------------------------------------------------

@@ -79,6 +79,7 @@ public:
   Linker(const llvm::Triple &triple, std::string_view output)
     : triple_(triple)
     , output_(output)
+    , lto_(false)
   {
   }
 
@@ -117,6 +118,9 @@ private:
   /// Merge a constructor/destructor.
   bool Merge(Prog &dest, Xtor &xtor);
 
+  /// Initialise LTO.
+  void InitialiseLTO();
+
   /// Create the MC options.
   llvm::MCTargetOptions CreateMCTargetOptions();
   /// Create the target options.
@@ -143,4 +147,6 @@ private:
   std::set<std::string> resolved_;
   /// Set of linked program IDs to avoid duplicates.
   std::set<llvm::StringRef> linked_;
+  /// Flag to indicate whether lto was initialised.
+  bool lto_;
 };
