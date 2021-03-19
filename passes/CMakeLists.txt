@@ -5,6 +5,7 @@
 add_library(passes
     global_forward/forwarder.cpp
     global_forward/nodes.cpp
+    global_forward/reverse.cpp
     global_forward/transfer.cpp
 
     inliner/inline_helper.cpp
