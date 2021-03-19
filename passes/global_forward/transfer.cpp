@@ -89,12 +89,7 @@ void GlobalForwarder::Approximator::VisitMemoryStoreInst(MemoryStoreInst &store)
   // Record a potential non-escaped symbol as mutated.
   size_t size = GetSize(store.GetValue().GetType());
   if (auto ptr = GetObject(store.GetAddr())) {
-    auto id = state_.GetObjectID(ptr->first);
-    if (ptr->second) {
-      StoredPrecise[id].emplace(*ptr->second, *ptr->second + size);
-    } else {
-      StoredImprecise.Insert(id);
-    }
+    Stored.Insert(state_.GetObjectID(ptr->first));
   }
 }
 
@@ -108,11 +103,7 @@ void GlobalForwarder::Approximator::VisitMemoryLoadInst(MemoryLoadInst &load)
     auto &obj = *state_.objects_[id];
     Funcs.Union(obj.Funcs);
     Escaped.Union(obj.Objects);
-    if (ptr->second) {
-      LoadedPrecise[id].emplace(*ptr->second, *ptr->second + size);
-    } else {
-      LoadedImprecise.Insert(id);
-    }
+    Loaded.Insert(id);
   }
 }
 
@@ -125,20 +116,8 @@ void GlobalForwarder::Approximator::VisitCallSite(CallSite &site)
     Indirect = Indirect || func.Indirect;
     Funcs.Union(func.Funcs);
     Escaped.Union(func.Escaped);
-
-    LoadedImprecise.Union(func.LoadedImprecise);
-    for (auto &[object, offsets] : func.LoadedPrecise) {
-      for (auto &off : offsets) {
-        LoadedPrecise[object].emplace(off);
-      }
-    }
-
-    StoredImprecise.Union(func.StoredImprecise);
-    for (auto &[object, offsets] : func.StoredPrecise) {
-      for (auto &off : offsets) {
-        StoredPrecise[object].emplace(off);
-      }
-    }
+    Loaded.Union(func.Loaded);
+    Stored.Union(func.Stored);
   } else {
     Indirect = true;
   }
@@ -207,7 +186,7 @@ bool GlobalForwarder::Simplifier::VisitMemoryStoreInst(MemoryStoreInst &store)
     if (ptr->second) {
       auto off = *ptr->second;
       auto end = off + GetSize(ty);
-      node_.StoredPrecise[id].emplace(off, end);
+      node_.Stored.Insert(id);
 
       auto &stores = node_.Stores[id];
       for (auto it = stores.begin(); it != stores.end(); ) {
@@ -225,13 +204,13 @@ bool GlobalForwarder::Simplifier::VisitMemoryStoreInst(MemoryStoreInst &store)
       stores.emplace(*ptr->second, std::make_pair(ty, v));
       reverse_.Store(id, off, end, &store);
     } else {
-      node_.StoredImprecise.Insert(id);
+      node_.Stored.Insert(id);
       node_.Overwrite(id);
       reverse_.Store(id);
     }
   } else {
-    node_.Overwrite(node_.Escaped, {});
-    reverse_.Store(node_.Escaped, {});
+    node_.Overwrite(node_.Escaped);
+    reverse_.Store(node_.Escaped);
   }
   return false;
 }
@@ -281,20 +260,9 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
         } else {
           llvm_unreachable("not implemented");
         }
-      } else if (!node_.StoredImprecise.Contains(id)) {
-        bool killed = false;
-        if (auto it = node_.StoredPrecise.find(id); it != node_.StoredPrecise.end()) {
-          for (auto [killStart, killEnd] : it->second) {
-            if (end <= killStart || killEnd <= off) {
-              continue;
-            }
-            killed = true;
-            break;
-          }
-        }
-
+      } else if (!node_.Stored.Contains(id)) {
         // Value not yet mutated, load from static data.
-        if (auto *v = ptr->first->Load(off, ty); v && !killed) {
+        if (auto *v = ptr->first->Load(off, ty)) {
           ++NumLoadsFolded;
           auto *mov = new MovInst(ty, v, load.GetAnnots());
           LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
@@ -313,7 +281,7 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
     }
   } else {
     // Imprecise load, all pointees should have already been tainted.
-    reverse_.Load(node_.Escaped, {});
+    reverse_.Load(node_.Escaped);
     return false;
   }
 }
@@ -329,30 +297,25 @@ bool GlobalForwarder::Simplifier::VisitMemoryExchangeInst(MemoryExchangeInst &xc
     node_.Escaped.Union(obj.Objects);
     node_.Funcs.Union(obj.Funcs);
 
+    node_.Stored.Insert(id);
+    node_.Stores[id].clear();
+
     if (ptr->second) {
       auto off = *ptr->second;
       auto end = off + GetSize(ty);
 
-      node_.StoredPrecise[id].emplace(off, end);
-      if (auto it = node_.Stores.find(id); it != node_.Stores.end()) {
-        llvm_unreachable("not implemented");
-      }
-
       reverse_.Load(id, off, end);
       reverse_.Store(id, off, end);
     } else {
-      node_.StoredImprecise.Insert(id);
-      node_.Stores[id].clear();
-
       reverse_.Load(id);
       reverse_.Store(id);
     }
 
     return false;
   } else {
-    node_.Overwrite(node_.Escaped, {});
-    reverse_.Load(node_.Escaped, {});
-    reverse_.Store(node_.Escaped, {});
+    node_.Overwrite(node_.Escaped);
+    reverse_.Load(node_.Escaped);
+    reverse_.Store(node_.Escaped);
     return false;
   }
 }

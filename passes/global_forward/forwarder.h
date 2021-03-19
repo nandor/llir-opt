@@ -81,13 +81,9 @@ private:
     /// Set of escaped symbols.
     BitSet<Object> Escaped;
     /// Set of loaded symbols.
-    BitSet<Object> LoadedImprecise;
-    /// Set of loaded offsets.
-    ObjectOffsetMap LoadedPrecise;
+    BitSet<Object> Loaded;
     /// Set of over-written symbols.
-    BitSet<Object> StoredImprecise;
-    /// Set of over-written offsets.
-    ObjectOffsetMap StoredPrecise;
+    BitSet<Object> Stored;
 
   private:
     /// Reference to the transformation.
@@ -138,9 +134,7 @@ private:
       BitSet<Func> &funcs,
       BitSet<Object> &escaped,
       BitSet<Object> &storedImprecise,
-      ObjectOffsetMap &storedPrecise,
       BitSet<Object> &loadedImprecise,
-      ObjectOffsetMap &loadedPrecise,
       bool &raises
   );
   /// Approximate the effects of a raise.

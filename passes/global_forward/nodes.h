@@ -38,13 +38,9 @@ struct FuncClosure {
   /// Set of escaped objects.
   BitSet<Object> Escaped;
   /// Set of changed objects.
-  BitSet<Object> StoredImprecise;
-  /// Set of changed offsets.
-  std::unordered_map<ID<Object>, OffsetSet> StoredPrecise;
+  BitSet<Object> Stored;
   /// Set of dereferenced objects.
-  BitSet<Object> LoadedImprecise;
-  /// Set of dereferenced offsets.
-  std::unordered_map<ID<Object>, OffsetSet> LoadedPrecise;
+  BitSet<Object> Loaded;
   /// Flag to indicate whether any function raises.
   bool Raises;
   /// Flag to indicate whether any function has indirect calls.
@@ -58,9 +54,7 @@ struct NodeState {
   /// ID of tainted objects.
   BitSet<Object> Escaped;
   /// Set of objects changed to unknown values.
-  BitSet<Object> StoredImprecise;
-  /// Set of offsets changed.
-  ObjectOffsetMap StoredPrecise;
+  BitSet<Object> Stored;
   /// Accurate stores.
   std::unordered_map
     < ID<Object>
@@ -73,13 +67,10 @@ struct NodeState {
   {
     BitSet<Object> imprecise;
     imprecise.Insert(changed);
-    return Overwrite(imprecise, {});
+    return Overwrite(imprecise);
   }
 
-  void Overwrite(
-      const BitSet<Object> &imprecise,
-      const ObjectOffsetMap &precise
-  );
+  void Overwrite(const BitSet<Object> &changed);
 
   void dump(llvm::raw_ostream &os);
 };
@@ -97,25 +88,12 @@ struct ReverseNodeState {
   std::unordered_map
     < ID<Object>
     , std::map<uint64_t, std::pair<MemoryStoreInst *, uint64_t>>
-    > StorePrecise;
+    > Stores;
   /// Imprecise, tainted locations.
-  BitSet<Object> StoreImprecise;
+  BitSet<Object> Stored;
 
-  /// Set of potentially dead stores.
-  std::unordered_map
-    < ID<Object>
-    , std::map<uint64_t, std::pair<MemoryStoreInst *, uint64_t>>
-    > KillableStores;
-  /// Set of stores definitely killed.
-  std::set<MemoryStoreInst *> KilledStores;
-
-  /// Set of accurate loads.
-  std::unordered_map
-    < ID<Object>
-    , std::set<std::pair<uint64_t, uint64_t>>
-    > LoadPrecise;
   /// Set of inaccurate loads.
-  BitSet<Object> LoadImprecise;
+  BitSet<Object> Loaded;
 
   ReverseNodeState(DAGBlock &node);
 
@@ -130,12 +108,12 @@ struct ReverseNodeState {
       uint64_t end,
       MemoryStoreInst *store = nullptr
   );
-  void Store(const BitSet<Object> &imprecise, const ObjectOffsetMap &precise);
+  void Store(const BitSet<Object> &changed);
 
   /// @section Loads
   void Load(ID<Object> id);
   void Load(ID<Object> id, uint64_t start, uint64_t end);
-  void Load(const BitSet<Object> &imprecise, const ObjectOffsetMap &precise);
+  void Load(const BitSet<Object> &loaded);
 
   /// Print information about the node to a stream.
   void dump(llvm::raw_ostream &os);
