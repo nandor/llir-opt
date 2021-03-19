@@ -311,6 +311,12 @@ bool GlobalForwarder::Forward()
                   raises
               );
             }
+            LLVM_DEBUG(llvm::dbgs()
+                << "\t\tApprox:\n"
+                << "\t\t\tstored:" << stored << "\n"
+                << "\t\t\tloaded:" << loaded << "\n"
+                << "\t\t\tescaped:" << node.Escaped << "\n"
+            );
             node.Overwrite(stored | node.Escaped);
             reverse.Load(loaded | node.Escaped);
             reverse.Store(stored | node.Escaped);

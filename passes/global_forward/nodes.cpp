@@ -2,8 +2,13 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/Support/Debug.h>
+
 #include "passes/global_forward/nodes.h"
+#include "core/type.h"
 #include "core/inst.h"
+
+#define DEBUG_TYPE "global-forward"
 
 
 
@@ -80,8 +85,8 @@ void NodeState::dump(llvm::raw_ostream &os)
   os << "\tEscaped: " << Escaped << "\n";
   os << "\tStored: " << Stored << "\n";
   for (auto &[id, stores] : Stores) {
-    for (auto &[off, storeAndEnd] : stores) {
-      auto &[ty, inst] = storeAndEnd;
+    for (auto &[off, storeAndTy] : stores) {
+      auto &[ty, inst] = storeAndTy;
       os << "\t\t" << id << " + " << off << "," << off + GetSize(ty);
       if (inst) {
         os << *inst;
@@ -195,6 +200,13 @@ void ReverseNodeState::Store(
       }
     }
   }
+  LLVM_DEBUG({
+    llvm::dbgs() << "\t\t\trecord: " << id << " + " << start << "," << end;
+    if (store) {
+      llvm::dbgs() << *store;
+    }
+    llvm::dbgs() << "\n";
+  });
   Stores[id].emplace(start, std::make_pair(store, end));
 }
 
@@ -202,13 +214,6 @@ void ReverseNodeState::Store(
 void ReverseNodeState::Store(const BitSet<Object> &changed)
 {
   Stored.Union(changed);
-  for (auto it = Stores.begin(); it != Stores.end(); ) {
-    if (Stored.Contains(it->first)) {
-      Stores.erase(it++);
-    } else {
-      ++it;
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -247,4 +252,14 @@ void ReverseNodeState::dump(llvm::raw_ostream &os)
 {
   os << "\tLoad: " << Loaded << "\n";
   os << "\tStore: " << Stored << "\n";
+  for (auto &[id, stores] : Stores) {
+    for (auto &[off, storeAndEnd] : stores) {
+      auto &[inst, end] = storeAndEnd;
+      os << "\t\t" << id << " + " << off << "," << end;
+      if (inst) {
+        os << *inst;
+      }
+      os << "\n";
+    }
+  }
 }
