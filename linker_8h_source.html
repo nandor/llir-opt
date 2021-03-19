@@ -132,50 +132,54 @@ $(function() {
 <div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="classLinker.html#acda62d3f78d1c866b08529778fdb63e9">   79</a></span>&#160;  <a class="code" href="classLinker.html#acda62d3f78d1c866b08529778fdb63e9">Linker</a>(<span class="keyword">const</span> llvm::Triple &amp;triple, std::string_view output)</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    : triple_(triple)</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    , output_(output)</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  {</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  }</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  llvm::Error <a class="code" href="classLinker.html#aee0c85a0e78ed6549ce8b5d26946ba48">LinkUndefined</a>(<span class="keyword">const</span> std::string &amp;symbol);</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  llvm::Error <a class="code" href="classLinker.html#a0ae94e10d6f1985e908b058189c4bf1a">LinkObject</a>(Unit &amp;&amp;unit);</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  llvm::Error <a class="code" href="classLinker.html#a699ce80954bcf8741826e7729f17d772">LinkGroup</a>(std::list&lt;Linker::Unit&gt; &amp;&amp;units);</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00093"></a><span class="lineno"><a class="line" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">   93</a></span>&#160;  <span class="keyword">using</span> <a class="code" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">LinkResult</a> = std::pair&lt;std::unique_ptr&lt;Prog&gt;, std::vector&lt;std::string&gt;&gt;;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  llvm::Expected&lt;LinkResult&gt; Link();</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  llvm::Expected&lt;std::vector&lt;std::unique_ptr&lt;Prog&gt;&gt;&gt; Collect();</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordtype">void</span> Resolve(<a class="code" href="classProg.html">Prog</a> &amp;prog);</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="keywordtype">void</span> Resolve(llvm::lto::InputFile &amp;obj);</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="keywordtype">void</span> Resolve(<span class="keyword">const</span> std::string &amp;name);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <span class="keywordtype">bool</span> Resolves(<a class="code" href="classProg.html">Prog</a> &amp;prog);</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">bool</span> Resolves(llvm::lto::InputFile &amp;prog);</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classProg.html">Prog</a> &amp;source);</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classFunc.html">Func</a> &amp;func);</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classData.html">Data</a> &amp;data);</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classXtor.html">Xtor</a> &amp;xtor);</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  llvm::MCTargetOptions CreateMCTargetOptions();</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  llvm::TargetOptions CreateTargetOptions();</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;  llvm::lto::Config CreateLTOConfig();</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;  llvm::Expected&lt;std::vector&lt;std::unique_ptr&lt;Prog&gt;&gt;&gt; LTO(</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;      std::vector&lt;std::unique_ptr&lt;llvm::lto::InputFile&gt;&gt; &amp;&amp;modules</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  );</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;  llvm::Triple triple_;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;  std::string output_;</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;  std::vector&lt;Unit&gt; units_;</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;  std::vector&lt;std::string&gt; files_;</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  std::set&lt;std::string&gt; unresolved_;</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;  std::set&lt;std::string&gt; resolved_;</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  std::set&lt;llvm::StringRef&gt; linked_;</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;};</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    , lto_(false)</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  {</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  }</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  llvm::Error <a class="code" href="classLinker.html#aee0c85a0e78ed6549ce8b5d26946ba48">LinkUndefined</a>(<span class="keyword">const</span> std::string &amp;symbol);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  llvm::Error <a class="code" href="classLinker.html#a0ae94e10d6f1985e908b058189c4bf1a">LinkObject</a>(Unit &amp;&amp;unit);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  llvm::Error <a class="code" href="classLinker.html#a699ce80954bcf8741826e7729f17d772">LinkGroup</a>(std::list&lt;Linker::Unit&gt; &amp;&amp;units);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">   94</a></span>&#160;  <span class="keyword">using</span> <a class="code" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">LinkResult</a> = std::pair&lt;std::unique_ptr&lt;Prog&gt;, std::vector&lt;std::string&gt;&gt;;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  llvm::Expected&lt;LinkResult&gt; Link();</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  llvm::Expected&lt;std::vector&lt;std::unique_ptr&lt;Prog&gt;&gt;&gt; Collect();</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keywordtype">void</span> Resolve(<a class="code" href="classProg.html">Prog</a> &amp;prog);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">void</span> Resolve(llvm::lto::InputFile &amp;obj);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">void</span> Resolve(<span class="keyword">const</span> std::string &amp;name);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keywordtype">bool</span> Resolves(<a class="code" href="classProg.html">Prog</a> &amp;prog);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keywordtype">bool</span> Resolves(llvm::lto::InputFile &amp;prog);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classProg.html">Prog</a> &amp;source);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classFunc.html">Func</a> &amp;func);</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classData.html">Data</a> &amp;data);</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keywordtype">bool</span> Merge(<a class="code" href="classProg.html">Prog</a> &amp;dest, <a class="code" href="classXtor.html">Xtor</a> &amp;xtor);</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;  <span class="keywordtype">void</span> InitialiseLTO();</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;  llvm::MCTargetOptions CreateMCTargetOptions();</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;  llvm::TargetOptions CreateTargetOptions();</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  llvm::lto::Config CreateLTOConfig();</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;  llvm::Expected&lt;std::vector&lt;std::unique_ptr&lt;Prog&gt;&gt;&gt; LTO(</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;      std::vector&lt;std::unique_ptr&lt;llvm::lto::InputFile&gt;&gt; &amp;&amp;modules</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;  );</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;  llvm::Triple triple_;</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;  std::string output_;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  std::vector&lt;Unit&gt; units_;</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;  std::vector&lt;std::string&gt; files_;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  std::set&lt;std::string&gt; unresolved_;</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  std::set&lt;std::string&gt; resolved_;</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  std::set&lt;llvm::StringRef&gt; linked_;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keywordtype">bool</span> lto_;</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassLinker_1_1Unit_html_a597cefb2d0ac5341d7a8cfd3b98a8e82"><div class="ttname"><a href="classLinker_1_1Unit.html#a597cefb2d0ac5341d7a8cfd3b98a8e82">Linker::Unit::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of objects to be linked.</div><div class="ttdef"><b>Definition:</b> linker.h:30</div></div>
 <div class="ttc" id="aclassLinker_1_1Unit_html"><div class="ttname"><a href="classLinker_1_1Unit.html">Linker::Unit</a></div><div class="ttdoc">A unit to link.</div><div class="ttdef"><b>Definition:</b> linker.h:27</div></div>
-<div class="ttc" id="aclassLinker_html_a699ce80954bcf8741826e7729f17d772"><div class="ttname"><a href="classLinker.html#a699ce80954bcf8741826e7729f17d772">Linker::LinkGroup</a></div><div class="ttdeci">llvm::Error LinkGroup(std::list&lt; Linker::Unit &gt; &amp;&amp;units)</div><div class="ttdoc">Link a group of units.</div><div class="ttdef"><b>Definition:</b> linker.cpp:151</div></div>
+<div class="ttc" id="aclassLinker_html_a699ce80954bcf8741826e7729f17d772"><div class="ttname"><a href="classLinker.html#a699ce80954bcf8741826e7729f17d772">Linker::LinkGroup</a></div><div class="ttdeci">llvm::Error LinkGroup(std::list&lt; Linker::Unit &gt; &amp;&amp;units)</div><div class="ttdoc">Link a group of units.</div><div class="ttdef"><b>Definition:</b> linker.cpp:153</div></div>
 <div class="ttc" id="aclassLinker_1_1Unit_html_a597cefb2d0ac5341d7a8cfd3b98a8e82a8eee8e217391199668cbac89472ace53"><div class="ttname"><a href="classLinker_1_1Unit.html#a597cefb2d0ac5341d7a8cfd3b98a8e82a8eee8e217391199668cbac89472ace53">Linker::Unit::Kind::OBJECT</a></div><div class="ttdeci">@ OBJECT</div><div class="ttdoc">Regular object file.</div></div>
 <div class="ttc" id="aclassLinker_html"><div class="ttname"><a href="classLinker.html">Linker</a></div><div class="ttdef"><b>Definition:</b> linker.h:24</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
@@ -185,7 +189,7 @@ $(function() {
 <div class="ttc" id="aclassData_html"><div class="ttname"><a href="classData.html">Data</a></div><div class="ttdef"><b>Definition:</b> data.h:47</div></div>
 <div class="ttc" id="aclassLinker_1_1Unit_html_a79e2cbffb48a99b129f72f1307a80a22"><div class="ttname"><a href="classLinker_1_1Unit.html#a79e2cbffb48a99b129f72f1307a80a22">Linker::Unit::Unit</a></div><div class="ttdeci">Unit(std::unique_ptr&lt; Prog &gt; &amp;&amp;prog)</div><div class="ttdoc">Create a unit for an LLIR program.</div><div class="ttdef"><b>Definition:</b> linker.cpp:21</div></div>
 <div class="ttc" id="aclassLinker_html_a4815ffde24f6a05382f1d58528fa481b"><div class="ttname"><a href="classLinker.html#a4815ffde24f6a05382f1d58528fa481b">Linker::Archive</a></div><div class="ttdeci">std::list&lt; Linker::Unit &gt; Archive</div><div class="ttdoc">Representation for an entire archive.</div><div class="ttdef"><b>Definition:</b> linker.h:76</div></div>
-<div class="ttc" id="aclassLinker_html_a4c6132ed49d48ca4acd2f26d4e6bbe0f"><div class="ttname"><a href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">Linker::LinkResult</a></div><div class="ttdeci">std::pair&lt; std::unique_ptr&lt; Prog &gt;, std::vector&lt; std::string &gt; &gt; LinkResult</div><div class="ttdoc">Return the resulting program.</div><div class="ttdef"><b>Definition:</b> linker.h:93</div></div>
+<div class="ttc" id="aclassLinker_html_a4c6132ed49d48ca4acd2f26d4e6bbe0f"><div class="ttname"><a href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">Linker::LinkResult</a></div><div class="ttdeci">std::pair&lt; std::unique_ptr&lt; Prog &gt;, std::vector&lt; std::string &gt; &gt; LinkResult</div><div class="ttdoc">Return the resulting program.</div><div class="ttdef"><b>Definition:</b> linker.h:94</div></div>
 <div class="ttc" id="aclassLinker_1_1Unit_html_ae33aea913c7a5d6d026180c37426df8a"><div class="ttname"><a href="classLinker_1_1Unit.html#ae33aea913c7a5d6d026180c37426df8a">Linker::Unit::~Unit</a></div><div class="ttdeci">~Unit()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition:</b> linker.cpp:70</div></div>
 <div class="ttc" id="aclassXtor_html"><div class="ttname"><a href="classXtor.html">Xtor</a></div><div class="ttdoc">Constructor/Destructor information.</div><div class="ttdef"><b>Definition:</b> xtor.h:20</div></div>
 <div class="ttc" id="astructLinker_1_1Unit_1_1Object_html"><div class="ttname"><a href="structLinker_1_1Unit_1_1Object.html">Linker::Unit::Object</a></div><div class="ttdoc">Create a unit for an ELF object.</div><div class="ttdef"><b>Definition:</b> linker.h:47</div></div>

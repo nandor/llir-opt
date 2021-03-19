@@ -98,17 +98,17 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 <tr class="memitem:a38bf87fa909153198efdd65241c93fdb"><td class="memItemLeft" align="right" valign="top"><a id="a38bf87fa909153198efdd65241c93fdb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id, uint64_t start, uint64_t end, MemoryStoreInst *store=nullptr)</td></tr>
 <tr class="separator:a38bf87fa909153198efdd65241c93fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52482bb0a46e642b93f0ed0e64c0c5c9"><td class="memItemLeft" align="right" valign="top"><a id="a52482bb0a46e642b93f0ed0e64c0c5c9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;imprecise, const ObjectOffsetMap &amp;precise)</td></tr>
-<tr class="separator:a52482bb0a46e642b93f0ed0e64c0c5c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbabbce6ad9a3b11f31bfecdecfcd2c2"><td class="memItemLeft" align="right" valign="top"><a id="acbabbce6ad9a3b11f31bfecdecfcd2c2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Store</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;changed)</td></tr>
+<tr class="separator:acbabbce6ad9a3b11f31bfecdecfcd2c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abac0a0b18d83aaee193a33dd5bc4f34e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#abac0a0b18d83aaee193a33dd5bc4f34e">Load</a> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id)</td></tr>
 <tr class="separator:abac0a0b18d83aaee193a33dd5bc4f34e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abff1f1c8f97205b4abe5263a0510a406"><td class="memItemLeft" align="right" valign="top"><a id="abff1f1c8f97205b4abe5263a0510a406"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; id, uint64_t start, uint64_t end)</td></tr>
 <tr class="separator:abff1f1c8f97205b4abe5263a0510a406"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ca7b8fe56fe47f9aa98f9658838694d"><td class="memItemLeft" align="right" valign="top"><a id="a0ca7b8fe56fe47f9aa98f9658838694d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;imprecise, const ObjectOffsetMap &amp;precise)</td></tr>
-<tr class="separator:a0ca7b8fe56fe47f9aa98f9658838694d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6d64fa81059bc2ae01e593f9614870d"><td class="memItemLeft" align="right" valign="top"><a id="af6d64fa81059bc2ae01e593f9614870d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt; &amp;loaded)</td></tr>
+<tr class="separator:af6d64fa81059bc2ae01e593f9614870d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac91e4bdf664790120297b8094c09e9bd"><td class="memItemLeft" align="right" valign="top"><a id="ac91e4bdf664790120297b8094c09e9bd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#ac91e4bdf664790120297b8094c09e9bd">dump</a> (llvm::raw_ostream &amp;os)</td></tr>
 <tr class="memdesc:ac91e4bdf664790120297b8094c09e9bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print information about the node to a stream. <br /></td></tr>
@@ -124,22 +124,18 @@ Public Attributes</h2></td></tr>
 llvm::DenseSet&lt; <a class="el" href="structReverseNodeState.html">ReverseNodeState</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#adb9e9024aef54362ba5b226ef98eb981">Succs</a></td></tr>
 <tr class="memdesc:adb9e9024aef54362ba5b226ef98eb981"><td class="mdescLeft">&#160;</td><td class="mdescRight">Predecessor of the node. <br /></td></tr>
 <tr class="separator:adb9e9024aef54362ba5b226ef98eb981"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22a1370f09d17e2f9a928ca390dc446e"><td class="memItemLeft" align="right" valign="top"><a id="a22a1370f09d17e2f9a928ca390dc446e"></a>
-std::unordered_map&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;, std::map&lt; uint64_t, std::pair&lt; MemoryStoreInst *, uint64_t &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a22a1370f09d17e2f9a928ca390dc446e">StorePrecise</a></td></tr>
-<tr class="memdesc:a22a1370f09d17e2f9a928ca390dc446e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of stores which can be forwarded here. <br /></td></tr>
-<tr class="separator:a22a1370f09d17e2f9a928ca390dc446e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4905fe751cd2c73b441b2334506cb6e"><td class="memItemLeft" align="right" valign="top"><a id="aa4905fe751cd2c73b441b2334506cb6e"></a>
-<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#aa4905fe751cd2c73b441b2334506cb6e">StoreImprecise</a></td></tr>
-<tr class="memdesc:aa4905fe751cd2c73b441b2334506cb6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Imprecise, tainted locations. <br /></td></tr>
-<tr class="separator:aa4905fe751cd2c73b441b2334506cb6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1bd30a0643037060abf725a24e0ca0c1"><td class="memItemLeft" align="right" valign="top"><a id="a1bd30a0643037060abf725a24e0ca0c1"></a>
-std::unordered_map&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;, std::set&lt; std::pair&lt; uint64_t, uint64_t &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a1bd30a0643037060abf725a24e0ca0c1">LoadPrecise</a></td></tr>
-<tr class="memdesc:a1bd30a0643037060abf725a24e0ca0c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of accurate loads. <br /></td></tr>
-<tr class="separator:a1bd30a0643037060abf725a24e0ca0c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d5eb47f4ded9856624b0f2baab454a1"><td class="memItemLeft" align="right" valign="top"><a id="a0d5eb47f4ded9856624b0f2baab454a1"></a>
-<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a0d5eb47f4ded9856624b0f2baab454a1">LoadImprecise</a></td></tr>
-<tr class="memdesc:a0d5eb47f4ded9856624b0f2baab454a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of inaccurate loads. <br /></td></tr>
-<tr class="separator:a0d5eb47f4ded9856624b0f2baab454a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab216048f6a339aaeae5d98a96882a346"><td class="memItemLeft" align="right" valign="top"><a id="ab216048f6a339aaeae5d98a96882a346"></a>
+std::unordered_map&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;, std::map&lt; uint64_t, std::pair&lt; MemoryStoreInst *, uint64_t &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#ab216048f6a339aaeae5d98a96882a346">Stores</a></td></tr>
+<tr class="memdesc:ab216048f6a339aaeae5d98a96882a346"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of stores which can be forwarded here. <br /></td></tr>
+<tr class="separator:ab216048f6a339aaeae5d98a96882a346"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5aa1ff2835f78f1e047a1015e6a7e576"><td class="memItemLeft" align="right" valign="top"><a id="a5aa1ff2835f78f1e047a1015e6a7e576"></a>
+<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a5aa1ff2835f78f1e047a1015e6a7e576">Stored</a></td></tr>
+<tr class="memdesc:a5aa1ff2835f78f1e047a1015e6a7e576"><td class="mdescLeft">&#160;</td><td class="mdescRight">Imprecise, tainted locations. <br /></td></tr>
+<tr class="separator:a5aa1ff2835f78f1e047a1015e6a7e576"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9947fb6f173393098ed51a3dce9928ed"><td class="memItemLeft" align="right" valign="top"><a id="a9947fb6f173393098ed51a3dce9928ed"></a>
+<a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classObject.html">Object</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReverseNodeState.html#a9947fb6f173393098ed51a3dce9928ed">Loaded</a></td></tr>
+<tr class="memdesc:a9947fb6f173393098ed51a3dce9928ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of inaccurate loads. <br /></td></tr>
+<tr class="separator:a9947fb6f173393098ed51a3dce9928ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classNode.html">Node</a> in the reverse flow graph used to find the earliest insertion point for stores which can potentially be folded. </p>
