@@ -91,6 +91,22 @@ bool GlobalForwarder::Reverse()
         }
       }
 
+      for (auto &&[id, stores] : node->Stores) {
+        auto *obj = idToObject_[id];
+        if (obj->size() != 1) {
+          continue;
+        }
+        Atom *atom = &*obj->begin();
+        for (auto &[start, storeAndEnd] : stores) {
+          auto [store, end] = storeAndEnd;
+          if (start != 0 || end != atom->GetByteSize()) {
+            continue;
+          }
+          merged->Loaded.Erase(id);
+          break;
+        }
+      }
+
       node->Loaded.Union(merged->Loaded);
     }
     LLVM_DEBUG(llvm::dbgs() << "Final:\n");
