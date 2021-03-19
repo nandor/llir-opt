@@ -369,9 +369,9 @@ bool SimplifyCfgPass::FoldBranches(Func &func)
 
           for (unsigned i = 0; i < n; ++i) {
             if (i != idx) {
-              Block *block = inst->getSuccessor(i);
-              for (auto &phi : block->phis()) {
-                phi.Remove(block);
+              Block *succ = inst->getSuccessor(i);
+              for (auto &phi : succ->phis()) {
+                phi.Remove(&block);
               }
             }
           }

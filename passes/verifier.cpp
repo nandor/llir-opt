@@ -89,6 +89,16 @@ void VerifierPass::Verify(Func &func)
 
   // Verify properties of instructions.
   for (Block &block : func) {
+    std::set<Block *> preds(block.pred_begin(), block.pred_end());
+    for (PhiInst &phi : block.phis()) {
+      std::set<Block *> ins;
+      for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+        ins.insert(phi.GetBlock(i));
+      }
+      if (preds != ins) {
+        Error(phi, "invalid PHI predecessors");
+      }
+    }
     for (Inst &inst : block) {
       Dispatch(inst);
     }
