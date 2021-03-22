@@ -119,6 +119,7 @@ llvm::SDValue AArch64ISel::GetRegArch(Register reg)
     case Register::AARCH64_FPCR: return mrs("mrs $0, fpcr");
     case Register::AARCH64_CNTVCT: return mrs("mrs $0, cntvct_el0");
     case Register::AARCH64_CNTFRQ: return mrs("mrs $0, cntfrq_el0");
+    case Register::AARCH64_FAR: return mrs("mrs $0, FAR_EL1");
     default: {
       llvm_unreachable("invalid aarch64 register");
     }
@@ -136,6 +137,10 @@ void AArch64ISel::LowerArch(const Inst *inst)
     case Inst::Kind::AARCH64_LOAD_LINK:  return LowerLoadLink(static_cast<const AArch64_LoadLinkInst *>(inst));
     case Inst::Kind::AARCH64_STORE_COND: return LowerStoreCond(static_cast<const AArch64_StoreCondInst *>(inst));
     case Inst::Kind::AARCH64_D_FENCE:    return LowerDFence(static_cast<const AArch64_DFenceInst *>(inst));
+    case Inst::Kind::AARCH64_WFI:        return LowerWfi(static_cast<const AArch64_WfiInst *>(inst));
+    case Inst::Kind::AARCH64_STI:        return LowerSti(static_cast<const AArch64_StiInst *>(inst));
+    case Inst::Kind::AARCH64_CLI:        return LowerCli(static_cast<const AArch64_CliInst *>(inst));
+    case Inst::Kind::AARCH64_OUT:        return LowerOut(static_cast<const AArch64_OutInst *>(inst));
   }
 }
 
@@ -769,6 +774,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case Register::FS: return msr("msr tpidr_el0, $0");
     case Register::AARCH64_FPCR: return msr("msr fpcr, $0");
     case Register::AARCH64_FPSR: return msr("msr fpsr, $0");
+    case Register::AARCH64_VBAR: return msr("msr VBAR_EL1, $0");
     // Other architecture, ignore.
     case Register::X86_CR0:
     case Register::X86_CR2:
@@ -783,7 +789,6 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case Register::AARCH64_CNTVCT:
     case Register::AARCH64_CNTFRQ:
     case Register::AARCH64_FAR:
-    case Register::AARCH64_VBAR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:
@@ -1014,4 +1019,87 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
         memOps
     ));
   }
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerWfi(const AArch64_WfiInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "wfi",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerSti(const AArch64_StiInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "msr daifclr, #2",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerCli(const AArch64_CliInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "msr daifset, #2",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerOut(const AArch64_OutInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto portReg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue portNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      portReg,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetPort()), SDL_, MVT::i64),
+      SDValue()
+  );
+  auto valueReg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i32));
+  SDValue valueNode = DAG.getCopyToReg(
+      portNode.getValue(0),
+      SDL_,
+      valueReg,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i32),
+      portNode.getValue(1)
+  );
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      valueNode.getValue(0),
+      "str $0, [$1]",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { valueReg, portReg },
+      { },
+      { },
+      valueNode.getValue(1)
+  ));
 }
