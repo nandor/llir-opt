@@ -151,7 +151,7 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
                 }
                 case Value::Kind::EXPR:
                 case Value::Kind::CONST: {
-                  llvm_unreachable("invalid call target");
+                  continue;
                 }
               }
             }

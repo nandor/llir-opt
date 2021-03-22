@@ -153,7 +153,6 @@ llvm::SDValue AArch64ISel::LowerCallee(ConstRef<Inst> inst)
     switch (movArg->GetKind()) {
       case Value::Kind::INST: {
         return GetValue(::cast<Inst>(movArg));
-        break;
       }
       case Value::Kind::GLOBAL: {
         const Global &movGlobal = *::cast<Global>(movArg);
@@ -183,7 +182,7 @@ llvm::SDValue AArch64ISel::LowerCallee(ConstRef<Inst> inst)
       }
       case Value::Kind::EXPR:
       case Value::Kind::CONST: {
-        llvm_unreachable("invalid call argument");
+        return GetValue(movInst);
       }
     }
     llvm_unreachable("invalid value kind");

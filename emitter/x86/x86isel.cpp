@@ -506,7 +506,6 @@ llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
     switch (movArg->GetKind()) {
       case Value::Kind::INST: {
         return GetValue(::cast<Inst>(movArg));
-        break;
       }
       case Value::Kind::GLOBAL: {
         const Global &movGlobal = *::cast<Global>(movArg);
