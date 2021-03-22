@@ -117,6 +117,8 @@ llvm::SDValue AArch64ISel::GetRegArch(Register reg)
     case Register::FS: return mrs("mrs $0, tpidr_el0");
     case Register::AARCH64_FPSR: return mrs("mrs $0, fpsr");
     case Register::AARCH64_FPCR: return mrs("mrs $0, fpcr");
+    case Register::AARCH64_CNTVCT: return mrs("mrs $0, cntvct_el0");
+    case Register::AARCH64_CNTFRQ: return mrs("mrs $0, cntfrq_el0");
     default: {
       llvm_unreachable("invalid aarch64 register");
     }
@@ -778,6 +780,10 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case Register::X86_SS:
     case Register::X86_FS:
     case Register::X86_GS:
+    case Register::AARCH64_CNTVCT:
+    case Register::AARCH64_CNTFRQ:
+    case Register::AARCH64_FAR:
+    case Register::AARCH64_VBAR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:

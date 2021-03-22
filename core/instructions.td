@@ -767,6 +767,27 @@ def AARCH64_STORE_COND : StoreCondInst;
 
 def AARCH64_D_FENCE : BarrierInst;
 
+def AARCH64_WFI : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def AARCH64_STI : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def AARCH64_CLI : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def AARCH64_OUT : Inst
+{
+  let Fields = [ InstField<"Port">, InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
 // -----------------------------------------------------------------------------
 // RISC-V instructions
 // -----------------------------------------------------------------------------

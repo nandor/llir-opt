@@ -42,6 +42,14 @@ enum class Register : uint8_t {
   AARCH64_FPSR,
   /// AArch64 FPCR register.
   AARCH64_FPCR,
+  /// AArch64 Counter-Timer Virtual Count Register.
+  AARCH64_CNTVCT,
+  /// AArch64 Counter-Timer Virtual Count Frequency.
+  AARCH64_CNTFRQ,
+  /// AArch64 Fault Address Register.
+  AARCH64_FAR,
+  /// AArch64 Vector Base Address Register.
+  AARCH64_VBAR,
   /// RISC-V fflags register.
   RISCV_FFLAGS,
   /// RISC-V frm register.

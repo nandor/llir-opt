@@ -823,6 +823,10 @@ void RISCVISel::LowerSet(const SetInst *inst)
     case Register::X86_GS:
     case Register::AARCH64_FPCR:
     case Register::AARCH64_FPSR:
+    case Register::AARCH64_CNTVCT:
+    case Register::AARCH64_CNTFRQ:
+    case Register::AARCH64_FAR:
+    case Register::AARCH64_VBAR:
     case Register::PPC_FPSCR: {
       llvm_unreachable("invalid register");
     }

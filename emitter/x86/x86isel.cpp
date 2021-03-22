@@ -195,6 +195,10 @@ void X86ISel::LowerSet(const SetInst *inst)
     case Register::RET_ADDR:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
+    case Register::AARCH64_CNTVCT:
+    case Register::AARCH64_CNTFRQ:
+    case Register::AARCH64_FAR:
+    case Register::AARCH64_VBAR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:

@@ -552,6 +552,10 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::AARCH64_LOAD_LINK:
     case Inst::Kind::AARCH64_STORE_COND:
     case Inst::Kind::AARCH64_D_FENCE:
+    case Inst::Kind::AARCH64_WFI:
+    case Inst::Kind::AARCH64_STI:
+    case Inst::Kind::AARCH64_CLI:
+    case Inst::Kind::AARCH64_OUT:
     case Inst::Kind::RISCV_XCHG:
     case Inst::Kind::RISCV_CMP_XCHG:
     case Inst::Kind::RISCV_FENCE:
@@ -2552,6 +2556,10 @@ void ISel::LowerGet(const GetInst *get)
     case Register::X86_GS:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
+    case Register::AARCH64_CNTVCT:
+    case Register::AARCH64_CNTFRQ:
+    case Register::AARCH64_FAR:
+    case Register::AARCH64_VBAR:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:
