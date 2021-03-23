@@ -137,7 +137,7 @@ void AArch64ISel::LowerArch(const Inst *inst)
     case Inst::Kind::AARCH64_LOAD_LINK:  return LowerLoadLink(static_cast<const AArch64_LoadLinkInst *>(inst));
     case Inst::Kind::AARCH64_STORE_COND: return LowerStoreCond(static_cast<const AArch64_StoreCondInst *>(inst));
     case Inst::Kind::AARCH64_OUT:        return LowerOut(static_cast<const AArch64_OutInst *>(inst));
-    case Inst::Kind::AARCH64_DMB:        return LowerAsm(inst, "dmb");
+    case Inst::Kind::AARCH64_DMB:        return LowerAsm(inst, "dmb ish");
     case Inst::Kind::AARCH64_ISB:        return LowerAsm(inst, "isb");
     case Inst::Kind::AARCH64_WFI:        return LowerAsm(inst, "wfi");
     case Inst::Kind::AARCH64_STI:        return LowerAsm(inst, "msr daifclr, #2");
