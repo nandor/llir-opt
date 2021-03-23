@@ -136,11 +136,12 @@ void AArch64ISel::LowerArch(const Inst *inst)
     }
     case Inst::Kind::AARCH64_LOAD_LINK:  return LowerLoadLink(static_cast<const AArch64_LoadLinkInst *>(inst));
     case Inst::Kind::AARCH64_STORE_COND: return LowerStoreCond(static_cast<const AArch64_StoreCondInst *>(inst));
-    case Inst::Kind::AARCH64_D_FENCE:    return LowerDFence(static_cast<const AArch64_DFenceInst *>(inst));
-    case Inst::Kind::AARCH64_WFI:        return LowerWfi(static_cast<const AArch64_WfiInst *>(inst));
-    case Inst::Kind::AARCH64_STI:        return LowerSti(static_cast<const AArch64_StiInst *>(inst));
-    case Inst::Kind::AARCH64_CLI:        return LowerCli(static_cast<const AArch64_CliInst *>(inst));
     case Inst::Kind::AARCH64_OUT:        return LowerOut(static_cast<const AArch64_OutInst *>(inst));
+    case Inst::Kind::AARCH64_DMB:        return LowerAsm(inst, "dmb");
+    case Inst::Kind::AARCH64_ISB:        return LowerAsm(inst, "isb");
+    case Inst::Kind::AARCH64_WFI:        return LowerAsm(inst, "wfi");
+    case Inst::Kind::AARCH64_STI:        return LowerAsm(inst, "msr daifclr, #2");
+    case Inst::Kind::AARCH64_CLI:        return LowerAsm(inst, "msr daifset, #2");
   }
 }
 
@@ -869,18 +870,17 @@ void AArch64ISel::LowerStoreCond(const AArch64_StoreCondInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerDFence(const AArch64_DFenceInst *inst)
+void AArch64ISel::LowerAsm(const Inst *inst, const char *code)
 {
   auto &DAG = GetDAG();
-  DAG.setRoot(DAG.getNode(
-      ISD::INTRINSIC_VOID,
-      SDL_,
-      MVT::Other,
-      {
-        DAG.getRoot(),
-        DAG.getIntPtrConstant(llvm::Intrinsic::aarch64_dmb, SDL_, true),
-        DAG.getConstant(0xB, SDL_, MVT::i32)
-      }
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      code,
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { },
+      { }
   ));
 }
 
@@ -1018,51 +1018,6 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
         memOps
     ));
   }
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerWfi(const AArch64_WfiInst *inst)
-{
-  auto &DAG = GetDAG();
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      DAG.getRoot(),
-      "wfi",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { },
-      { },
-      { }
-  ));
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerSti(const AArch64_StiInst *inst)
-{
-  auto &DAG = GetDAG();
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      DAG.getRoot(),
-      "msr daifclr, #2",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { },
-      { },
-      { }
-  ));
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerCli(const AArch64_CliInst *inst)
-{
-  auto &DAG = GetDAG();
-  DAG.setRoot(LowerInlineAsm(
-      ISD::INLINEASM,
-      DAG.getRoot(),
-      "msr daifset, #2",
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      { },
-      { },
-      { }
-  ));
 }
 
 // -----------------------------------------------------------------------------

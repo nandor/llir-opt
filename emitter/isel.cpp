@@ -551,7 +551,8 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_INT:
     case Inst::Kind::AARCH64_LOAD_LINK:
     case Inst::Kind::AARCH64_STORE_COND:
-    case Inst::Kind::AARCH64_D_FENCE:
+    case Inst::Kind::AARCH64_DMB:
+    case Inst::Kind::AARCH64_ISB:
     case Inst::Kind::AARCH64_WFI:
     case Inst::Kind::AARCH64_STI:
     case Inst::Kind::AARCH64_CLI:

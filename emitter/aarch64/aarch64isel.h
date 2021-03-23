@@ -107,13 +107,7 @@ private:
   /// Lowers an SC instruction.
   void LowerStoreCond(const AArch64_StoreCondInst *inst);
   /// Lowers a DMB instruction.
-  void LowerDFence(const AArch64_DFenceInst *inst);
-  /// Lowers a WFI instruction.
-  void LowerWfi(const AArch64_WfiInst *inst);
-  /// Lowers a STI instruction.
-  void LowerSti(const AArch64_StiInst *inst);
-  /// Lowers a CLI instruction.
-  void LowerCli(const AArch64_CliInst *inst);
+  void LowerAsm(const Inst *inst, const char *code);
   /// Lowers a MMIO write.
   void LowerOut(const AArch64_OutInst *inst);
 

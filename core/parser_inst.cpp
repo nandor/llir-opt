@@ -357,7 +357,8 @@ Inst *Parser::CreateInst(
       if (opc == "alloca") return new AllocaInst(t(0), op(1), imm(2), std::move(annot));
       if (opc == "aarch64_ll")  return new AArch64_LoadLinkInst(t(0), op(1), std::move(annot));
       if (opc == "aarch64_sc")  return new AArch64_StoreCondInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "aarch64_dmb") return new AArch64_DFenceInst(std::move(annot));
+      if (opc == "aarch64_dmb") return new AArch64_DmbInst(std::move(annot));
+      if (opc == "aarch64_isb") return new AArch64_IsbInst(std::move(annot));
       if (opc == "aarch64_wfi") return new AArch64_WfiInst(std::move(annot));
       if (opc == "aarch64_sti") return new AArch64_StiInst(std::move(annot));
       if (opc == "aarch64_cli") return new AArch64_CliInst(std::move(annot));

@@ -506,11 +506,12 @@ void CoqEmitter::Write(Block::const_iterator it)
 
     case Inst::Kind::AARCH64_STORE_COND: llvm_unreachable("AARCH64_SC");
     case Inst::Kind::AARCH64_LOAD_LINK:  llvm_unreachable("AARCH64_LL");
-    case Inst::Kind::AARCH64_D_FENCE:    llvm_unreachable("AARCH64_DMB");
+    case Inst::Kind::AARCH64_DMB:        llvm_unreachable("AARCH64_DMB");
     case Inst::Kind::AARCH64_WFI:        llvm_unreachable("AARCH64_WFI");
     case Inst::Kind::AARCH64_STI:        llvm_unreachable("AARCH64_STI");
     case Inst::Kind::AARCH64_CLI:        llvm_unreachable("AARCH64_CLI");
     case Inst::Kind::AARCH64_OUT:        llvm_unreachable("AARCH64_OUT");
+    case Inst::Kind::AARCH64_ISB:        llvm_unreachable("AARCH64_ISB");
     case Inst::Kind::RISCV_XCHG:         llvm_unreachable("RISCV_XCHG");
     case Inst::Kind::RISCV_CMP_XCHG:     llvm_unreachable("RISCV_CMP_XCHG");
     case Inst::Kind::RISCV_FENCE:        llvm_unreachable("RISCV_FENCE");

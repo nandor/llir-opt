@@ -765,7 +765,9 @@ def AARCH64_LOAD_LINK : LoadLinkInst;
 
 def AARCH64_STORE_COND : StoreCondInst;
 
-def AARCH64_D_FENCE : BarrierInst;
+def AARCH64_DMB : BarrierInst;
+
+def AARCH64_ISB : BarrierInst;
 
 def AARCH64_WFI : Inst
 {
