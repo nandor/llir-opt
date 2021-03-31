@@ -550,7 +550,6 @@ static bool Bypass(
     blockTerm->eraseFromParent();
 
     phiPlace = join;
-
     for (PhiInst &phi : target->phis()) {
       auto value = phi.GetValue(&block);
       phi.Remove(&block);
@@ -579,6 +578,7 @@ static bool Bypass(
     std::unordered_map<PhiInst *, PhiInst *> newPhis;
     for (auto [oldPhi, newPhi] : phis) {
       newPhis.emplace(newPhi, oldPhi);
+      newPhis.emplace(oldPhi, oldPhi);
     }
 
     std::queue<Block *> q;
