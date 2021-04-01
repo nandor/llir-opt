@@ -30,6 +30,8 @@ enum class CallingConv : uint8_t {
   INTR,
   // Multiboot entry.
   MULTIBOOT,
+  // Windows.
+  WIN64,
 };
 
 /**

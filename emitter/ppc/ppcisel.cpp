@@ -741,7 +741,8 @@ static bool NeedsTOCSave(const Func *func)
     case CallingConv::CAML_GC:
     case CallingConv::XEN:
     case CallingConv::INTR:
-    case CallingConv::MULTIBOOT: {
+    case CallingConv::MULTIBOOT:
+    case CallingConv::WIN64: {
       return false;
     }
   }

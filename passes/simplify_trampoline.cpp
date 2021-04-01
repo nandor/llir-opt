@@ -32,7 +32,8 @@ static bool CheckCallingConv(CallingConv conv)
 {
   switch (conv) {
     case CallingConv::C:
-    case CallingConv::CAML: {
+    case CallingConv::CAML: 
+    case CallingConv::WIN64: {
       return true;
     }
     case CallingConv::CAML_ALLOC:

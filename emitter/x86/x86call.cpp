@@ -810,6 +810,7 @@ llvm::ArrayRef<unsigned> X86_64Call::GetGPRs() const
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcGPR64);
     }
+    case CallingConv::WIN64: 
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }
@@ -837,6 +838,7 @@ llvm::ArrayRef<unsigned> X86_64Call::GetXMMs() const
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcXMM);
     }
+    case CallingConv::WIN64: 
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }

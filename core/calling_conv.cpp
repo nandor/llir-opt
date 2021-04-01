@@ -18,6 +18,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv)
     case CallingConv::XEN:        return os << "xen";
     case CallingConv::INTR:       return os << "intr";
     case CallingConv::MULTIBOOT:  return os << "multiboot";
+    case CallingConv::WIN64:      return os << "win64";
   }
   llvm_unreachable("invalid calling convention");
 }

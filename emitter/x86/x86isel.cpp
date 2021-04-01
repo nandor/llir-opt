@@ -322,7 +322,8 @@ void X86ISel::LowerVASetup(const X86Call &ci)
   // address for tail calls for the fast calling convention.
   unsigned stackSize = ci.GetFrameSize();
   switch (func_->GetCallingConv()) {
-    case CallingConv::C: {
+    case CallingConv::C: 
+    case CallingConv::WIN64: {
       break;
     }
     case CallingConv::SETJMP:

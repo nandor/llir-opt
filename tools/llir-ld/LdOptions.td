@@ -184,6 +184,8 @@ defm cref: YesNo
   , "Do not output cross reference table"
   >;
 
+defm unresolved_symbols: Eq<"unresolved-symbols", "Determine how to handle unresolved symbols">;
+
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;
 defm mabi: Eq<"mabi", "Specify the target ABI">;

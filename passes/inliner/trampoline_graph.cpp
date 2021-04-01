@@ -59,7 +59,8 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
           case Global::Kind::FUNC: {
             auto &func = static_cast<const Func &>(g);
             switch (func.GetCallingConv()) {
-              case CallingConv::C: {
+              case CallingConv::C:
+              case CallingConv::WIN64: {
                 return graph_[&func].Trampoline;
               }
               case CallingConv::CAML:
@@ -101,6 +102,7 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       // Start building the graph at C call sites.
       switch (func.GetCallingConv()) {
         case CallingConv::C:
+        case CallingConv::WIN64:
         case CallingConv::SETJMP:
         case CallingConv::XEN:
         case CallingConv::INTR:

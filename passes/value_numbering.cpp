@@ -196,6 +196,7 @@ bool ValueNumberingPass::Run(Prog &prog)
         continue;
       }
       case CallingConv::C:
+      case CallingConv::WIN64:
       case CallingConv::SETJMP:
       case CallingConv::XEN:
       case CallingConv::INTR:

@@ -72,6 +72,7 @@ static bool ReturnsTwice(CallingConv conv)
 {
   switch (conv) {
     case CallingConv::C:
+    case CallingConv::WIN64:
     case CallingConv::CAML:
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
@@ -346,6 +347,7 @@ static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
     case CallingConv::XEN:        return llvm::CallingConv::LLIR_XEN;
     case CallingConv::MULTIBOOT:  return llvm::CallingConv::LLIR_MULTIBOOT;
     case CallingConv::INTR:       return llvm::CallingConv::X86_INTR;
+    case CallingConv::WIN64:      llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -1466,7 +1468,8 @@ llvm::SDValue ISel::LowerGCFrame(
 
   ISD::FrameType op = ISD::ROOT;
   switch (inst->GetCallingConv()) {
-    case CallingConv::C: {
+    case CallingConv::C:
+    case CallingConv::WIN64: {
       op = ISD::CALL;
       break;
     }
@@ -1572,7 +1575,8 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
   bool needsTrampoline = false;
   if (caller->GetCallingConv() == CallingConv::CAML) {
     switch (call->GetCallingConv()) {
-      case CallingConv::C: {
+      case CallingConv::C: 
+      case CallingConv::WIN64: {
         needsTrampoline = call->HasAnnot<CamlFrame>();
         break;
       }
@@ -1603,6 +1607,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
     case CallingConv::XEN:        return { false, LLIR_XEN };
     case CallingConv::MULTIBOOT:  return { false, LLIR_MULTIBOOT };
     case CallingConv::INTR:       return { false, X86_INTR };
+    case CallingConv::WIN64:      llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid calling convention");
 }

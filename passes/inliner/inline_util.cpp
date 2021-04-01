@@ -37,6 +37,7 @@ bool CanInline(const Func *caller, const Func *callee)
   // Do not inline certain functions.
   switch (callee->GetCallingConv()) {
     case CallingConv::C:
+    case CallingConv::WIN64:
       break;
     case CallingConv::CAML:
       break;
