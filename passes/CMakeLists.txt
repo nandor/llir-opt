@@ -45,6 +45,7 @@ add_library(passes
     sccp/x86.cpp
 
     atom_simplify.cpp
+    bypass_phi.cpp
     caml_alloc_inliner.cpp
     caml_global_simplify.cpp
     caml_assign.cpp

@@ -28,6 +28,7 @@
 #include "emitter/riscv/riscvemitter.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/atom_simplify.h"
+#include "passes/bypass_phi.h"
 #include "passes/caml_alloc_inliner.h"
 #include "passes/caml_assign.h"
 #include "passes/caml_global_simplify.h"
@@ -171,6 +172,7 @@ static void AddOpt1(PassManager &mngr)
     < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
+    , BypassPhiPass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
@@ -202,6 +204,7 @@ static void AddOpt2(PassManager &mngr)
     , SCCPPass
     , LibCSimplifyPass
     , SimplifyCfgPass
+    , BypassPhiPass
     , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
@@ -237,6 +240,7 @@ static void AddOpt3(PassManager &mngr)
     , SCCPPass
     , LibCSimplifyPass
     , SimplifyCfgPass
+    , BypassPhiPass
     , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
@@ -272,6 +276,7 @@ static void AddOpt4(PassManager &mngr)
     , SCCPPass
     , LibCSimplifyPass
     , SimplifyCfgPass
+    , BypassPhiPass
     , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
@@ -316,6 +321,7 @@ static void AddOptS(PassManager &mngr)
     , SCCPPass
     , DedupBlockPass
     , SimplifyCfgPass
+    , BypassPhiPass
     , VerifierPass
     , DeadCodeElimPass
     , DeadFuncElimPass

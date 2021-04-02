@@ -1575,7 +1575,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
   bool needsTrampoline = false;
   if (caller->GetCallingConv() == CallingConv::CAML) {
     switch (call->GetCallingConv()) {
-      case CallingConv::C: 
+      case CallingConv::C:
       case CallingConv::WIN64: {
         needsTrampoline = call->HasAnnot<CamlFrame>();
         break;
