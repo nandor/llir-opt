@@ -30,5 +30,6 @@ var searchData=
   ['build_135',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]],
   ['buildtaint_136',['BuildTaint',['../classPointerClosure.html#a9311de533ea899287895e663155773da',1,'PointerClosure']]],
   ['buildtainted_137',['BuildTainted',['../classPointerClosure.html#ac64052596402d207424a873582a8c393',1,'PointerClosure']]],
-  ['bypass_138',['Bypass',['../classSymbolicFrame.html#a462b12ce069bd50cb447e9775342ed4c',1,'SymbolicFrame']]]
+  ['bypass_138',['Bypass',['../classSymbolicFrame.html#a462b12ce069bd50cb447e9775342ed4c',1,'SymbolicFrame']]],
+  ['bypassphipass_139',['BypassPhiPass',['../classBypassPhiPass.html',1,'BypassPhiPass'],['../classBypassPhiPass.html#a60024250a65425e68c4af403037d0c96',1,'BypassPhiPass::BypassPhiPass()']]]
 ];
