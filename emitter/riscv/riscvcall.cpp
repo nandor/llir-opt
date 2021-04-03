@@ -278,6 +278,12 @@ void RISCVCall::AssignArgXen(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
+void RISCVCall::AssignArgWin64(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void RISCVCall::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -415,6 +421,12 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, FlaggedType type)
 
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignRetXen(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void RISCVCall::AssignRetWin64(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }

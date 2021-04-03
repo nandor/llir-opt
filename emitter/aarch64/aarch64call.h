@@ -85,6 +85,8 @@ private:
   void AssignArgOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
   void AssignArgXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls.
+  void AssignArgWin64(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, FlaggedType type) override;
@@ -96,6 +98,8 @@ private:
   void AssignRetOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
   void AssignRetXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls
+  void AssignRetWin64(unsigned i, FlaggedType type) override;
 
   /// Assigns a location to a register.
   void AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg);

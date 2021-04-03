@@ -119,6 +119,8 @@ private:
   void AssignArgXen(unsigned i, FlaggedType type) override;
   /// Location assignment for multiboot.
   void AssignArgMultiboot(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls.
+  void AssignArgWin64(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, FlaggedType type) override;
@@ -130,6 +132,8 @@ private:
   void AssignRetOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
   void AssignRetXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls
+  void AssignRetWin64(unsigned i, FlaggedType type) override;
 };
 
 /**
@@ -167,6 +171,8 @@ private:
   void AssignArgXen(unsigned i, FlaggedType type) override;
   /// Location assignment for multiboot.
   void AssignArgMultiboot(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls.
+  void AssignArgWin64(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, FlaggedType type) override;
@@ -178,4 +184,6 @@ private:
   void AssignRetOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
   void AssignRetXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls
+  void AssignRetWin64(unsigned i, FlaggedType type) override;
 };

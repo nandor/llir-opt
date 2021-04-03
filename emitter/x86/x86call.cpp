@@ -255,6 +255,12 @@ void X86_32Call::AssignArgMultiboot(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
+void X86_32Call::AssignArgWin64(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void X86_32Call::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -293,8 +299,8 @@ void X86_32Call::AssignRetC(unsigned i, FlaggedType type)
       }
       return;
     }
-    case Type::F32: 
-    case Type::F64: 
+    case Type::F32:
+    case Type::F64:
     case Type::F80: {
       if (retRegs_ < k32CRetGPR32.size()) {
         AssignRetReg(loc, GetVT(ty), k32CRetFP[retRegs_++]);
@@ -331,6 +337,12 @@ void X86_32Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
 
 // -----------------------------------------------------------------------------
 void X86_32Call::AssignRetXen(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86_32Call::AssignRetWin64(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }
@@ -546,6 +558,14 @@ void X86_64Call::AssignArgXen(unsigned i, FlaggedType type)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86_64Call::AssignArgWin64(unsigned i, FlaggedType type)
+{
+  // TODO: implement proper calling convention.
+  // Win64 uses rcx, rdx, r8, r9
+  return AssignArgC(i, type);
 }
 
 // -----------------------------------------------------------------------------
@@ -794,6 +814,12 @@ void X86_64Call::AssignRetXen(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
+void X86_64Call::AssignRetWin64(unsigned i, FlaggedType type)
+{
+  return AssignRetC(i, type);
+}
+
+// -----------------------------------------------------------------------------
 llvm::ArrayRef<unsigned> X86_64Call::GetGPRs() const
 {
   switch (conv_) {
@@ -810,7 +836,7 @@ llvm::ArrayRef<unsigned> X86_64Call::GetGPRs() const
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcGPR64);
     }
-    case CallingConv::WIN64: 
+    case CallingConv::WIN64:
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }
@@ -838,7 +864,7 @@ llvm::ArrayRef<unsigned> X86_64Call::GetXMMs() const
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcXMM);
     }
-    case CallingConv::WIN64: 
+    case CallingConv::WIN64:
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }

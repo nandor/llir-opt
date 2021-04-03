@@ -73,6 +73,8 @@ private:
   }
   /// Location assignment for Xen hypercalls.
   void AssignArgXen(unsigned i, FlaggedType type) override;
+  /// Location assignment for Win64 calls.
+  void AssignArgWin64(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, FlaggedType type) override;
@@ -97,6 +99,8 @@ private:
   void AssignArgStack(ArgLoc &loc, llvm::MVT type, unsigned size);
   /// Assigns a location to a register.
   void AssignRetReg(RetLoc &loc, llvm::MVT vt, llvm::Register reg);
+  /// Location assignment for Win64 calls
+  void AssignRetWin64(unsigned i, FlaggedType type) override;
 
   /// Returns the list of GPR registers.
   llvm::ArrayRef<llvm::MCPhysReg> GetGPRs() const;

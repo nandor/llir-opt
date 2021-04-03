@@ -176,6 +176,8 @@ protected:
   {
     llvm_unreachable("no args to multiboot");
   }
+  /// Location assignment for Win64.
+  virtual void AssignArgWin64(unsigned i, FlaggedType type) = 0;
 
   /// Location assignment for C.
   virtual void AssignRetC(unsigned i, FlaggedType type) = 0;
@@ -187,6 +189,8 @@ protected:
   virtual void AssignRetOCamlGc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Xen hypercalls.
   virtual void AssignRetXen(unsigned i, FlaggedType type) = 0;
+  /// Location assignment for Win64 calls.
+  virtual void AssignRetWin64(unsigned i, FlaggedType type) = 0;
 
 protected:
   /// Analyse a function.

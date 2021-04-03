@@ -347,7 +347,7 @@ static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
     case CallingConv::XEN:        return llvm::CallingConv::LLIR_XEN;
     case CallingConv::MULTIBOOT:  return llvm::CallingConv::LLIR_MULTIBOOT;
     case CallingConv::INTR:       return llvm::CallingConv::X86_INTR;
-    case CallingConv::WIN64:      llvm_unreachable("not implemented");
+    case CallingConv::WIN64:      return llvm::CallingConv::Win64;
   }
   llvm_unreachable("invalid calling convention");
 }

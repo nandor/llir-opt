@@ -224,6 +224,12 @@ void PPCCall::AssignArgXen(unsigned i, FlaggedType type)
 }
 
 // -----------------------------------------------------------------------------
+void PPCCall::AssignArgWin64(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void PPCCall::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -309,6 +315,12 @@ void PPCCall::AssignRetOCaml(unsigned i, FlaggedType type)
 
 // -----------------------------------------------------------------------------
 void PPCCall::AssignRetXen(unsigned i, FlaggedType type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void PPCCall::AssignRetWin64(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }
