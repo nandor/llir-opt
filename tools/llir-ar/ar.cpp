@@ -42,7 +42,8 @@ static constexpr auto kKind = llvm::object::Archive::K_GNU;
 // -----------------------------------------------------------------------------
 static int CreateOrUpdateArchive(
     llvm::StringRef path,
-    llvm::ArrayRef<llvm::StringRef> objs)
+    llvm::ArrayRef<llvm::StringRef> objs,
+    bool quick)
 {
   std::unique_ptr<llvm::object::Archive> archive;
   std::unique_ptr<llvm::MemoryBuffer> buffer;
@@ -109,7 +110,7 @@ static int CreateOrUpdateArchive(
       exitIfError(std::move(err), "cannot update archive");
     }
 
-    if (found) {
+    if (found && !quick) {
       llvm_unreachable("not implemented");
     } else {
       auto fileOrErr = llvm::NewArchiveMember::getFile(objs[i], true);
@@ -253,7 +254,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (!(do_delete || do_list || do_quick || do_replace || do_extract)) {
+  if (!(do_delete || do_list || do_quick || do_replace || do_extract || do_index)) {
     WithColor::error(llvm::errs(), ToolName) << "no action specified\n";
     return EXIT_FAILURE;
   }
@@ -271,7 +272,7 @@ int main(int argc, char **argv)
     if (!do_create && !sys::fs::exists(archive)) {
       llvm::outs() << "creating " << archive << "\n";
     }
-    return CreateOrUpdateArchive(argv[2], objs);
+    return CreateOrUpdateArchive(argv[2], objs, do_quick);
   }
 
   if (do_extract) {
@@ -280,6 +281,10 @@ int main(int argc, char **argv)
 
   if (do_list) {
     return ListArchive(argv[2]);
+  }
+
+  if (do_index) {
+    return EXIT_SUCCESS;
   }
 
   llvm_unreachable("not implemented");
