@@ -54,26 +54,25 @@ void VerifierPass::Verify(Func &func)
 {
   // ensure definitions dominate uses.
   DominatorTree DT(func);
-  std::function<void(Block &block, const std::set<Inst *> &)> check =
-    [&] (Block &block, const std::set<Inst *> &insts)
+  std::function<void(Block &block, std::set<Inst *> &)> check =
+    [&] (Block &block, std::set<Inst *> &insts)
     {
-      std::set<Inst *> defs(insts);
       for (Inst &inst : block) {
         if (!inst.Is(Inst::Kind::PHI)) {
           for (auto value : inst.operand_values()) {
             if (auto op = ::cast_or_null<Inst>(value)) {
-              if (!defs.count(op.Get())) {
+              if (!insts.count(op.Get())) {
                 Error(inst, "def does not dominate use");
               }
             }
           }
         }
-        defs.insert(&inst);
+        insts.insert(&inst);
       }
       for (Block *succ : block.successors()) {
         for (auto &phi : succ->phis()) {
           auto v = phi.GetValue(&block);
-          if (!defs.count(v.Get())) {
+          if (!insts.count(v.Get())) {
             std::string str;
             llvm::raw_string_ostream os(str);
             os << "def does not dominate use in PHI from " << block.getName();
@@ -82,13 +81,20 @@ void VerifierPass::Verify(Func &func)
         }
       }
       for (const auto *child : *DT[&block]) {
-        check(*child->getBlock(), defs);
+        check(*child->getBlock(), insts);
+      }
+      for (Inst &inst : block) {
+        insts.erase(&inst);
       }
     };
-  check(func.getEntryBlock(), {});
+  std::set<Inst *> insts;
+  check(func.getEntryBlock(), insts);
 
   // Verify properties of instructions.
   for (Block &block : func) {
+    if (!block.GetTerminator()) {
+      Error(block, "invalid terminator");
+    }
     std::set<Block *> preds(block.pred_begin(), block.pred_end());
     for (PhiInst &phi : block.phis()) {
       std::set<Block *> ins;
@@ -152,6 +158,21 @@ void VerifierPass::CheckType(const Inst &i, ConstRef<Inst> ref, Type type)
   if (it != type) {
     Error(i, "invalid type");
   }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::Error(const Block &block, llvm::Twine msg)
+{
+  const Func *func = block.getParent();
+  std::string buffer;
+  llvm::raw_string_ostream os(buffer);
+  Printer p(os);
+  os << "[" << func->getName() << ":" << block.getName() << "] " << msg.str();
+  os << "\n\n";
+  p.Print(*func);
+  p.Print(block);
+  os << "\n";
+  llvm::report_fatal_error(os.str().c_str());
 }
 
 // -----------------------------------------------------------------------------

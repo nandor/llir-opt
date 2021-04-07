@@ -425,12 +425,14 @@ bool SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     if (block->HasAddressTaken() || !block->IsLocal()) {
       continue;
     }
-
     // Erase the terminator & transfer all instructions.
     predJmp->eraseFromParent();
     for (auto it = block->begin(); it != block->end(); ) {
       auto *inst = &*it++;
       if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
+        if (phi->GetNumIncoming() != 1) {
+          func.dump();
+        }
         assert(phi->GetNumIncoming() == 1 && "invalid phi");
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
         phi->replaceAllUsesWith(phi->GetValue(0u));

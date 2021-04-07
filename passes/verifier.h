@@ -54,6 +54,8 @@ private:
       Type type
   );
   /// Report an error.
+  [[noreturn]] void Error(const Block &i, llvm::Twine msg);
+  /// Report an error.
   [[noreturn]] void Error(const Inst &i, llvm::Twine msg);
 
 private:

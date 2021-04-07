@@ -228,7 +228,6 @@ public:
   {
     blocks_.insert(&block);
     auto restore = conds_.size();
-    std::unordered_set<Ref<Inst>> pointers = pointers_;
 
     // Find new dominating edges ending at the current node.
     for (Block *start : block.predecessors()) {
@@ -276,10 +275,11 @@ public:
     }
 
     bool changed = false;
+    AbductedSet abducted;
     for (auto it = block.begin(); it != block.end(); ) {
       Inst &inst = *it++;
       // Try to infer which instructions generate pointers.
-      Abduct(inst);
+      Abduct(abducted, inst);
       // Simplify instructions based on information from all
       // instructions or edges which dominate them.
       changed = Dispatch(inst) || changed;
@@ -295,54 +295,61 @@ public:
 
     conds_.erase(conds_.begin() + restore, conds_.end());
     blocks_.erase(&block);
-    pointers_ = pointers;
+    for (Ref<Inst> addr : abducted) {
+      pointers_.erase(addr);
+    }
     return changed;
   }
 
-  void Abduct(Inst &inst)
+  using AbductedSet = std::set<Ref<Inst>>;
+
+  void Abduct(AbductedSet &abducted, Inst &inst)
   {
     if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
-      Abduct(load->GetAddr());
+      Abduct(abducted, load->GetAddr());
       return;
     }
     if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
-      Abduct(store->GetAddr());
+      Abduct(abducted, store->GetAddr());
       return;
     }
     if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
-      Abduct(xchg->GetAddr());
+      Abduct(abducted, xchg->GetAddr());
       return;
     }
   }
 
-  void Abduct(Ref<Inst> addr)
+  void Abduct(AbductedSet &abducted, Ref<Inst> addr)
   {
     if (!blocks_.count(addr->getParent())) {
       return;
     }
-    pointers_.insert(addr);
+    if (!pointers_.insert(addr).second) {
+      return;
+    }
+    abducted.insert(addr);
 
     if (auto add = ::cast_or_null<AddInst>(addr)) {
       if (GetConstant(add->GetLHS())) {
-        return Abduct(add->GetRHS());
+        return Abduct(abducted, add->GetRHS());
       }
       if (GetConstant(add->GetRHS())) {
-        return Abduct(add->GetLHS());
+        return Abduct(abducted, add->GetLHS());
       }
       return;
     }
     if (auto sub = ::cast_or_null<SubInst>(addr)) {
       if (GetConstant(sub->GetLHS())) {
-        return Abduct(sub->GetRHS());
+        return Abduct(abducted, sub->GetRHS());
       }
       if (GetConstant(sub->GetRHS())) {
-        return Abduct(sub->GetLHS());
+        return Abduct(abducted, sub->GetLHS());
       }
       return;
     }
     if (auto select = ::cast_or_null<SelectInst>(addr)) {
-      Abduct(select->GetFalse());
-      Abduct(select->GetTrue());
+      Abduct(abducted, select->GetFalse());
+      Abduct(abducted, select->GetTrue());
     }
   }
 

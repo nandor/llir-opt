@@ -148,6 +148,10 @@ optEntry("entry", cl::desc("Entry point of the application"));
 static cl::opt<bool>
 optVerify("verify", cl::desc("Enable the verified pass"), cl::init(false));
 
+static cl::opt<std::string>
+optSaveBefore("save-before", cl::desc("save IR to file before all passes"));
+
+
 
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
@@ -330,8 +334,11 @@ static void AddOptS(PassManager &mngr)
     , EliminateSelectPass
     , VerifierPass
     , SpecialisePass
+    , VerifierPass
     , InlinerPass
+    , VerifierPass
     , CondSimplifyPass
+    , VerifierPass
     , ObjectSplitPass
     , StoreToLoadPass
     , DeadStorePass
@@ -474,7 +481,7 @@ int main(int argc, char **argv)
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
-  PassManager passMngr(cfg, t.get(), optVerbose, optTime);
+  PassManager passMngr(cfg, t.get(), optSaveBefore, optVerbose, optTime);
   if (!optPasses.empty()) {
     for (auto &passName : optPasses) {
       registry.Add(passMngr, std::string(passName));

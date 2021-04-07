@@ -28,7 +28,7 @@ static void ZeroExtern(Extern *ext)
     if (auto *inst = ::cast_or_null<MovInst>(use->getUser())) {
       *use = new ConstantInt(0);
     } else {
-      llvm::report_fatal_error("not implemented");
+      *use = nullptr;
     }
   }
   ext->eraseFromParent();

@@ -169,9 +169,15 @@ std::set<Func *> FindArticulationPoints(const std::set<Func *> &funcs)
   return points;
 }
 
+#include "core/bitcode.h"
+
 // -----------------------------------------------------------------------------
 bool InlinerPass::Run(Prog &prog)
 {
+  std::error_code err;
+  llvm::raw_fd_ostream os("/home/nand/Downloads/pre.llbc", err);
+  BitcodeWriter(os).Write(prog);
+
   bool changed = false;
 
   // Reset the counts.
@@ -281,6 +287,9 @@ bool InlinerPass::Run(Prog &prog)
     }
 
     bool inlined = false;
+    if (caller->getName() != "camlTezos_crypto__Hacl__direct_inner_273") {
+      continue;
+    }
     for (auto it = caller->begin(); it != caller->end(); ) {
       // Find a call site with a known target outside an SCC.
       auto *call = ::cast_or_null<CallSite>(it->GetTerminator());

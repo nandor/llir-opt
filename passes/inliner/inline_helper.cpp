@@ -607,10 +607,10 @@ void InlineHelper::SplitEntry()
     call_->eraseFromParent();
     call_ = nullptr;
   } else {
-    // If the call success has other incoming edges, place the phis
+    // If the call successor has other incoming edges, place the phis
     // into a fresh block preceding it and wire the phis into any
     // prior instructions.
-    if (exit_->pred_size() != 1) {
+    if (exit_->pred_size() != 1 || !exit_->phi_empty()) {
       Block *newExit = new Block((exit_->getName() + "exit").str());
       caller_->AddBlock(newExit, exit_);
       JumpInst *newJump = new JumpInst(exit_, {});

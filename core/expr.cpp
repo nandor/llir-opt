@@ -42,11 +42,11 @@ SymbolOffsetExpr::~SymbolOffsetExpr()
 // -----------------------------------------------------------------------------
 const Global *SymbolOffsetExpr::GetSymbol() const
 {
-  return cast<Global>(Get<0>()).Get();
+  return cast_or_null<Global>(Get<0>()).Get();
 }
 
 // -----------------------------------------------------------------------------
 Global *SymbolOffsetExpr::GetSymbol()
 {
-  return cast<Global>(Get<0>()).Get();
+  return cast_or_null<Global>(Get<0>()).Get();
 }

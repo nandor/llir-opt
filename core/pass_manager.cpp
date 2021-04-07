@@ -6,10 +6,12 @@
 #include <iostream>
 
 #include <llvm/Support/Format.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include "core/pass.h"
 #include "core/pass_manager.h"
 #include "core/printer.h"
+#include "core/bitcode.h"
 
 
 
@@ -24,6 +26,12 @@ void PassManager::Run(Prog &prog)
         llvm::outs() << "-----------\n";
       }
       for (auto &pass : group.Passes) {
+        if (!saveBefore_.empty()) {
+          std::error_code err;
+          llvm::raw_fd_ostream os(saveBefore_, err);
+          BitcodeWriter(os).Write(prog);
+        }
+
         if (Run(pass, prog)) {
           changed = true;
           analyses_.clear();

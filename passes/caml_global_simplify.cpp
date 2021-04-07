@@ -187,9 +187,10 @@ bool CamlGlobalSimplifier::Simplify()
               switch (expr->GetKind()) {
                 case Expr::Kind::SYMBOL_OFFSET: {
                   auto g = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
-                  auto *ref = ::cast_or_null<Atom>(g);
-                  if (ref && ref->getParent()->getParent() == root_->getParent()) {
-                    escapes_.insert(ref->getParent());
+                  if (auto *ref = ::cast_or_null<Atom>(g)) {
+                    if (ref->getParent()->getParent() == root_->getParent()) {
+                      escapes_.insert(ref->getParent());
+                    }
                   }
                   continue;
                 }

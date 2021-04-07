@@ -80,10 +80,12 @@ public:
   PassManager(
       const PassConfig &config,
       const Target *target,
+      const std::string &saveBefore,
       bool verbose,
       bool time)
     : config_(config)
     , target_(target)
+    , saveBefore_(saveBefore)
     , verbose_(verbose)
     , time_(time)
   {
@@ -171,6 +173,8 @@ private:
   PassConfig config_;
   /// Underlying target.
   const Target *target_;
+  /// Name of file to save IR before each pass.
+  std::string saveBefore_;
   /// Verbosity flag.
   bool verbose_;
   /// Timing flag.
