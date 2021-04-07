@@ -57,7 +57,7 @@ std::pair<unsigned, unsigned> InlinerPass::CountUses(const Func &func)
 }
 
 // -----------------------------------------------------------------------------
-bool InlinerPass::CheckGlobalCost(const Func &callee)
+bool InlinerPass::CheckGlobalCost(const Func &caller, const Func &callee)
 {
   // Do not inline functions which are too large.
   if (callee.size() > 100) {
@@ -87,7 +87,7 @@ bool InlinerPass::CheckGlobalCost(const Func &callee)
 }
 
 // -----------------------------------------------------------------------------
-bool InlinerPass::CheckInitCost(const CallSite &call, const Func &f)
+bool InlinerPass::CheckInitCost(const Func &caller, const Func &f)
 {
   // Always inline functions which are used once.
   auto [data, code] = CountUses(f);
@@ -250,7 +250,7 @@ bool InlinerPass::Run(Prog &prog)
         // Do not inline if illegal or expensive. If the callee is a method
         // with a single use, it can be assumed it is on the initialisation
         // pass, thus this conservative inlining pass continue with it.
-        if (!CanInline(caller, callee) || !CheckInitCost(*call, *callee)) {
+        if (!CanInline(caller, callee) || !CheckInitCost(*caller, *callee)) {
           if (callee->use_size() == 1) {
             q.push(callee);
           }
@@ -309,7 +309,7 @@ bool InlinerPass::Run(Prog &prog)
       }
 
       // Bail out if illegal or expensive.
-      if (!CanInline(caller, callee) || !CheckGlobalCost(*callee)) {
+      if (!CanInline(caller, callee) || !CheckGlobalCost(*caller, *callee)) {
         ++it;
         continue;
       }

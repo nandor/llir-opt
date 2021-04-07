@@ -42,6 +42,8 @@ private:
 
   /// DFS over the DAG - CFG minus loop edges.
   void TraverseDAG(const Block *block);
+  /// Propagate liveness in a node.
+  void TraverseNode(const Block *block);
   /// DFS over the loop nesting forest.
   void TraverseLoop(LoopNesting::Loop *loop);
   /// Applies the transfer function of an instruction.

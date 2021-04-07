@@ -69,7 +69,12 @@ void LiveVariables::TraverseDAG(const Block *block)
       }
     }
   };
+  TraverseNode(block);
+}
 
+// -----------------------------------------------------------------------------
+void LiveVariables::TraverseNode(const Block *block)
+{
   // liveOut = PhiUses(block)
   InstSet liveOut;
   for (auto *succ : block->successors()) {
