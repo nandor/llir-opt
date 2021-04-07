@@ -102,21 +102,22 @@ $(function() {
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keyword">using</span> InstSet = std::unordered_set&lt;ConstRef&lt;Inst&gt;&gt;;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">void</span> TraverseDAG(<span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *block);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> TraverseLoop(<a class="code" href="classLoopNesting_1_1Loop.html">LoopNesting::Loop</a> *loop);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> KillDef(InstSet &amp;live, <span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> *inst);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <a class="code" href="classLoopNesting.html">LoopNesting</a> loops_;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  std::unordered_map</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    &lt; <span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    , std::pair&lt;InstSet, InstSet&gt;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    &gt; live_;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  std::unordered_map</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    &lt; <span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> *</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    , InstSet</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    &gt; liveCache_;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *liveBlock_ = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;};</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> TraverseNode(<span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *block);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> TraverseLoop(<a class="code" href="classLoopNesting_1_1Loop.html">LoopNesting::Loop</a> *loop);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> KillDef(InstSet &amp;live, <span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> *inst);</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <a class="code" href="classLoopNesting.html">LoopNesting</a> loops_;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  std::unordered_map</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    &lt; <span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    , std::pair&lt;InstSet, InstSet&gt;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    &gt; live_;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  std::unordered_map</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    &lt; <span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> *</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    , InstSet</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    &gt; liveCache_;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keyword">const</span> <a class="code" href="classBlock.html">Block</a> *liveBlock_ = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassLiveVariables_html_a84deaabe7862260a36e8287c1e6d2321"><div class="ttname"><a href="classLiveVariables.html#a84deaabe7862260a36e8287c1e6d2321">LiveVariables::LiveOut</a></div><div class="ttdeci">std::vector&lt; ConstRef&lt; Inst &gt; &gt; LiveOut(const Inst *inst)</div><div class="ttdef"><b>Definition:</b> live_variables.cpp:30</div></div>
