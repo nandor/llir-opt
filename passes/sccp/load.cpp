@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <unordered_set>
+
 #include "passes/sccp/lattice.h"
 #include "passes/sccp/solver.h"
 
@@ -90,6 +92,59 @@ static Lattice LoadFloat(Atom::const_iterator it, unsigned off, unsigned size)
 }
 
 // -----------------------------------------------------------------------------
+static bool IsConstant(const Atom *atom)
+{
+  auto *object = atom->getParent();
+  auto *data = object->getParent();
+  if (data->IsConstant()) {
+    return true;
+  }
+  std::queue<const User *> qu;
+  std::queue<ConstRef<Inst>> qi;
+  for (const Atom &atom : *object) {
+    if (!atom.IsLocal() || atom.getName() == "caml_globals") {
+      return false;
+    }
+    for (const User *user : atom.users()) {
+      if (auto *inst = ::cast_or_null<const Inst>(user)) {
+        qi.emplace(inst);
+        continue;
+      }
+      return false;
+    }
+  }
+  std::unordered_set<ConstRef<Inst>> vi;
+  while (!qi.empty()) {
+    auto i = qi.front();
+    qi.pop();
+    if (!vi.insert(i).second) {
+      continue;
+    }
+    switch (i->GetKind()) {
+      default: return false;
+      case Inst::Kind::LOAD: {
+        continue;
+      }
+      case Inst::Kind::STORE: {
+        return false;
+      }
+      case Inst::Kind::MOV:
+      case Inst::Kind::ADD:
+      case Inst::Kind::SUB:
+      case Inst::Kind::PHI: {
+        for (const User *user : i->users()) {
+          if (auto *inst = ::cast_or_null<const Inst>(user)) {
+            qi.emplace(inst);
+          }
+        }
+        continue;
+      }
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
 void SCCPSolver::VisitLoadInst(LoadInst &inst)
 {
   auto &addr = GetValue(inst.GetAddr());
@@ -159,8 +214,7 @@ void SCCPSolver::VisitLoadInst(LoadInst &inst)
         case Global::Kind::ATOM: {
           auto *atom = static_cast<Atom *>(g);
           auto *object = atom->getParent();
-          auto *data = object->getParent();
-          if (data->IsConstant()) {
+          if (IsConstant(atom)) {
             // Find the item at the given offset, along with the offset into it.
             auto it = atom->begin();
             int64_t itemOff;

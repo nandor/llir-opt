@@ -302,7 +302,8 @@ static bool StoreInt(
     case Item::Kind::INT16: {
       llvm_unreachable("not implemented");
     }
-    case Item::Kind::INT32: {
+    case Item::Kind::INT32: 
+    case Item::Kind::EXPR32: {
       if (type == Type::I32) {
         auto *item = Item::CreateInt32(value.getSExtValue());
         it->getParent()->AddItem(item, &*it);
@@ -311,7 +312,8 @@ static bool StoreInt(
       }
       llvm_unreachable("not implemented");
     }
-    case Item::Kind::INT64: {
+    case Item::Kind::INT64: 
+    case Item::Kind::EXPR64: {
       if (type == Type::I64 || type == Type::V64) {
         auto *item = Item::CreateInt64(value.getSExtValue());
         it->getParent()->AddItem(item, &*it);
@@ -366,10 +368,6 @@ static bool StoreInt(
       return true;
     }
     case Item::Kind::FLOAT64: {
-      llvm_unreachable("not implemented");
-    }
-    case Item::Kind::EXPR32:
-    case Item::Kind::EXPR64: {
       llvm_unreachable("not implemented");
     }
   }

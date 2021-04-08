@@ -597,7 +597,8 @@ void SCCPSolver::VisitCmpInst(CmpInst &inst)
           llvm_unreachable("not implemented");
         }
         case Lattice::Kind::RANGE: {
-          llvm_unreachable("not implemented");
+          MarkOverdefined(inst);
+          return;
         }
       }
       llvm_unreachable("invalid rhs kind");
