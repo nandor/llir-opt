@@ -276,12 +276,15 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
-    < ConstGlobalPass
-    , SCCPPass
+    < PeepholePass
+    , CamlGlobalSimplifyPass
+    , ConstGlobalPass
     , LibCSimplifyPass
+    , SCCPPass
     , SimplifyCfgPass
     , BypassPhiPass
     , SpecialisePass
+    , EliminateSelectPass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
