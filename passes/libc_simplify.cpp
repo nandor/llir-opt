@@ -43,6 +43,7 @@ void LibCSimplifyPass::Simplify(
     Global *g,
     std::optional<Inst *> (LibCSimplifyPass::*f)(CallSite &))
 {
+  std::set<Func *> simplify;
   for (User *user : g->users()) {
     auto *mov = ::cast_or_null<MovInst>(user);
     if (!mov) {
@@ -54,23 +55,30 @@ void LibCSimplifyPass::Simplify(
         continue;
       }
       if (auto value = (this->*f)(*call)) {
+        auto *parent = call->getParent();
         switch (call->GetKind()) {
           default: llvm_unreachable("not a call");
           case Inst::Kind::CALL: {
             auto *cont = static_cast<CallInst *>(call)->GetCont();
-            call->getParent()->AddInst(new JumpInst(cont, {}), call);
-            call->eraseFromParent();
+            parent->AddInst(new JumpInst(cont, {}), call);
             break;
           }
           case Inst::Kind::TAIL_CALL: {
             llvm_unreachable("not implemented");
           }
           case Inst::Kind::INVOKE: {
-            llvm_unreachable("not implemented");
+            auto *cont = static_cast<InvokeInst *>(call)->GetCont();
+            parent->AddInst(new JumpInst(cont, {}), call);
+	    simplify.insert(call->getParent()->getParent());
+            break;
           }
         }
+        call->eraseFromParent();
       }
     }
+  }
+  for (Func *f : simplify) {
+    f->RemoveUnreachable();
   }
 }
 
