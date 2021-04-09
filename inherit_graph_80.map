@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classInitPath.html" title=" " alt="" coords="5,5,76,32"/>
+<area shape="rect" id="node1" href="$classInstVisitor.html" title=" " alt="" coords="5,5,156,47"/>
+<area shape="rect" id="node2" href="$classProgReducerBase.html" title=" " alt="" coords="204,13,340,39"/>
+<area shape="rect" id="node3" href="$classProgReducer.html" title=" " alt="" coords="388,13,492,39"/>
 </map>

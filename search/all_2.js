@@ -9,7 +9,7 @@ var searchData=
   ['camlallocinlinerpass_148',['CamlAllocInlinerPass',['../classCamlAllocInlinerPass.html',1,'CamlAllocInlinerPass'],['../classCamlAllocInlinerPass.html#af2be37c24714aa43eb1eca199a97fa7e',1,'CamlAllocInlinerPass::CamlAllocInlinerPass()']]],
   ['camlassignpass_149',['CamlAssignPass',['../classCamlAssignPass.html',1,'CamlAssignPass'],['../classCamlAssignPass.html#acabc4fb224fd758a321c6348b3e4e593',1,'CamlAssignPass::CamlAssignPass()']]],
   ['camlframe_150',['CamlFrame',['../classCamlFrame.html',1,'CamlFrame'],['../classCamlFrame.html#a8109641ffd8bf15f9f684126fa0b1c7f',1,'CamlFrame::CamlFrame()'],['../classCamlFrame.html#a10e3a466bdc03c5c62013d0271e5fa48',1,'CamlFrame::CamlFrame(std::vector&lt; size_t &gt; &amp;&amp;allocs, std::vector&lt; DebugInfos &gt; &amp;&amp;debug_infos)']]],
-  ['camlglobalsimplifier_151',['CamlGlobalSimplifier',['../classCamlGlobalSimplifier.html',1,'CamlGlobalSimplifier'],['../classCamlGlobalSimplifier.html#a47fb1d59bfdc4268a247977069dfd285',1,'CamlGlobalSimplifier::CamlGlobalSimplifier()']]],
+  ['camlglobalsimplifier_151',['CamlGlobalSimplifier',['../classCamlGlobalSimplifier.html',1,'CamlGlobalSimplifier'],['../classCamlGlobalSimplifier.html#a8b1765215688dcc3b576683c97e438f3',1,'CamlGlobalSimplifier::CamlGlobalSimplifier()']]],
   ['camlglobalsimplifypass_152',['CamlGlobalSimplifyPass',['../classCamlGlobalSimplifyPass.html',1,'CamlGlobalSimplifyPass'],['../classCamlGlobalSimplifyPass.html#a1ac493110464053fbed40f7258561d1b',1,'CamlGlobalSimplifyPass::CamlGlobalSimplifyPass()']]],
   ['cast_153',['Cast',['../classSymbolicValue.html#afb3c1fc19af0ae4d8f696475ab00d6ff',1,'SymbolicValue']]],
   ['check_154',['Check',['../classLexer.html#a66a7eca49808a3828d22659748f8fa8c',1,'Lexer']]],
