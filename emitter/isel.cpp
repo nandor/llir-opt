@@ -1250,7 +1250,7 @@ llvm::SDValue ISel::LowerInlineAsm(
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerImm(const APInt &val, Type type)
 {
-  union U { int64_t i; double d; float f; };
+  union U { int64_t i; double d; };
   switch (type) {
     case Type::I8:
       return GetDAG().getConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
@@ -1265,11 +1265,11 @@ llvm::SDValue ISel::LowerImm(const APInt &val, Type type)
       return GetDAG().getConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
     case Type::F32: {
       U u { .i = val.getSExtValue() };
-      return GetDAG().getConstantFP(APFloat(u.f), SDL_, MVT::f32);
+      return GetDAG().getConstantFP(u.d, SDL_, MVT::f32);
     }
     case Type::F64: {
       U u { .i = val.getSExtValue() };
-      return GetDAG().getConstantFP(APFloat(u.d), SDL_, MVT::f64);
+      return GetDAG().getConstantFP(u.d, SDL_, MVT::f64);
     }
     case Type::F80: {
       U u { .i = val.getSExtValue() };
