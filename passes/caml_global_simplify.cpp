@@ -4,6 +4,8 @@
 
 #include <set>
 #include <queue>
+#include <unordered_set>
+#include <unordered_map>
 
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/Statistic.h>
@@ -15,7 +17,6 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
-#include "core/analysis/init_path.h"
 #include "core/analysis/object_graph.h"
 #include "passes/caml_global_simplify.h"
 
@@ -30,10 +31,9 @@ STATISTIC(NumLoadsFolded, "Loads folded");
 class CamlGlobalSimplifier final {
 public:
   /// Set up the transformation.
-  CamlGlobalSimplifier(Prog &prog, Object *root, Func *entry)
+  CamlGlobalSimplifier(Prog &prog, Object *root)
     : prog_(prog)
     , root_(root)
-    , path_(prog, entry)
     , changed_(false)
   {
   }
@@ -50,20 +50,11 @@ private:
   using StoreMap = std::map<int64_t, std::set<MemoryStoreInst *>>;
   using LoadMap = std::map<int64_t, std::set<MemoryLoadInst *>>;
 
-  /// Simplify store-only object.
-  bool SimplifyStoreOnly(Atom *atom, const StoreMap &stores);
-  /// Simplify load-only object.
-  bool SimplifyLoadOnly(Atom *atom, const LoadMap &loads);
-  /// Simplify unused offsets.
-  bool SimplifyUnused(Atom *atom, const StoreMap &stores, const LoadMap &loads);
-
 private:
   /// Reference to the underlying program.
   Prog &prog_;
   /// Reference to the root object.
   Object *root_;
-  /// Reference to the init path analysis.
-  InitPath path_;
   /// Set of objects which are indirectly referenced.
   std::unordered_set<Object *> escapes_;
   /// Flag to indicate that the object cannot be eliminated.
@@ -546,12 +537,8 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
     return false;
   }
 
-  const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
-  auto *startFn = ::cast_or_null<Func>(prog.GetGlobal(start));
-  auto *root = globals->getParent();
-
   bool changed = false;
-  while (CamlGlobalSimplifier(prog, root, startFn).Simplify()) {
+  while (CamlGlobalSimplifier(prog, globals->getParent()).Simplify()) {
     changed = true;
   }
   return changed;

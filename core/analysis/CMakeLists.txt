@@ -5,7 +5,6 @@
 add_library(analysis
     call_graph.cpp
     dominator.cpp
-    init_path.cpp
     live_variables.cpp
     loop_nesting.cpp
     object_graph.cpp
