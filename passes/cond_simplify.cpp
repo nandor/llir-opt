@@ -118,14 +118,20 @@ static std::optional<int64_t> GetConstant(Ref<Inst> inst)
 // -----------------------------------------------------------------------------
 class CondSimplifier : public InstVisitor<bool> {
 public:
-  CondSimplifier(Func &func) : func_(func), dt_(func) {}
+  CondSimplifier(Func &func)
+    : func_(func)
+    , dt_(func)
+  {
+  }
 
   bool VisitInst(Inst &) { return false; }
 
   bool VisitAddInst(AddInst &add)
   {
     if (pointers_.count(add.GetLHS()) || pointers_.count(add.GetRHS())) {
-      pointers_.emplace(&add);
+      if (pointers_.emplace(&add).second) {
+        abducted_.insert(&add);
+      }
     }
     return false;
   }
@@ -275,16 +281,16 @@ public:
     }
 
     bool changed = false;
-    AbductedSet abducted;
     for (auto it = block.begin(); it != block.end(); ) {
       Inst &inst = *it++;
       // Try to infer which instructions generate pointers.
-      Abduct(abducted, inst);
+      Abduct(inst);
       // Simplify instructions based on information from all
       // instructions or edges which dominate them.
       changed = Dispatch(inst) || changed;
     }
 
+    auto abducted = abducted_;
     if (auto *node = dt_[&block]) {
       for (auto *child : *node) {
         if (auto *childBlock = child->getBlock()) {
@@ -298,28 +304,27 @@ public:
     for (Ref<Inst> addr : abducted) {
       pointers_.erase(addr);
     }
+    abducted.clear();
     return changed;
   }
 
-  using AbductedSet = std::set<Ref<Inst>>;
-
-  void Abduct(AbductedSet &abducted, Inst &inst)
+  void Abduct(Inst &inst)
   {
     if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
-      Abduct(abducted, load->GetAddr());
+      Abduct(load->GetAddr());
       return;
     }
     if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
-      Abduct(abducted, store->GetAddr());
+      Abduct(store->GetAddr());
       return;
     }
     if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
-      Abduct(abducted, xchg->GetAddr());
+      Abduct(xchg->GetAddr());
       return;
     }
   }
 
-  void Abduct(AbductedSet &abducted, Ref<Inst> addr)
+  void Abduct(Ref<Inst> addr)
   {
     if (!blocks_.count(addr->getParent())) {
       return;
@@ -327,29 +332,29 @@ public:
     if (!pointers_.insert(addr).second) {
       return;
     }
-    abducted.insert(addr);
+    abducted_.insert(addr);
 
     if (auto add = ::cast_or_null<AddInst>(addr)) {
       if (GetConstant(add->GetLHS())) {
-        return Abduct(abducted, add->GetRHS());
+        return Abduct(add->GetRHS());
       }
       if (GetConstant(add->GetRHS())) {
-        return Abduct(abducted, add->GetLHS());
+        return Abduct(add->GetLHS());
       }
       return;
     }
     if (auto sub = ::cast_or_null<SubInst>(addr)) {
       if (GetConstant(sub->GetLHS())) {
-        return Abduct(abducted, sub->GetRHS());
+        return Abduct(sub->GetRHS());
       }
       if (GetConstant(sub->GetRHS())) {
-        return Abduct(abducted, sub->GetLHS());
+        return Abduct(sub->GetLHS());
       }
       return;
     }
     if (auto select = ::cast_or_null<SelectInst>(addr)) {
-      Abduct(abducted, select->GetFalse());
-      Abduct(abducted, select->GetTrue());
+      Abduct(select->GetFalse());
+      Abduct(select->GetTrue());
     }
   }
 
@@ -364,6 +369,8 @@ private:
   std::set<Block *> blocks_;
   /// Stack of instructions assumed to be pointers.
   std::unordered_set<Ref<Inst>> pointers_;
+  /// Instructions abducted in the current node.
+  std::unordered_set<Ref<Inst>> abducted_;
 };
 
 // -----------------------------------------------------------------------------
@@ -371,7 +378,9 @@ bool CondSimplifyPass::Run(Prog &prog)
 {
   bool changed = false;
   for (Func &func : prog) {
-    changed = CondSimplifier(func).Traverse(func.getEntryBlock()) || changed;
+    if (CondSimplifier(func).Traverse(func.getEntryBlock())) {
+      changed = true;
+    }
   }
   return changed;
 }
