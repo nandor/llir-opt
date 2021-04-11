@@ -105,15 +105,18 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">const</span> llvm::X86Subtarget &amp;<a class="code" href="classX86Target.html#a923d096d9b581550db7ae856584f8be6">GetSubtarget</a>(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> &amp;func) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTarget.html">Target</a>;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  std::unique_ptr&lt;llvm::X86TargetMachine&gt; machine_;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;};</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classX86Target.html#a0a940bfd30e510e69ade7321007acecf">   42</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classX86Target.html#a0a940bfd30e510e69ade7321007acecf">AllowsUnalignedStores</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTarget.html">Target</a>;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  std::unique_ptr&lt;llvm::X86TargetMachine&gt; machine_;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassX86Target_html_a923d096d9b581550db7ae856584f8be6"><div class="ttname"><a href="classX86Target.html#a923d096d9b581550db7ae856584f8be6">X86Target::GetSubtarget</a></div><div class="ttdeci">const llvm::X86Subtarget &amp; GetSubtarget(const Func &amp;func) const</div><div class="ttdoc">Returns the subtarget.</div><div class="ttdef"><b>Definition:</b> x86.cpp:48</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
 <div class="ttc" id="aclassTarget_html"><div class="ttname"><a href="classTarget.html">Target</a></div><div class="ttdef"><b>Definition:</b> target.h:24</div></div>
 <div class="ttc" id="aclassX86Target_html"><div class="ttname"><a href="classX86Target.html">X86Target</a></div><div class="ttdef"><b>Definition:</b> x86.h:20</div></div>
+<div class="ttc" id="aclassX86Target_html_a0a940bfd30e510e69ade7321007acecf"><div class="ttname"><a href="classX86Target.html#a0a940bfd30e510e69ade7321007acecf">X86Target::AllowsUnalignedStores</a></div><div class="ttdeci">bool AllowsUnalignedStores() const override</div><div class="ttdoc">X86 allows unaligned stores.</div><div class="ttdef"><b>Definition:</b> x86.h:42</div></div>
 <div class="ttc" id="aclassX86Target_html_a1dbfaba1194e3b2d6c47cc8350fef353"><div class="ttname"><a href="classX86Target.html#a1dbfaba1194e3b2d6c47cc8350fef353">X86Target::GetTargetMachine</a></div><div class="ttdeci">llvm::X86TargetMachine &amp; GetTargetMachine()</div><div class="ttdoc">Returns the generic target machine.</div><div class="ttdef"><b>Definition:</b> x86.h:36</div></div>
 <div class="ttc" id="aclassTarget_html_a38581b289758ff590ec2559212408225"><div class="ttname"><a href="classTarget.html#a38581b289758ff590ec2559212408225">Target::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of supported targets.</div><div class="ttdef"><b>Definition:</b> target.h:27</div></div>
 <!-- start footer part -->
