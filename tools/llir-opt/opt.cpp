@@ -47,6 +47,7 @@
 #include "passes/link.h"
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
+#include "passes/merge_stores.h"
 #include "passes/object_split.h"
 #include "passes/peephole.h"
 #include "passes/pre_eval.h"
@@ -185,6 +186,7 @@ static void AddOpt1(PassManager &mngr)
     , VerifierPass
     >();
   // Final transformation.
+  mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
@@ -221,6 +223,7 @@ static void AddOpt2(PassManager &mngr)
     , VerifierPass
     >();
   // Final transformation.
+  mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
@@ -257,6 +260,7 @@ static void AddOpt3(PassManager &mngr)
     , VerifierPass
     >();
   // Final transformation.
+  mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
@@ -296,6 +300,7 @@ static void AddOpt4(PassManager &mngr)
     , VerifierPass
     >();
   // Final transformation.
+  mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
@@ -351,6 +356,7 @@ static void AddOptS(PassManager &mngr)
     , GlobalForwardPass
     >();
   // Final simplification.
+  mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
 }
 

@@ -37,6 +37,12 @@ void Block::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
+void Block::insert(Inst *i, iterator it)
+{
+  insts_.insert(it, i);
+}
+
+// -----------------------------------------------------------------------------
 void Block::remove(iterator it)
 {
   insts_.remove(it);

@@ -63,6 +63,7 @@ add_library(passes
     link.cpp
     libc_simplify.cpp
     mem_to_reg.cpp
+    merge_stores.cpp
     move_elim.cpp
     object_split.cpp
     peephole.cpp

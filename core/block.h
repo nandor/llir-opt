@@ -213,6 +213,9 @@ public:
   /// Checks if the block is a single trap.
   bool IsTrap() const;
 
+  /// Add an instruction to the block.
+  void insert(Inst *inst, iterator it); 
+
   /// Removes an instruction.
   void remove(iterator it);
   /// Erases an instruction.

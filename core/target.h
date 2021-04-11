@@ -80,6 +80,11 @@ public:
   /// Return the target pointer type.
   Type GetPointerType() const;
 
+  /// Check whether the target is little endian.
+  virtual bool IsLittleEndian() const { return true; }
+  /// Check whether the target allows unaligned stores.
+  virtual bool AllowsUnalignedStores() const { return false; }
+ 
 protected:
   /// Target kind.
   Kind kind_;

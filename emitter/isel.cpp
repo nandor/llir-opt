@@ -298,7 +298,6 @@ bool ISel::runOnModule(llvm::Module &Module)
     if (!Finalize(*MF)) {
       Error(func_, "Cannot finalise function");
     }
-
     MF->verify(nullptr, "LLIR-to-X86 ISel");
 
     MBB_ = nullptr;
@@ -1746,7 +1745,7 @@ void ISel::CodeGenAndEmitDAG()
   const auto &TII = *STI.getInstrInfo();
   const auto &TRI = *STI.getRegisterInfo();
   const auto &TLI = *STI.getTargetLowering();
-
+  
   llvm::AAResults *aa = nullptr;
 
   DAG.NewNodesMustHaveLegalTypes = false;

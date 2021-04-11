@@ -38,6 +38,9 @@ public:
   /// Returns the subtarget.
   const llvm::X86Subtarget &GetSubtarget(const Func &func) const;
 
+  /// X86 allows unaligned stores.
+  bool AllowsUnalignedStores() const override { return true; }
+
 private:
   friend class Target;
   /// LLVM target machine.

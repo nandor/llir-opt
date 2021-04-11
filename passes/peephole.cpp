@@ -104,3 +104,4 @@ bool PeepholePass::VisitSubInst(SubInst &inst)
   }
   return false;
 }
+
