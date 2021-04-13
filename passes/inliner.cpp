@@ -287,9 +287,6 @@ bool InlinerPass::Run(Prog &prog)
     }
 
     bool inlined = false;
-    if (caller->getName() != "camlTezos_crypto__Hacl__direct_inner_273") {
-      continue;
-    }
     for (auto it = caller->begin(); it != caller->end(); ) {
       // Find a call site with a known target outside an SCC.
       auto *call = ::cast_or_null<CallSite>(it->GetTerminator());

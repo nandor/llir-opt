@@ -621,6 +621,8 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::U_REM:       return LowerBinary(i, ISD::UREM, ISD::FREM);
     case Inst::Kind::S_REM:       return LowerBinary(i, ISD::SREM, ISD::FREM);
     case Inst::Kind::MUL:         return LowerBinary(i, ISD::MUL,  ISD::FMUL);
+    case Inst::Kind::MUL_H_S:     return LowerBinary(i, ISD::MULHS);
+    case Inst::Kind::MUL_H_U:     return LowerBinary(i, ISD::MULHU);
     case Inst::Kind::ADD:         return LowerBinary(i, ISD::ADD,  ISD::FADD);
     case Inst::Kind::SUB:         return LowerBinary(i, ISD::SUB,  ISD::FSUB);
     case Inst::Kind::AND:         return LowerBinary(i, ISD::AND);
@@ -1302,7 +1304,7 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
       APFloat r(val);
       bool ignored;
       r.convert(
-          DAG.EVTToAPFloatSemantics(vt), 
+          DAG.EVTToAPFloatSemantics(vt),
           llvm::APFloat::rmNearestTiesToEven,
           &ignored
       );
@@ -1745,7 +1747,7 @@ void ISel::CodeGenAndEmitDAG()
   const auto &TII = *STI.getInstrInfo();
   const auto &TRI = *STI.getRegisterInfo();
   const auto &TLI = *STI.getTargetLowering();
-  
+
   llvm::AAResults *aa = nullptr;
 
   DAG.NewNodesMustHaveLegalTypes = false;

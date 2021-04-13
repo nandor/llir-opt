@@ -73,7 +73,8 @@ void SCCPSolver::VisitX86_CpuIdInst(X86_CpuIdInst &inst)
       return;
     }
     case 0x0: {
-      llvm_unreachable("not implemented");
+      MarkOverdefined(inst);
+      return;
     }
     case 0x1: {
       if (auto *sti = subtarget()) {

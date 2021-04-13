@@ -1,3 +1,4 @@
+# RUN: %opt - -triple i386 -verify
 
 
 

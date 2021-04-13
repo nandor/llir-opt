@@ -482,6 +482,8 @@ Inst *Parser::CreateInst(
     case 'm': {
       if (opc == "mov") return new MovInst(t(0), val(1), std::move(annot));
       if (opc == "mul") return new MulInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "mul_h_s") return new MulHSInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "mul_h_u") return new MulHUInst(t(0), op(1), op(2), std::move(annot));
       break;
     }
     case 'n': {

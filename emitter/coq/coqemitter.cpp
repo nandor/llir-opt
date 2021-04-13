@@ -448,6 +448,8 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::S_DIV:     return Binary(it, "SDiv");
     case Inst::Kind::S_REM:     return Binary(it, "SRem");
     case Inst::Kind::MUL:       return Binary(it, "Mul");
+    case Inst::Kind::MUL_H_S:   return Binary(it, "MulHS");
+    case Inst::Kind::MUL_H_U:   return Binary(it, "MulHU");
     case Inst::Kind::OR:        return Binary(it, "Or");
     case Inst::Kind::ROTL:      return Binary(it, "Rotl");
     case Inst::Kind::ROTR:      return Binary(it, "Rotr");

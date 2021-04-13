@@ -53,6 +53,8 @@ private:
   static Lattice Eval(URemInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(SRemInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(MulInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(MulHSInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(MulHUInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(OrInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(SubInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(XorInst *inst, Lattice &lhs, Lattice &rhs);

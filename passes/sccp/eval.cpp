@@ -350,6 +350,8 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &l, Lattice &r)
     case Inst::Kind::U_REM:     return Eval(static_cast<URemInst *>(inst),     l, r);
     case Inst::Kind::S_REM:     return Eval(static_cast<SRemInst *>(inst),     l, r);
     case Inst::Kind::MUL:       return Eval(static_cast<MulInst *>(inst),      l, r);
+    case Inst::Kind::MUL_H_S:   return Eval(static_cast<MulHSInst *>(inst),      l, r);
+    case Inst::Kind::MUL_H_U:   return Eval(static_cast<MulHUInst *>(inst),      l, r);
     case Inst::Kind::POW:       return Eval(static_cast<PowInst *>(inst),      l, r);
     case Inst::Kind::COPY_SIGN: return Eval(static_cast<CopySignInst *>(inst), l, r);
     case Inst::Kind::O_U_ADD:   return Eval(static_cast<OUAddInst *>(inst),    l, r);
@@ -1167,6 +1169,20 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(MulHSInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  // TODO: implement this rule
+  return Lattice::Overdefined();
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(MulHUInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------

@@ -816,3 +816,11 @@ def PPC_STORE_COND : StoreCondInst;
 def PPC_FENCE : BarrierInst;
 
 def PPC_I_FENCE : BarrierInst;
+
+
+// -----------------------------------------------------------------------------
+// TODO: move to proper place.
+// -----------------------------------------------------------------------------
+
+def MUL_H_S : BinaryInst;
+def MUL_H_U : BinaryInst;
