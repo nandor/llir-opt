@@ -18,6 +18,7 @@
 
 STATISTIC(NumAddsSimplified, "Add instructions simplified");
 STATISTIC(NumSubsSimplified, "Subtractions simplified");
+STATISTIC(NumCastsEliminated, "Number of bit casts eliminated");
 
 
 
@@ -105,3 +106,15 @@ bool PeepholePass::VisitSubInst(SubInst &inst)
   return false;
 }
 
+// -----------------------------------------------------------------------------
+bool PeepholePass::VisitStoreInst(StoreInst &inst)
+{
+  if (auto cast = ::cast_or_null<BitCastInst>(inst.GetValue())) {
+    auto *newInst = new StoreInst(inst.GetAddr(), cast->GetArg(), inst.GetAnnots());
+    inst.getParent()->AddInst(newInst, &inst);
+    inst.eraseFromParent();
+    NumCastsEliminated++;
+    return true;
+  }
+  return false;
+}
