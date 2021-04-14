@@ -16,7 +16,7 @@ static std::optional<int64_t> GetConstant(Ref<Inst> inst)
 {
   if (auto movInst = ::cast_or_null<MovInst>(inst)) {
     if (auto movValue = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
-      if (movValue->GetValue().getMinSignedBits() >= 64) {
+      if (movValue->GetValue().getMinSignedBits() <= 64) {
         return movValue->GetInt();
       }
     }

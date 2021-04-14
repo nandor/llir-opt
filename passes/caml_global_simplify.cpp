@@ -17,6 +17,7 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
+#include "core/analysis/init_path.h"
 #include "core/analysis/object_graph.h"
 #include "passes/caml_global_simplify.h"
 
@@ -24,28 +25,57 @@
 
 STATISTIC(NumReferencesRemoved, "References removed");
 STATISTIC(NumLoadsFolded, "Loads folded");
+STATISTIC(NumAllocsRemoved, "Allocations eliminated");
 
 
+// -----------------------------------------------------------------------------
+static std::optional<int64_t> GetConstant(Ref<Inst> inst)
+{
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto movValue = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
+      if (movValue->GetValue().getMinSignedBits() <= 64) {
+        return movValue->GetInt();
+      }
+    }
+  }
+  return {};
+}
 
 // -----------------------------------------------------------------------------
 class CamlGlobalSimplifier final {
 public:
   /// Set up the transformation.
-  CamlGlobalSimplifier(Prog &prog, Object *root)
+  CamlGlobalSimplifier(Prog &prog, Object *root, Func *entry)
     : prog_(prog)
     , root_(root)
+    , init_(prog, entry)
     , changed_(false)
   {
   }
 
   /// Run the simplifier.
-  bool Simplify();
+  bool Simplify()
+  {
+    SimplifyObjects();
+    SimplifyAllocs();
+    return changed_;
+  }
 
 private:
+  /// Simplify global objects.
+  void SimplifyObjects();
+  /// Move allocations to the constant section.
+  void SimplifyAllocs();
+
   /// Escape the read or written fields of an object.
   void Escape(Object &obj);
   /// Recursively simplify objects starting at caml_globals.
   void Simplify(Object &object);
+
+  /// Replace a caml_alloc* allocation.
+  void ReplaceAlloc(CallInst *call, unsigned n); 
+  /// Replace a caml_allocN allocation.
+  void ReplaceAllocN(CallInst *call, Ref<Inst> young, unsigned n);
 
   using StoreMap = std::map<int64_t, std::set<MemoryStoreInst *>>;
   using LoadMap = std::map<int64_t, std::set<MemoryLoadInst *>>;
@@ -55,12 +85,16 @@ private:
   Prog &prog_;
   /// Reference to the root object.
   Object *root_;
+  /// Set of nodes on the entry path.
+  InitPath init_;
   /// Set of objects which are indirectly referenced.
   std::unordered_set<Object *> escapes_;
   /// Flag to indicate that the object cannot be eliminated.
   std::unordered_map<Object *, bool> pinned_;
   /// Flag to indicate whether the program changed.
   bool changed_;
+  /// Stores which anchor a heap object.
+  std::unordered_set<Inst *> anchor_;
 };
 
 // -----------------------------------------------------------------------------
@@ -139,7 +173,7 @@ static EscapeKind Escapes(Object &obj)
 }
 
 // -----------------------------------------------------------------------------
-bool CamlGlobalSimplifier::Simplify()
+void CamlGlobalSimplifier::SimplifyObjects()
 {
   // Find individual objects which escape: they are either referenced from
   // outside of the OCaml data section or pointers to them escape in code,
@@ -245,8 +279,6 @@ bool CamlGlobalSimplifier::Simplify()
       llvm_unreachable("not implemented");
     }
   }
-
-  return changed_;
 }
 
 // -----------------------------------------------------------------------------
@@ -377,6 +409,13 @@ void CamlGlobalSimplifier::Simplify(Object &object)
 
   if (!stores.empty() && !loads.empty()) {
     pinned = true;
+    for (auto &[off, insts] : stores) {
+      if (insts.size() == 1) {
+        for (auto *inst : insts) {
+          anchor_.insert(inst);
+        }
+      }
+    }
   } else if (!loads.empty()) {
     // If there are no stores, propagate all loads.
     for (auto it = loads.begin(); it != loads.end(); ) {
@@ -514,7 +553,170 @@ void CamlGlobalSimplifier::Simplify(Object &object)
   pinned_.emplace(&object, pinned);
 }
 
+// -----------------------------------------------------------------------------
+void CamlGlobalSimplifier::SimplifyAllocs()
+{
+  for (Func &func : prog_) {
+    for (Block &block : func) {
+      // Find blocks which are executed at most once that
+      // end with a call to an OCaml allocation.
+      if (!init_[block]) {
+        continue;
+      }
+      auto *call = ::cast_or_null<CallInst>(block.GetTerminator());
+      if (!call) {
+        continue;
+      }
+      auto calleeMov = ::cast_or_null<MovInst>(call->GetCallee());
+      if (!calleeMov) {
+        continue;
+      }
+      auto callee = ::cast_or_null<Global>(calleeMov->GetArg());
+      if (!callee || !callee->getName().startswith("caml_alloc")) {
+        continue;
+      }
+      // All the indirect uses of the allocation site should be anchored.
+      std::queue<std::pair<Inst *, Ref<Inst>>> q;
+      for (Use &use : call->uses()) {
+        if ((*use).Index() != call->GetNumRets() - 1) {
+          continue;
+        }
+        if (auto add = ::cast_or_null<AddInst>(use.getUser())) {
+          q.emplace(add, ::cast<Inst>(*use));
+        }
+      }
+      // Ensure pointers to the object escape only to objects which are
+      // never de-allocated to locations which are written at most once.
+      bool anchored = true;
+      while (anchored && !q.empty()) {
+        auto [i, ref] = q.front();
+        q.pop();
+        switch (i->GetKind()) {
+          default: {
+            anchored = false;
+            break;
+          }
+          case Inst::Kind::STORE: {
+            auto *store = ::cast<StoreInst>(i);
+            if (store->GetValue() == ref) {
+              anchored = anchored && anchor_.count(i) != 0;
+            }
+            break;
+          }
+          case Inst::Kind::ADD: {
+            for (auto *user : i->users()) {
+              q.emplace(::cast<Inst>(user), i);
+            }
+            break;
+          }
+        }
+      }
+      if (!anchored) {
+        continue;
+      }
 
+      if (callee->getName() == "caml_alloc1") {
+        ReplaceAlloc(call, 1);
+        continue;
+      }
+      if (callee->getName() == "caml_alloc2") {
+        ReplaceAlloc(call, 2);
+        continue;
+      }
+      if (callee->getName() == "caml_alloc3") {
+        ReplaceAlloc(call, 3);
+        continue;
+      }
+      if (callee->getName() == "caml_allocN") {
+        if (auto sub = ::cast_or_null<SubInst>(call->arg(call->arg_size() - 1))) {
+          if (auto n = GetConstant(sub->GetRHS())) {
+            ReplaceAllocN(call, sub->GetLHS(), *n / 8 - 1);
+            continue;
+          }
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CamlGlobalSimplifier::ReplaceAlloc(CallInst *call, unsigned size)
+{
+  auto &block = *call->getParent();
+  
+  auto *obj = new Object();
+  root_->getParent()->AddObject(obj);
+  std::string name;
+  llvm::raw_string_ostream os(name);
+  os << block.getName() << "$alloc";
+  auto *atom = new Atom(name);
+  obj->AddAtom(atom);
+  atom->AddItem(Item::CreateInt64(size << 10));
+  for (unsigned i = 0; i < size; ++i) {
+    atom->AddItem(Item::CreateInt64(1));
+  }
+
+  unsigned idx = call->GetNumRets() - 1;
+  auto *mov = new MovInst(call->type(idx), atom, {});
+  block.AddInst(mov);
+  block.AddInst(new JumpInst(call->GetCont(), {}));
+
+  for (auto ut = call->use_begin(); ut != call->use_end(); ) {
+    Use &use = *ut++;
+    auto inst = ::cast<Inst>(use.getUser());
+    auto useIdx = (*use).Index();
+    if (::cast_or_null<AddInst>(inst) && useIdx == idx) {
+      use = mov;
+    } else {
+      use = call->arg(useIdx);
+    }
+  }
+  call->eraseFromParent();
+  NumAllocsRemoved++;
+}
+
+// -----------------------------------------------------------------------------
+void CamlGlobalSimplifier::ReplaceAllocN(
+    CallInst *call, 
+    Ref<Inst> young,
+    unsigned size)
+{
+  auto &block = *call->getParent();
+  
+  auto *obj = new Object();
+  root_->getParent()->AddObject(obj);
+  std::string name;
+  llvm::raw_string_ostream os(name);
+  os << block.getName() << "$alloc";
+  auto *atom = new Atom(name);
+  obj->AddAtom(atom);
+  atom->AddItem(Item::CreateInt64(size << 10));
+  for (unsigned i = 0; i < size; ++i) {
+    atom->AddItem(Item::CreateInt64(1));
+  }
+
+  unsigned idx = call->GetNumRets() - 1;
+  auto *mov = new MovInst(call->type(idx), atom, {});
+  block.AddInst(mov);
+  block.AddInst(new JumpInst(call->GetCont(), {}));
+
+  for (auto ut = call->use_begin(); ut != call->use_end(); ) {
+    Use &use = *ut++;
+    auto inst = ::cast<Inst>(use.getUser());
+    auto useIdx = (*use).Index();
+    if (::cast_or_null<AddInst>(inst) && useIdx == idx) {
+      use = mov;
+    } else {
+      if (useIdx == idx) {
+        use = young;
+      } else {
+        use = call->arg(useIdx);
+      }
+    }
+  }
+  call->eraseFromParent();
+  NumAllocsRemoved++;
+}
 
 // -----------------------------------------------------------------------------
 const char *CamlGlobalSimplifyPass::kPassID = "caml-global-simplify";
@@ -537,8 +739,12 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
     return false;
   }
 
+  const std::string entryName = cfg.Entry.empty() ? "_start" : cfg.Entry;
+  auto *entry = ::cast_or_null<Func>(prog.GetGlobal(entryName));
+  auto *root = globals->getParent();
+
   bool changed = false;
-  while (CamlGlobalSimplifier(prog, globals->getParent()).Simplify()) {
+  while (CamlGlobalSimplifier(prog, root, entry).Simplify()) {
     changed = true;
   }
   return changed;
