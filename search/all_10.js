@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['queue_772',['Queue',['../classQueue.html',1,'']]],
-  ['queue_3c_20setnode_20_2a_20_3e_773',['Queue&lt; SetNode * &gt;',['../classQueue.html',1,'']]]
+  ['queue_773',['Queue',['../classQueue.html',1,'']]],
+  ['queue_3c_20setnode_20_2a_20_3e_774',['Queue&lt; SetNode * &gt;',['../classQueue.html',1,'']]]
 ];
