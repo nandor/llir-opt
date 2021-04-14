@@ -18,6 +18,18 @@
 const char *MoveElimPass::kPassID = "move-elim";
 
 // -----------------------------------------------------------------------------
+static bool CanEliminate(Ref<MovInst> mov, Ref<Inst> arg)
+{
+  if (mov->GetType() == arg.GetType()) {
+    return true;
+  }
+  if (auto argMov = ::cast_or_null<MovInst>(arg)) {
+    return !::cast_or_null<Inst>(argMov->GetArg());
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool MoveElimPass::Run(Prog &prog)
 {
   bool changed = false;
@@ -25,17 +37,15 @@ bool MoveElimPass::Run(Prog &prog)
     for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
       for (auto it = block->begin(); it != block->end(); ) {
         if (auto *mov = ::cast_or_null<MovInst>(&*it++)) {
-          if (Ref<Inst> argRef = ::cast_or_null<Inst>(mov->GetArg())) {
-            if (argRef.GetType() != mov->GetType()) {
-              continue;
+          if (Ref<Inst> arg = ::cast_or_null<Inst>(mov->GetArg())) {
+            if (CanEliminate(mov, arg)) {
+              // Since in this form we have PHIs, moves which rename
+              // virtual registers are not required and can be replaced
+              // with the virtual register they copy from.
+              mov->replaceAllUsesWith(arg);
+              mov->eraseFromParent();
+              changed = true;
             }
-
-            // Since in this form we have PHIs, moves which rename
-            // virtual registers are not required and can be replaced
-            // with the virtual register they copy from.
-            mov->replaceAllUsesWith(argRef);
-            mov->eraseFromParent();
-            changed = true;
           }
         }
       }

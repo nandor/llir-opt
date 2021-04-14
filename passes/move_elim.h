@@ -6,9 +6,6 @@
 
 #include "core/pass.h"
 
-class Func;
-class MovInst;
-
 
 
 /**
