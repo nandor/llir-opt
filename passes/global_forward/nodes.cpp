@@ -103,16 +103,12 @@ ReverseNodeState::ReverseNodeState(DAGBlock &node) : Node(node) {}
 void ReverseNodeState::Merge(const ReverseNodeState &that)
 {
   for (auto it = Stores.begin(); it != Stores.end(); ) {
-    if (that.Loaded.Contains(it->first)) {
-      Stores.erase(it++);
-      continue;
-    }
-
+    auto thatLoaded = that.Loaded.Contains(it->first);
     auto thatStoreIt = that.Stores.find(it->first);
     for (auto jt = it->second.begin(); jt != it->second.end(); ) {
       auto start = jt->first;
       auto &[store, end] = jt->second;
-      bool killed = false;
+      bool killed = thatLoaded;
       if (thatStoreIt != that.Stores.end()) {
         for (auto &[thatStart, thatStoreAndEnd] : thatStoreIt->second) {
           auto &[thatStore, thatEnd] = thatStoreAndEnd;
@@ -120,6 +116,7 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
             continue;
           }
           if (start == thatStart && end == thatEnd) {
+            killed = false;
             continue;
           }
           llvm_unreachable("not implemented");
@@ -140,13 +137,11 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
   }
 
   for (auto &[id, stores] : that.Stores) {
-    if (Loaded.Contains(id)) {
-      continue;
-    }
+    auto thisLoaded = Loaded.Contains(id);
     auto thisStoreIt = Stores.find(id);
     for (auto &[start, storeAndEnd] : stores) {
       auto &[store, end] = storeAndEnd;
-      bool killed = false;
+      bool killed = thisLoaded;
       if (thisStoreIt != Stores.end()) {
         for (auto &[thisStart, thisStoreAndEnd] : thisStoreIt->second) {
           auto &[thisStore, thisEnd] = thisStoreAndEnd;
@@ -154,6 +149,7 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
             continue;
           }
           if (start == thisStart && end == thisEnd) {
+            killed = false;
             continue;
           }
           llvm_unreachable("not implemented");
