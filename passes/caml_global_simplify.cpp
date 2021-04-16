@@ -690,45 +690,48 @@ void CamlGlobalSimplifier::SimplifyAllocs()
         continue;
       }
       // All the indirect uses of the allocation site should be anchored.
-      std::queue<std::pair<Inst *, Ref<Inst>>> q;
+      std::queue<AddInst *> q;
       for (Use &use : call->uses()) {
         if ((*use).Index() != call->GetNumRets() - 1) {
           continue;
         }
         if (auto add = ::cast_or_null<AddInst>(use.getUser())) {
-          q.emplace(add, ::cast<Inst>(*use));
+          if (add->GetType() == Type::V64) {
+            q.emplace(add);
+          }
         }
       }
       // Ensure pointers to the object escape only to objects which are
       // never de-allocated to locations which are written at most once.
       bool anchored = true;
       while (anchored && !q.empty()) {
-        auto [i, ref] = q.front();
+        auto inst = q.front();
         q.pop();
-        switch (i->GetKind()) {
-          default: {
-            anchored = false;
-            break;
-          }
-          case Inst::Kind::STORE: {
-            auto *store = ::cast<StoreInst>(i);
-            if (store->GetValue() == ref) {
-              anchored = anchored && anchor_.count(i) != 0;
+        bool anchor = false; 
+        for (User *user : inst->users()) {
+          switch (::cast<Inst>(user)->GetKind()) {
+            default: continue;
+            case Inst::Kind::ADD: {
+              auto add = ::cast<AddInst>(user);
+              if (add->GetType() == Type::V64) {
+                q.push(add);
+              }
+              continue;
             }
-            break;
-          }
-          case Inst::Kind::ADD: {
-            for (auto *user : i->users()) {
-              q.emplace(::cast<Inst>(user), i);
+            case Inst::Kind::STORE: {
+              auto store = ::cast<StoreInst>(user);
+              if (store->GetValue() == inst->GetSubValue(0)) {
+                anchor = anchor || anchor_.count(store) != 0;
+              }
+              continue;
             }
-            break;
           }
         }
+        anchored = anchored && anchor;
       }
       if (!anchored) {
         continue;
       }
-
       if (callee->getName() == "caml_alloc1") {
         ReplaceAlloc(call, 1);
         continue;
@@ -757,7 +760,7 @@ void CamlGlobalSimplifier::SimplifyAllocs()
 void CamlGlobalSimplifier::ReplaceAlloc(CallInst *call, unsigned size)
 {
   auto &block = *call->getParent();
-
+  
   auto *obj = new Object();
   root_->getParent()->AddObject(obj);
   std::string name;
