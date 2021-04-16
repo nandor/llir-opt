@@ -26,6 +26,8 @@
 STATISTIC(NumReferencesRemoved, "References removed");
 STATISTIC(NumLoadsFolded, "Loads folded");
 STATISTIC(NumAllocsRemoved, "Allocations eliminated");
+STATISTIC(NumPointersFolded, "Dereferenced pointers folded");
+
 
 
 // -----------------------------------------------------------------------------
@@ -73,7 +75,7 @@ private:
   void Simplify(Object &object);
 
   /// Replace a caml_alloc* allocation.
-  void ReplaceAlloc(CallInst *call, unsigned n); 
+  void ReplaceAlloc(CallInst *call, unsigned n);
   /// Replace a caml_allocN allocation.
   void ReplaceAllocN(CallInst *call, Ref<Inst> young, unsigned n);
 
@@ -365,8 +367,41 @@ void CamlGlobalSimplifier::Escape(Object &object)
 }
 
 // -----------------------------------------------------------------------------
+static std::optional<std::pair<Atom *, int64_t>>
+ToAtomOffset(Ref<Value> value)
+{
+  switch (value->GetKind()) {
+    case Value::Kind::INST: {
+      llvm_unreachable("invalid value");
+    }
+    case Value::Kind::CONST: {
+      return std::nullopt;
+    }
+    case Value::Kind::GLOBAL: {
+      llvm_unreachable("not implemented");
+    }
+    case Value::Kind::EXPR: {
+      switch (::cast<Expr>(value)->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto soe = ::cast<SymbolOffsetExpr>(value);
+          if (auto *atom = ::cast_or_null<Atom>(soe->GetSymbol())) {
+            return std::make_pair(atom, soe->GetOffset());
+          } else {
+            return std::nullopt;
+          }
+        }
+      }
+      llvm_unreachable("invalid expression kind");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 void CamlGlobalSimplifier::Simplify(Object &object)
 {
+  const Type ptrTy = Type::I64;
+  
   bool pinned = false;
 
   // Find the loads and stores using the object.
@@ -409,10 +444,78 @@ void CamlGlobalSimplifier::Simplify(Object &object)
 
   if (!stores.empty() && !loads.empty()) {
     pinned = true;
+    
     for (auto &[off, insts] : stores) {
+      // If the write is unique, this store potentially anchors
+      // a dynamic allocation, preventing it from being de-allocated.
       if (insts.size() == 1) {
-        for (auto *inst : insts) {
-          anchor_.insert(inst);
+        anchor_.insert(*insts.begin());
+      }
+      // Determine whether all stores write constant values.
+      // Collect the values, along with the original in the object.
+      bool allStoresConstant = true;
+      std::vector<Ref<Value>> values;
+      if (auto *val = object.Load(off, ptrTy)) {
+        values.emplace_back(val);
+        for (auto *store : insts) {
+          auto mov = ::cast_or_null<MovInst>(store->GetValue());
+          if (!mov || !mov->IsConstant()) {
+            allStoresConstant = false;
+            break;
+          } else {
+            values.push_back(mov->GetArg());
+          }
+        }
+      } else {
+        allStoresConstant = false;
+      }
+      auto it = loads.find(off);
+      if (allStoresConstant && it != loads.end()) {
+        // If the location is over-written by a set of known constants,
+        // values can be propagated to loads and calls, if there is a
+        // unique pointer or function in the set.
+        for (auto *load : it->second) {
+          for (auto it = load->use_begin(); it != load->use_end(); ) {
+            Use &use = *it++;
+            auto *inst = ::cast<Inst>(use.getUser());
+            switch (inst->GetKind()) {
+              default: break;
+              case Inst::Kind::LOAD: {
+                std::vector<std::pair<Atom *, int64_t>> pointers;
+                for (auto value : values) {
+                  if (auto ptr = ToAtomOffset(value)) {
+                    pointers.push_back(*ptr);
+                  }
+                }
+                switch (pointers.size()) {
+                  default: break;
+                  case 0: llvm_unreachable("not implemented");
+                  case 1: {
+                    auto [atom, off] = pointers[0];
+                    auto *mov = new MovInst(
+                        ptrTy, 
+                        SymbolOffsetExpr::Create(atom, off), 
+                        {}
+                    );
+                    inst->getParent()->AddInst(mov, inst);
+                    use = mov->GetSubValue(0);
+                    NumPointersFolded++;
+                    break;
+                  }
+                }
+                continue;
+              }
+              case Inst::Kind::CALL: 
+              case Inst::Kind::TAIL_CALL: 
+              case Inst::Kind::INVOKE: {
+                auto *site = ::cast<CallSite>(inst);
+                if (site->GetCallee() == load->GetSubValue(0)) {
+                  llvm_unreachable("not implemented");
+                }
+                continue;
+              }
+            }
+          }
         }
       }
     }
@@ -643,7 +746,7 @@ void CamlGlobalSimplifier::SimplifyAllocs()
 void CamlGlobalSimplifier::ReplaceAlloc(CallInst *call, unsigned size)
 {
   auto &block = *call->getParent();
-  
+
   auto *obj = new Object();
   root_->getParent()->AddObject(obj);
   std::string name;
@@ -677,12 +780,12 @@ void CamlGlobalSimplifier::ReplaceAlloc(CallInst *call, unsigned size)
 
 // -----------------------------------------------------------------------------
 void CamlGlobalSimplifier::ReplaceAllocN(
-    CallInst *call, 
+    CallInst *call,
     Ref<Inst> young,
     unsigned size)
 {
   auto &block = *call->getParent();
-  
+
   auto *obj = new Object();
   root_->getParent()->AddObject(obj);
   std::string name;
