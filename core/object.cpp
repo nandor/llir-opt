@@ -323,7 +323,20 @@ static bool StoreInt(
       llvm_unreachable("not implemented");
     }
     case Item::Kind::STRING: {
-      llvm_unreachable("not implemented");
+      std::string data(it->GetString());
+      if (off + GetSize(type) <= data.size()) {
+        if (type == Type::I8) {
+          data[off] = value.getSExtValue();
+        } else { 
+          llvm_unreachable("not implemented");
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
+      auto *item = Item::CreateString(data);
+      it->getParent()->AddItem(item, &*it);
+      it->eraseFromParent();
+      return true;
     }
     case Item::Kind::SPACE: {
       int64_t space = it->GetSpace();
