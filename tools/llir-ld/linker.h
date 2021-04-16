@@ -6,6 +6,7 @@
 
 #include <set>
 #include <unordered_map>
+#include <string>
 
 #include <llvm/Support/WithColor.h>
 #include <llvm/LTO/LTO.h>
@@ -67,6 +68,7 @@ public:
     union S {
       std::unique_ptr<Prog> P;
       std::unique_ptr<llvm::lto::InputFile> B;
+      std::string D;
       S() {}
       ~S() {}
     } s_;

@@ -39,8 +39,9 @@ Linker::Unit::Unit(const Object &object)
 
 // -----------------------------------------------------------------------------
 Linker::Unit::Unit(const Data &data)
+  : kind_(Kind::DATA)
 {
-  llvm_unreachable("not implemented");
+  new (&s_.D) std::string(data.Path);
 }
 
 // -----------------------------------------------------------------------------
@@ -82,7 +83,8 @@ Linker::Unit::~Unit()
       llvm_unreachable("not implemented");
     }
     case Unit::Kind::DATA: {
-      llvm_unreachable("not implemented");
+      s_.D.~basic_string<char>();
+      return;
     }
   }
   llvm_unreachable("invalid unit kind");
@@ -196,7 +198,10 @@ llvm::Error Linker::LinkGroup(std::list<Linker::Unit> &&units)
             llvm_unreachable("not implemented");
           }
           case Unit::Kind::DATA: {
-            llvm_unreachable("not implemented");
+            // TODO: add rlibs used by rust.
+            // files_.push_back(it->s_.D);
+            it = units.erase(it);
+            continue;
           }
         }
         llvm_unreachable("invalid unit kind");
