@@ -481,6 +481,7 @@ void CamlGlobalSimplifier::Simplify(Object &object)
             switch (inst->GetKind()) {
               default: break;
               case Inst::Kind::LOAD: {
+                auto load = ::cast<LoadInst>(inst);
                 std::vector<std::pair<Atom *, int64_t>> pointers;
                 for (auto value : values) {
                   if (auto ptr = ToAtomOffset(value)) {
@@ -489,7 +490,17 @@ void CamlGlobalSimplifier::Simplify(Object &object)
                 }
                 switch (pointers.size()) {
                   default: break;
-                  case 0: llvm_unreachable("not implemented");
+                  case 0: {
+                    if (load->GetType() == Type::V64) {
+                      auto ty = ::cast<LoadInst>(inst)->GetType();
+                      auto *und = new UndefInst(ty, {});
+                      inst->getParent()->AddInst(und, inst);
+                      inst->replaceAllUsesWith(und);
+                      inst->eraseFromParent();
+                      NumPointersFolded++;
+                    }
+                    break;
+                  }
                   case 1: {
                     auto [atom, off] = pointers[0];
                     auto *mov = new MovInst(
