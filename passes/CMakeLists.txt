@@ -61,6 +61,7 @@ add_library(passes
     value_numbering.cpp
     inliner.cpp
     link.cpp
+    linearise.cpp
     libc_simplify.cpp
     mem_to_reg.cpp
     merge_stores.cpp

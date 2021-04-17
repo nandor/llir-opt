@@ -41,13 +41,13 @@
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
 #include "passes/global_forward.h"
-#include "passes/value_numbering.h"
 #include "passes/inliner.h"
 #include "passes/libc_simplify.h"
+#include "passes/linearise.h"
 #include "passes/link.h"
 #include "passes/mem_to_reg.h"
-#include "passes/move_elim.h"
 #include "passes/merge_stores.h"
+#include "passes/move_elim.h"
 #include "passes/object_split.h"
 #include "passes/peephole.h"
 #include "passes/pre_eval.h"
@@ -61,6 +61,7 @@
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
 #include "passes/unused_arg.h"
+#include "passes/value_numbering.h"
 #include "passes/verifier.h"
 #include "stats/alloc_size.h"
 
@@ -487,6 +488,7 @@ int main(int argc, char **argv)
   registry.Register<VerifierPass>();
   registry.Register<ObjectSplitPass>();
   registry.Register<ValueNumberingPass>();
+  registry.Register<LinearisePass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);

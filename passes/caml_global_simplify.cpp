@@ -401,7 +401,7 @@ ToAtomOffset(Ref<Value> value)
 void CamlGlobalSimplifier::Simplify(Object &object)
 {
   const Type ptrTy = Type::I64;
-  
+
   bool pinned = false;
 
   // Find the loads and stores using the object.
@@ -444,7 +444,7 @@ void CamlGlobalSimplifier::Simplify(Object &object)
 
   if (!stores.empty() && !loads.empty()) {
     pinned = true;
-    
+
     for (auto &[off, insts] : stores) {
       // If the write is unique, this store potentially anchors
       // a dynamic allocation, preventing it from being de-allocated.
@@ -504,8 +504,8 @@ void CamlGlobalSimplifier::Simplify(Object &object)
                   case 1: {
                     auto [atom, off] = pointers[0];
                     auto *mov = new MovInst(
-                        ptrTy, 
-                        SymbolOffsetExpr::Create(atom, off), 
+                        ptrTy,
+                        SymbolOffsetExpr::Create(atom, off),
                         {}
                     );
                     inst->getParent()->AddInst(mov, inst);
@@ -516,8 +516,8 @@ void CamlGlobalSimplifier::Simplify(Object &object)
                 }
                 continue;
               }
-              case Inst::Kind::CALL: 
-              case Inst::Kind::TAIL_CALL: 
+              case Inst::Kind::CALL:
+              case Inst::Kind::TAIL_CALL:
               case Inst::Kind::INVOKE: {
                 auto *site = ::cast<CallSite>(inst);
                 if (site->GetCallee() == load->GetSubValue(0)) {
@@ -558,6 +558,11 @@ void CamlGlobalSimplifier::Simplify(Object &object)
     pinned = !loads.empty() || pinned;
   } else if (!stores.empty()) {
     pinned = true;
+    for (auto &[off, insts] : stores) {
+      if (insts.size() == 1) {
+        anchor_.insert(*insts.begin());
+      }
+    }
   }
 
   // Collect the offsets touched by loads and stores.
@@ -707,7 +712,7 @@ void CamlGlobalSimplifier::SimplifyAllocs()
       while (anchored && !q.empty()) {
         auto inst = q.front();
         q.pop();
-        bool anchor = false; 
+        bool anchor = false;
         for (User *user : inst->users()) {
           switch (::cast<Inst>(user)->GetKind()) {
             default: continue;
@@ -760,7 +765,7 @@ void CamlGlobalSimplifier::SimplifyAllocs()
 void CamlGlobalSimplifier::ReplaceAlloc(CallInst *call, unsigned size)
 {
   auto &block = *call->getParent();
-  
+
   auto *obj = new Object();
   root_->getParent()->AddObject(obj);
   std::string name;
