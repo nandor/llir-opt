@@ -49,6 +49,7 @@
 #include "passes/merge_stores.h"
 #include "passes/move_elim.h"
 #include "passes/object_split.h"
+#include "passes/phi_taut.h"
 #include "passes/peephole.h"
 #include "passes/pre_eval.h"
 #include "passes/pta.h"
@@ -217,6 +218,7 @@ static void AddOpt2(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
@@ -254,6 +256,7 @@ static void AddOpt3(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
@@ -294,6 +297,7 @@ static void AddOpt4(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
@@ -340,6 +344,7 @@ static void AddOptS(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , PhiTautPass
     , EliminateSelectPass
     , VerifierPass
     , SpecialisePass
@@ -489,6 +494,7 @@ int main(int argc, char **argv)
   registry.Register<ObjectSplitPass>();
   registry.Register<ValueNumberingPass>();
   registry.Register<LinearisePass>();
+  registry.Register<PhiTautPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);

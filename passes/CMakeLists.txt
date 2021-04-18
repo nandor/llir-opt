@@ -47,8 +47,8 @@ add_library(passes
     atom_simplify.cpp
     bypass_phi.cpp
     caml_alloc_inliner.cpp
-    caml_global_simplify.cpp
     caml_assign.cpp
+    caml_global_simplify.cpp
     cond_simplify.cpp
     const_global.cpp
     dead_code_elim.cpp
@@ -58,16 +58,16 @@ add_library(passes
     dedup_block.cpp
     eliminate_select.cpp
     global_forward.cpp
-    value_numbering.cpp
     inliner.cpp
-    link.cpp
-    linearise.cpp
     libc_simplify.cpp
+    linearise.cpp
+    link.cpp
     mem_to_reg.cpp
     merge_stores.cpp
     move_elim.cpp
     object_split.cpp
     peephole.cpp
+    phi_taut.cpp
     pre_eval.cpp
     pta.cpp
     sccp.cpp
@@ -79,6 +79,7 @@ add_library(passes
     tail_rec_elim.cpp
     undef_elim.cpp
     unused_arg.cpp
+    value_numbering.cpp
     verifier.cpp
 )
 add_dependencies(passes core)
