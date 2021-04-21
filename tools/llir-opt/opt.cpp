@@ -46,6 +46,7 @@
 #include "passes/libc_simplify.h"
 #include "passes/linearise.h"
 #include "passes/link.h"
+#include "passes/localize_select.h"
 #include "passes/mem_to_reg.h"
 #include "passes/merge_stores.h"
 #include "passes/move_elim.h"
@@ -191,6 +192,7 @@ static void AddOpt1(PassManager &mngr)
   // Final transformation.
   mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<LocalizeSelectPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
 
@@ -229,6 +231,7 @@ static void AddOpt2(PassManager &mngr)
   // Final transformation.
   mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<LocalizeSelectPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
 
@@ -267,6 +270,7 @@ static void AddOpt3(PassManager &mngr)
   // Final transformation.
   mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<LocalizeSelectPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
 
@@ -308,6 +312,7 @@ static void AddOpt4(PassManager &mngr)
   // Final transformation.
   mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<LocalizeSelectPass>();
   mngr.Add<CodeLayoutPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
@@ -365,6 +370,7 @@ static void AddOptS(PassManager &mngr)
     >();
   // Final simplification.
   mngr.Add<MergeStoresPass>();
+  mngr.Add<LocalizeSelectPass>();
   mngr.Add<CodeLayoutPass>();
   mngr.Add<StackObjectElimPass>();
 }
@@ -498,6 +504,8 @@ int main(int argc, char **argv)
   registry.Register<ValueNumberingPass>();
   registry.Register<LinearisePass>();
   registry.Register<PhiTautPass>();
+  registry.Register<CodeLayoutPass>();
+  registry.Register<LocalizeSelectPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);

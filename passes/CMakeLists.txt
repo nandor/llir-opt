@@ -63,6 +63,7 @@ add_library(passes
     libc_simplify.cpp
     linearise.cpp
     link.cpp
+    localize_select.cpp
     mem_to_reg.cpp
     merge_stores.cpp
     move_elim.cpp
