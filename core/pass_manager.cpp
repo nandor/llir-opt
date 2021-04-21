@@ -16,6 +16,28 @@
 
 
 // -----------------------------------------------------------------------------
+PassManager::PassManager(
+    const PassConfig &config,
+    const Target *target,
+    const std::string &saveBefore,
+    bool verbose,
+    bool time)
+  : config_(config)
+  , target_(target)
+  , saveBefore_(saveBefore)
+  , verbose_(verbose)
+  , time_(time)
+{
+  if (auto *s = getenv("LLIR_OPT_DISABLED")) {
+    llvm::SmallVector<llvm::StringRef, 8> passes;
+    llvm::StringRef(s).split(passes, ',');
+    for (auto pass : passes) {
+      disabled_.insert(pass.str());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void PassManager::Run(Prog &prog)
 {
   for (auto &group : groups_) {
@@ -72,9 +94,13 @@ void PassManager::Run(Prog &prog)
 // -----------------------------------------------------------------------------
 bool PassManager::Run(PassInfo &pass, Prog &prog)
 {
-  const auto &name = pass.P->GetPassName();
+  // Do not run disabled passes.
+  if (disabled_.count(pass.Name)) {
+    return false;
+  }
 
   // Print information.
+  const auto &name = pass.P->GetPassName();
   if (time_ && verbose_) {
     llvm::outs() << name << ": ";
   }

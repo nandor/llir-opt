@@ -82,23 +82,17 @@ public:
       const Target *target,
       const std::string &saveBefore,
       bool verbose,
-      bool time)
-    : config_(config)
-    , target_(target)
-    , saveBefore_(saveBefore)
-    , verbose_(verbose)
-    , time_(time)
-  {
-  }
+      bool time
+  );
 
   /// Add an analysis into the pipeline.
   template<typename T, typename... Args>
   void Add(const Args &... args)
   {
     if constexpr (std::is_base_of<Analysis, T>::value) {
-      groups_.emplace_back(std::make_unique<T>(this), &AnalysisID<T>::ID);
+      groups_.emplace_back(std::make_unique<T>(this), &AnalysisID<T>::ID, T::kPassID);
     } else {
-      groups_.emplace_back(std::make_unique<T>(this, args...), nullptr);
+      groups_.emplace_back(std::make_unique<T>(this, args...), nullptr, T::kPassID);
     }
   }
 
@@ -106,9 +100,9 @@ public:
   template<typename... Ts>
   void Group()
   {
-    std::vector<PassInfo> passes;
-    ((passes.emplace_back(std::make_unique<Ts>(this), nullptr)), ...);
-    groups_.emplace_back(std::move(passes));
+    std::vector<PassInfo> ps;
+    ((ps.emplace_back(std::make_unique<Ts>(this), nullptr, Ts::kPassID)), ...);
+    groups_.emplace_back(std::move(ps));
   }
 
   /// Adds a pass to the pipeline.
@@ -138,10 +132,13 @@ private:
     std::unique_ptr<Pass> P;
     /// ID to save the pass results under.
     const char *ID;
+    /// Name of the pass.
+    const char *Name;
 
-    PassInfo(std::unique_ptr<Pass> &&pass, const char *id)
+    PassInfo(std::unique_ptr<Pass> &&pass, const char *id, const char *name)
       : P(std::move(pass))
       , ID(id)
+      , Name(name)
     {
     }
   };
@@ -156,10 +153,10 @@ private:
     /// Flag to indicate whether group repeats until convergence.
     bool Repeat;
 
-    GroupInfo(std::unique_ptr<Pass> &&pass, const char * id)
+    GroupInfo(std::unique_ptr<Pass> &&pass, const char * id, const char *name)
       : Repeat(false)
     {
-      Passes.emplace_back(std::move(pass), id);
+      Passes.emplace_back(std::move(pass), id, name);
     }
 
     GroupInfo(std::vector<PassInfo> &&passes)
@@ -185,6 +182,8 @@ private:
   std::unordered_map<const char *, Pass *> analyses_;
   /// Mapping from pass names to their running times.
   std::unordered_map<const char *, std::vector<double>> times_;
+  /// Set of disabled passes.
+  std::set<std::string> disabled_;
 };
 
 

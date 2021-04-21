@@ -32,6 +32,7 @@
 #include "passes/caml_alloc_inliner.h"
 #include "passes/caml_assign.h"
 #include "passes/caml_global_simplify.h"
+#include "passes/code_layout.h"
 #include "passes/cond_simplify.h"
 #include "passes/const_global.h"
 #include "passes/dead_code_elim.h"
@@ -307,6 +308,7 @@ static void AddOpt4(PassManager &mngr)
   // Final transformation.
   mngr.Add<MergeStoresPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<CodeLayoutPass>();
   mngr.Add<CamlAllocInlinerPass>();
 }
 
@@ -363,6 +365,7 @@ static void AddOptS(PassManager &mngr)
     >();
   // Final simplification.
   mngr.Add<MergeStoresPass>();
+  mngr.Add<CodeLayoutPass>();
   mngr.Add<StackObjectElimPass>();
 }
 

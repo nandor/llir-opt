@@ -18,10 +18,6 @@
 
 
 // -----------------------------------------------------------------------------
-static llvm::cl::opt<bool>
-optDisable("disable-global-forward", llvm::cl::Hidden, llvm::cl::init(false));
-
-// -----------------------------------------------------------------------------
 const char *GlobalForwardPass::kPassID = "global-forward";
 
 // -----------------------------------------------------------------------------
@@ -33,10 +29,6 @@ const char *GlobalForwardPass::GetPassName() const
 // -----------------------------------------------------------------------------
 bool GlobalForwardPass::Run(Prog &prog)
 {
-  if (optDisable) {
-    return false;
-  }
-
   auto &cfg = GetConfig();
   const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
   auto *entry = ::cast_or_null<Func>(prog.GetGlobal(start));
