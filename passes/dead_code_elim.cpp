@@ -142,6 +142,7 @@ bool DeadCodeElimPass::Run(Func &func)
           }
           break;
         }
+        case Inst::Kind::SWITCH:
         case Inst::Kind::JUMP_COND: {
           if (auto *target = findTarget(inst)) {
             block.AddInst(new JumpInst(target, inst->GetAnnots()));
