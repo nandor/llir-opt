@@ -1,5 +1,5 @@
 <map id="Pass" name="Pass">
-<area shape="rect" id="node1" title=" " alt="" coords="5,968,56,995"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,993,56,1020"/>
 <area shape="rect" id="node2" href="$classAllocSizePass.html" title=" " alt="" coords="139,5,249,32"/>
 <area shape="rect" id="node3" href="$classAnalysis.html" title=" " alt="" coords="155,56,233,83"/>
 <area shape="rect" id="node5" href="$classAtomSimplifyPass.html" title=" " alt="" coords="125,107,263,133"/>
@@ -21,23 +21,24 @@
 <area shape="rect" id="node21" href="$classLibCSimplifyPass.html" title=" " alt="" coords="128,917,260,944"/>
 <area shape="rect" id="node22" href="$classLinearisePass.html" title=" " alt="" coords="139,968,249,995"/>
 <area shape="rect" id="node23" href="$classLinkPass.html" title=" " alt="" coords="155,1019,233,1045"/>
-<area shape="rect" id="node24" href="$classMemoryToRegisterPass.html" title=" " alt="" coords="107,1069,281,1096"/>
-<area shape="rect" id="node25" href="$classMergeStoresPass.html" title=" " alt="" coords="127,1120,261,1147"/>
-<area shape="rect" id="node26" href="$classMoveElimPass.html" title=" " alt="" coords="136,1171,252,1197"/>
-<area shape="rect" id="node27" href="$classObjectSplitPass.html" title=" " alt="" coords="133,1221,255,1248"/>
-<area shape="rect" id="node28" href="$classPeepholePass.html" title=" " alt="" coords="139,1272,249,1299"/>
-<area shape="rect" id="node29" href="$classPhiTautPass.html" title=" " alt="" coords="145,1323,243,1349"/>
-<area shape="rect" id="node30" href="$classPreEvalPass.html" title=" " alt="" coords="144,1373,244,1400"/>
-<area shape="rect" id="node31" href="$classSCCPPass.html" title=" " alt="" coords="151,1424,237,1451"/>
-<area shape="rect" id="node32" href="$classSimplifyCfgPass.html" title=" " alt="" coords="131,1475,257,1501"/>
-<area shape="rect" id="node33" href="$classSimplifyTrampolinePass.html" title=" " alt="" coords="106,1525,282,1552"/>
-<area shape="rect" id="node34" href="$classSpecialisePass.html" title=" " alt="" coords="135,1576,253,1603"/>
-<area shape="rect" id="node35" href="$classStackObjectElimPass.html" title=" " alt="" coords="115,1627,273,1653"/>
-<area shape="rect" id="node36" href="$classStoreToLoadPass.html" title=" " alt="" coords="129,1677,259,1704"/>
-<area shape="rect" id="node37" href="$classTailRecElimPass.html" title=" " alt="" coords="131,1728,257,1755"/>
-<area shape="rect" id="node38" href="$classUndefElimPass.html" title=" " alt="" coords="135,1779,253,1805"/>
-<area shape="rect" id="node39" href="$classUnusedArgPass.html" title=" " alt="" coords="133,1829,255,1856"/>
-<area shape="rect" id="node40" href="$classValueNumberingPass.html" title=" " alt="" coords="115,1880,273,1907"/>
-<area shape="rect" id="node41" href="$classVerifierPass.html" title=" " alt="" coords="145,1931,243,1957"/>
+<area shape="rect" id="node24" href="$classLocalizeSelectPass.html" title=" " alt="" coords="122,1069,266,1096"/>
+<area shape="rect" id="node25" href="$classMemoryToRegisterPass.html" title=" " alt="" coords="107,1120,281,1147"/>
+<area shape="rect" id="node26" href="$classMergeStoresPass.html" title=" " alt="" coords="127,1171,261,1197"/>
+<area shape="rect" id="node27" href="$classMoveElimPass.html" title=" " alt="" coords="136,1221,252,1248"/>
+<area shape="rect" id="node28" href="$classObjectSplitPass.html" title=" " alt="" coords="133,1272,255,1299"/>
+<area shape="rect" id="node29" href="$classPeepholePass.html" title=" " alt="" coords="139,1323,249,1349"/>
+<area shape="rect" id="node30" href="$classPhiTautPass.html" title=" " alt="" coords="145,1373,243,1400"/>
+<area shape="rect" id="node31" href="$classPreEvalPass.html" title=" " alt="" coords="144,1424,244,1451"/>
+<area shape="rect" id="node32" href="$classSCCPPass.html" title=" " alt="" coords="151,1475,237,1501"/>
+<area shape="rect" id="node33" href="$classSimplifyCfgPass.html" title=" " alt="" coords="131,1525,257,1552"/>
+<area shape="rect" id="node34" href="$classSimplifyTrampolinePass.html" title=" " alt="" coords="106,1576,282,1603"/>
+<area shape="rect" id="node35" href="$classSpecialisePass.html" title=" " alt="" coords="135,1627,253,1653"/>
+<area shape="rect" id="node36" href="$classStackObjectElimPass.html" title=" " alt="" coords="115,1677,273,1704"/>
+<area shape="rect" id="node37" href="$classStoreToLoadPass.html" title=" " alt="" coords="129,1728,259,1755"/>
+<area shape="rect" id="node38" href="$classTailRecElimPass.html" title=" " alt="" coords="131,1779,257,1805"/>
+<area shape="rect" id="node39" href="$classUndefElimPass.html" title=" " alt="" coords="135,1829,253,1856"/>
+<area shape="rect" id="node40" href="$classUnusedArgPass.html" title=" " alt="" coords="133,1880,255,1907"/>
+<area shape="rect" id="node41" href="$classValueNumberingPass.html" title=" " alt="" coords="115,1931,273,1957"/>
+<area shape="rect" id="node42" href="$classVerifierPass.html" title=" " alt="" coords="145,1981,243,2008"/>
 <area shape="rect" id="node4" href="$classPointsToAnalysis.html" title=" " alt="" coords="332,56,463,83"/>
 </map>
