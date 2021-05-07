@@ -22,3 +22,24 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv)
   }
   llvm_unreachable("invalid calling convention");
 }
+
+// -----------------------------------------------------------------------------
+bool IsCamlCall(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::CAML:
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC: {
+      return true;
+    }
+    case CallingConv::C:
+    case CallingConv::SETJMP:
+    case CallingConv::XEN:
+    case CallingConv::INTR:
+    case CallingConv::MULTIBOOT:
+    case CallingConv::WIN64: {
+      return false;
+    }
+  }
+  llvm_unreachable("invalid calling convention");
+}

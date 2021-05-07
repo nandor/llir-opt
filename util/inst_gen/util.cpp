@@ -49,3 +49,13 @@ std::string GetTypeName(llvm::Record &r)
   }
   return ToCamelCase(name) + "Inst";
 }
+
+// -----------------------------------------------------------------------------
+llvm::Record *GetBase(llvm::Record &r)
+{
+  auto bases = r.getType()->getClasses();
+  assert(bases.size() == 1 && "single base expected");
+  return bases[0];
+}
+
+

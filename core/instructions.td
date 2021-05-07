@@ -138,7 +138,13 @@ class UnaryInst : OperatorInst {
   let Fields = [ InstField<"Arg"> ];
 }
 
+class BitCountInst : UnaryInst {
+}
+
 class ConversionInst : UnaryInst {
+}
+
+class ExtensionInst : ConversionInst {
 }
 
 class BinaryInst : OperatorInst {
@@ -160,7 +166,19 @@ class RotateInst : ShiftRotateInst {
 class ShiftInst : ShiftRotateInst {
 }
 
-class DivisionInst : BinaryInst {
+class ShiftRightInst : ShiftInst {
+}
+
+class MultiplyInst : BinaryInst {
+}
+
+class DivisionRemainderInst : BinaryInst {
+}
+
+class DivisionInst : DivisionRemainderInst {
+}
+
+class RemainderInst : DivisionRemainderInst {
 }
 
 class MemoryInst : Inst {
@@ -466,10 +484,10 @@ def MOV : OperatorInst
 // UnaryInst instructions
 // -----------------------------------------------------------------------------
 
-def S_EXT : ConversionInst;
-def Z_EXT : ConversionInst;
-def F_EXT : ConversionInst;
-def X_EXT : ConversionInst;
+def S_EXT : ExtensionInst;
+def Z_EXT : ExtensionInst;
+def F_EXT : ExtensionInst;
+def X_EXT : ExtensionInst;
 def TRUNC : ConversionInst;
 def BIT_CAST : ConversionInst;
 
@@ -486,33 +504,37 @@ def LOG10 : UnaryInst;
 def F_CEIL : UnaryInst;
 def F_FLOOR : UnaryInst;
 
-def POP_COUNT : UnaryInst;
-def CLZ : UnaryInst;
-def CTZ : UnaryInst;
+def POP_COUNT : BitCountInst;
+def CLZ : BitCountInst;
+def CTZ : BitCountInst;
 def BYTE_SWAP : UnaryInst;
 
 // -----------------------------------------------------------------------------
 // BinaryInst Instructions
 // -----------------------------------------------------------------------------
+
+def MUL : MultiplyInst;
+def MUL_H_S : MultiplyInst;
+def MUL_H_U : MultiplyInst;
+
 def ADD : BinaryInst;
 def AND : BinaryInst;
 def SUB : BinaryInst;
 def XOR : BinaryInst;
 def POW : BinaryInst;
-def MUL : BinaryInst;
 def OR : BinaryInst;
 
 def U_DIV : DivisionInst;
 def S_DIV : DivisionInst;
-def U_REM : DivisionInst;
-def S_REM : DivisionInst;
+def U_REM : RemainderInst;
+def S_REM : RemainderInst;
 
 def ROTL : RotateInst;
 def ROTR : RotateInst;
 
 def SLL : ShiftInst;
-def SRA : ShiftInst;
-def SRL : ShiftInst;
+def SRA : ShiftRightInst;
+def SRL : ShiftRightInst;
 
 def COPY_SIGN : BinaryInst;
 
@@ -816,11 +838,3 @@ def PPC_STORE_COND : StoreCondInst;
 def PPC_FENCE : BarrierInst;
 
 def PPC_I_FENCE : BarrierInst;
-
-
-// -----------------------------------------------------------------------------
-// TODO: move to proper place.
-// -----------------------------------------------------------------------------
-
-def MUL_H_S : BinaryInst;
-def MUL_H_U : BinaryInst;

@@ -9,3 +9,6 @@
 
 
 std::string GetTypeName(llvm::Record &r);
+llvm::Record *GetBase(llvm::Record &r);
+
+

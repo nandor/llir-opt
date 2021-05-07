@@ -41,6 +41,7 @@
 #include "passes/dead_store.h"
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
+#include "passes/eliminate_tags.h"
 #include "passes/global_forward.h"
 #include "passes/inliner.h"
 #include "passes/libc_simplify.h"
@@ -506,6 +507,7 @@ int main(int argc, char **argv)
   registry.Register<PhiTautPass>();
   registry.Register<CodeLayoutPass>();
   registry.Register<LocalizeSelectPass>();
+  registry.Register<EliminateTagsPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);

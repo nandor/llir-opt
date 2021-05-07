@@ -74,14 +74,6 @@ void GetClassWriter::run(llvm::raw_ostream &OS)
 }
 
 // -----------------------------------------------------------------------------
-llvm::Record *GetBase(llvm::Record &r)
-{
-  auto bases = r.getType()->getClasses();
-  assert(bases.size() == 1 && "single base expected");
-  return bases[0];
-}
-
-// -----------------------------------------------------------------------------
 std::set<std::string> GetOwnFields(llvm::Record &r)
 {
   std::set<std::string> fields;

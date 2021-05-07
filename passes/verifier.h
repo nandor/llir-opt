@@ -67,7 +67,7 @@ private:
   void VisitBinaryInst(const BinaryInst &i) override;
   void VisitOverflowInst(const OverflowInst &i) override;
   void VisitShiftRotateInst(const ShiftRotateInst &i) override;
-  void VisitDivisionInst(const DivisionInst &i) override {}
+  void VisitDivisionRemainderInst(const DivisionRemainderInst &i) override {}
   void VisitMemoryInst(const MemoryInst &i) override;
   void VisitBarrierInst(const BarrierInst &i) override;
   void VisitMemoryExchangeInst(const MemoryExchangeInst &i) override;

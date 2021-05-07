@@ -32,33 +32,41 @@ public:
   Printer(llvm::raw_ostream &os) : os_(os) {}
 
   /// Prints a whole program.
-  void Print(const Prog &prog);
+  virtual void Print(const Prog &prog);
   /// Prints a data segment.
-  void Print(const Data &data);
+  virtual void Print(const Data &data);
   /// Prints an object.
-  void Print(const Object &object);
+  virtual void Print(const Object &object);
   /// Prints an atom.
-  void Print(const Atom &atom);
+  virtual void Print(const Atom &atom);
   /// Prints a function.
-  void Print(const Func &func);
+  virtual void Print(const Func &func);
   /// Prints a block.
-  void Print(const Block &block);
+  virtual void Print(const Block &block);
   /// Prints an instruction.
-  void Print(const Inst &inst);
+  virtual void Print(const Inst &inst);
   /// Prints an expression.
-  void Print(const Expr &expr);
+  virtual void Print(const Expr &expr);
   /// Prints a value.
-  void Print(ConstRef<Value> val);
+  virtual void Print(ConstRef<Value> val);
   /// Print a quoted string.
-  void Print(const std::string_view str);
+  virtual void Print(const std::string_view str);
+
+protected:
+  /// Hook to print additional information for functions.
+  virtual void PrintFuncHeader(const Func &func) {}
+  /// Hook to print additional information for instructions.
+  virtual void PrintInstHeader(const Inst &inst) {}
 
 private:
   /// Auto-generated printer implementation.
   void PrintImpl(const Inst &inst);
 
-private:
+protected:
   /// Output stream.
   llvm::raw_ostream &os_;
+
+private:
   /// Instruction to identifier map.
   std::unordered_map<ConstRef<Inst>, unsigned> insts_;
 };

@@ -38,3 +38,8 @@ enum class CallingConv : uint8_t {
  * Prints the calling convention to a stream.
  */
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv);
+
+/**
+ * Checks whether the calling conv is to OCaml.
+ */
+bool IsCamlCall(CallingConv conv);

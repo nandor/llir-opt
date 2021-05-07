@@ -161,7 +161,7 @@ private:
     void VisitInst(Inst &inst) override { }
     void VisitUnaryInst(UnaryInst &i) override { }
     void VisitOverflowInst(OverflowInst &i) override { }
-    void VisitDivisionInst(DivisionInst &i) override { }
+    void VisitDivisionRemainderInst(DivisionRemainderInst &i) override { }
     void VisitCmpInst(CmpInst &i) override { }
 
     void VisitBinaryInst(BinaryInst &i) override;

@@ -199,6 +199,9 @@ void Printer::Print(const Func &func)
     os_ << "\n";
   }
 
+  // Hook to print additional info.
+  PrintFuncHeader(func);
+
   // Generate names for instructions.
   {
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
@@ -232,6 +235,9 @@ void Printer::Print(const Block &block)
 void Printer::Print(const Inst &inst)
 {
   os_ << "\t";
+
+  // Hook to print additional info.
+  PrintInstHeader(inst);
 
   // Print the main instruction.
   PrintImpl(inst);

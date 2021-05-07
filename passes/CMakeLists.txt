@@ -44,6 +44,11 @@ add_library(passes
     sccp/solver.cpp
     sccp/x86.cpp
 
+    tags/analysis.cpp
+    tags/init.cpp
+    tags/step.cpp
+    tags/tagged_type.cpp
+
     atom_simplify.cpp
     bypass_phi.cpp
     caml_alloc_inliner.cpp
@@ -58,6 +63,7 @@ add_library(passes
     dead_store.cpp
     dedup_block.cpp
     eliminate_select.cpp
+    eliminate_tags.cpp
     global_forward.cpp
     inliner.cpp
     libc_simplify.cpp

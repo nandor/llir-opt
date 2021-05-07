@@ -23,4 +23,18 @@ void GetInstructionWriter::run(llvm::raw_ostream &OS)
   }
   OS << "#undef GET_INST\n";
   OS << "#endif // GET_INST\n\n";
+
+
+  OS << "#ifdef GET_KIND\n";
+  auto *inst = records_.getClass("Inst");
+  for (const auto &[name, c] : records_.getClasses()) {
+    auto *base = c.get();
+    if (!base->isSubClassOf(inst)) {
+      continue;
+    }
+    auto *parent = GetBase(*base);
+    OS << "GET_KIND(" << name << ", " << parent->getName() << ")\n";
+  }
+  OS << "#undef GET_KIND\n";
+  OS << "#endif // GET_KIND\n\n";
 }
