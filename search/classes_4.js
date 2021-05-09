@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['eliminateselectpass_1135',['EliminateSelectPass',['../classEliminateSelectPass.html',1,'']]],
-  ['emitter_1136',['Emitter',['../classEmitter.html',1,'']]],
-  ['expr_1137',['Expr',['../classExpr.html',1,'']]],
-  ['extern_1138',['Extern',['../classExtern.html',1,'']]]
+  ['eliminateselectpass_1141',['EliminateSelectPass',['../classEliminateSelectPass.html',1,'']]],
+  ['eliminatetagspass_1142',['EliminateTagsPass',['../classEliminateTagsPass.html',1,'']]],
+  ['emitter_1143',['Emitter',['../classEmitter.html',1,'']]],
+  ['expr_1144',['Expr',['../classExpr.html',1,'']]],
+  ['extern_1145',['Extern',['../classExtern.html',1,'']]]
 ];
