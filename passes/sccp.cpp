@@ -6,6 +6,7 @@
 #include <queue>
 
 #include <llvm/Support/Debug.h>
+#include <llvm/ADT/Statistic.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -20,6 +21,7 @@
 
 #define DEBUG_TYPE "sccp"
 
+STATISTIC(NumConstantsFolded, "Number of constants folded by SCCP");
 
 
 // -----------------------------------------------------------------------------
@@ -58,7 +60,11 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         #endif
 
         // Some instructions are not mapped to values.
-        if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
+        if (inst->IsVoid() || inst->HasSideEffects()) {
+          continue;
+        }
+        // Args are constant across an invocation, but not constant globally.
+        if (inst->IsConstant() && !inst->Is(Inst::Kind::ARG)) {
           continue;
         }
 
@@ -140,6 +146,7 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         // Replaces uses if any of them changed and erase the instruction if no
         // users are left, unless the instruction has side effects.
         if (numValues) {
+          ++NumConstantsFolded;
           inst->replaceAllUsesWith(newValues);
           inst->eraseFromParent();
         }
