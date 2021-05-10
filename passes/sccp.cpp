@@ -81,7 +81,8 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
           // The type is downgraded from V64 to I64 since constants are
           // not heap roots, thus they do not need to be tracked.
           Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
-          const auto &annot = inst->GetAnnots();
+          auto annot = inst->GetAnnots();
+          annot.Clear<CamlFrame>();
 
           // Create a mov instruction producing a constant value.
           Inst *newInst = nullptr;
