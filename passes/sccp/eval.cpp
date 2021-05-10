@@ -60,7 +60,8 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::I16:
         case Type::I32:
         case Type::I64:
-        case Type::I128: {
+        case Type::I128:
+        case Type::V64: {
           return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
         }
         case Type::F32:
@@ -71,10 +72,6 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         }
         case Type::F80: {
           llvm_unreachable("not implemented");
-        }
-        case Type::V64: {
-          // Cannot extend integer to pointer.
-          return Lattice::Overdefined();
         }
       }
       llvm_unreachable("invalid value kind");
