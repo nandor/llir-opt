@@ -59,13 +59,15 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         }
         #endif
 
-        // Some instructions are not mapped to values.
-        if (inst->IsVoid() || inst->HasSideEffects()) {
-          continue;
-        }
         // Args are constant across an invocation, but not constant globally.
         if (inst->IsConstant() && !inst->Is(Inst::Kind::ARG)) {
           continue;
+        }
+
+        // Find individual sub-values that have uses.
+        llvm::SmallVector<bool, 4> used(inst->GetNumRets());
+        for (Use &use : inst->uses()) {
+          used[(*use).Index()] = true;
         }
 
         // Find the value assigned to the instruction.
@@ -83,46 +85,48 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
 
           // Create a mov instruction producing a constant value.
           Inst *newInst = nullptr;
-          switch (v.GetKind()) {
-            case Lattice::Kind::UNKNOWN:
-            case Lattice::Kind::OVERDEFINED:
-            case Lattice::Kind::POINTER:
-            case Lattice::Kind::FLOAT_ZERO:
-            case Lattice::Kind::MASK:
-            case Lattice::Kind::RANGE: {
-              break;
-            }
-            case Lattice::Kind::INT: {
-              newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
-              break;
-            }
-            case Lattice::Kind::FLOAT: {
-              newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
-              break;
-            }
-            case Lattice::Kind::FRAME: {
-              newInst = new FrameInst(
-                  type,
-                  v.GetFrameObject(),
-                  v.GetFrameOffset(),
-                  annot
-              );
-              break;
-            }
-            case Lattice::Kind::GLOBAL: {
-              Value *global = nullptr;
-              Global *sym = v.GetGlobalSymbol();
-              if (auto offset = v.GetGlobalOffset()) {
-                global = SymbolOffsetExpr::Create(sym, offset);
-              } else {
-                global = sym;
+          if (used[i]) {
+            switch (v.GetKind()) {
+              case Lattice::Kind::UNKNOWN:
+              case Lattice::Kind::OVERDEFINED:
+              case Lattice::Kind::POINTER:
+              case Lattice::Kind::FLOAT_ZERO:
+              case Lattice::Kind::MASK:
+              case Lattice::Kind::RANGE: {
+                break;
               }
-              newInst = new MovInst(type, global, annot);
-              break;
-            }
-            case Lattice::Kind::UNDEFINED: {
-              newInst = new UndefInst(type, annot);
-              break;
+              case Lattice::Kind::INT: {
+                newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
+                break;
+              }
+              case Lattice::Kind::FLOAT: {
+                newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
+                break;
+              }
+              case Lattice::Kind::FRAME: {
+                newInst = new FrameInst(
+                    type,
+                    v.GetFrameObject(),
+                    v.GetFrameOffset(),
+                    annot
+                );
+                break;
+              }
+              case Lattice::Kind::GLOBAL: {
+                Value *global = nullptr;
+                Global *sym = v.GetGlobalSymbol();
+                if (auto offset = v.GetGlobalOffset()) {
+                  global = SymbolOffsetExpr::Create(sym, offset);
+                } else {
+                  global = sym;
+                }
+                newInst = new MovInst(type, global, annot);
+                break;
+              }
+              case Lattice::Kind::UNDEFINED: {
+                newInst = new UndefInst(type, annot);
+                break;
+              }
             }
           }
 
@@ -148,7 +152,9 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         if (numValues) {
           ++NumConstantsFolded;
           inst->replaceAllUsesWith(newValues);
-          inst->eraseFromParent();
+          if (!inst->HasSideEffects()) {
+            inst->eraseFromParent();
+          }
         }
       }
     }
