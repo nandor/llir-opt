@@ -55,7 +55,7 @@ void Init::VisitArgInst(const ArgInst &i)
                     case Type::I64:
                     case Type::I128: {
                       if (target_->GetPointerType() == ty) {
-                        analysis_.Mark(i, TaggedType::IntOrPtr());
+                        analysis_.Mark(i, TaggedType::PtrInt());
                       } else {
                         analysis_.Mark(i, TaggedType::Int());
                       }
@@ -284,7 +284,7 @@ void Init::VisitLoadInst(const LoadInst &i)
     case Type::I64:
     case Type::I128: {
       if (target_->GetPointerType() == ty) {
-        analysis_.Mark(i, TaggedType::IntOrPtr());
+        analysis_.Mark(i, TaggedType::PtrInt());
       } else {
         analysis_.Mark(i, TaggedType::Int());
       }

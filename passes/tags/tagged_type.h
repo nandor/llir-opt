@@ -17,17 +17,27 @@ class TaggedType {
 public:
   enum class Kind {
     UNKNOWN,
-    EVEN,
-    ODD,
-    INT,
-    PTR,
-    YOUNG,
-    VAL,
-    HEAP,
-    ONE,
+    // Integrals.
     ZERO,
-    ZERO_OR_ONE,
-    INT_OR_PTR,
+    EVEN,
+    ONE,
+    ODD,
+    ZERO_ONE,
+    INT,
+    // Caml pointers.
+    YOUNG,
+    HEAP,
+    // Caml values.
+    VAL,
+    VAL_NULL,
+    VAL_EVEN,
+    // Regular pointers.
+    PTR,
+    PTR_NULL,
+    PTR_EVEN,
+    PTR_ODD,
+    PTR_INT,
+    // Undefined/imprecise.
     UNDEF,
     ANY,
   };
@@ -35,14 +45,15 @@ public:
   Kind GetKind() const { return k_; }
 
   bool IsUnknown() const { return k_ == Kind::UNKNOWN; }
-  bool IsAny() const { return k_ == Kind::ANY; }
+  bool IsZero() const { return k_ == Kind::ZERO; }
   bool IsEven() const { return k_ == Kind::EVEN; }
+  bool IsOne() const { return k_ == Kind::ONE; }
   bool IsOdd() const { return k_ == Kind::ODD; }
+  bool IsAny() const { return k_ == Kind::ANY; }
   bool IsVal() const { return k_ == Kind::VAL; }
   bool IsInt() const { return k_ == Kind::INT; }
-  bool IsIntOrPtr() const { return k_ == Kind::INT_OR_PTR; }
-  bool IsZero() const { return k_ == Kind::ZERO; }
-  bool IsOne() const { return k_ == Kind::ONE; }
+  bool IsPtrInt() const { return k_ == Kind::PTR_INT; }
+  bool IsPtrOdd() const { return k_ == Kind::PTR_ODD; }
   bool IsPtr() const { return k_ == Kind::PTR; }
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
@@ -68,19 +79,24 @@ public:
   }
 
   static TaggedType Unknown() { return TaggedType(Kind::UNKNOWN); }
-  static TaggedType Any() { return TaggedType(Kind::ANY); }
-  static TaggedType Int() { return TaggedType(Kind::INT); }
-  static TaggedType Ptr() { return TaggedType(Kind::PTR); }
-  static TaggedType Val() { return TaggedType(Kind::VAL); }
-  static TaggedType Odd() { return TaggedType(Kind::ODD); }
-  static TaggedType One() { return TaggedType(Kind::ONE); }
-  static TaggedType Young() { return TaggedType(Kind::YOUNG); }
   static TaggedType Zero() { return TaggedType(Kind::ZERO); }
-  static TaggedType ZeroOrOne() { return TaggedType(Kind::ZERO_OR_ONE); }
   static TaggedType Even() { return TaggedType(Kind::EVEN); }
+  static TaggedType One() { return TaggedType(Kind::ONE); }
+  static TaggedType Odd() { return TaggedType(Kind::ODD); }
+  static TaggedType ZeroOne() { return TaggedType(Kind::ZERO_ONE); }
+  static TaggedType Int() { return TaggedType(Kind::INT); }
+  static TaggedType Young() { return TaggedType(Kind::YOUNG); }
   static TaggedType Heap() { return TaggedType(Kind::HEAP); }
+  static TaggedType Val() { return TaggedType(Kind::VAL); }
+  static TaggedType ValNull() { return TaggedType(Kind::VAL_NULL); }
+  static TaggedType ValEven() { return TaggedType(Kind::VAL_EVEN); }
+  static TaggedType Ptr() { return TaggedType(Kind::PTR); }
+  static TaggedType PtrNull() { return TaggedType(Kind::PTR_NULL); }
+  static TaggedType PtrEven() { return TaggedType(Kind::PTR_EVEN); }
+  static TaggedType PtrOdd() { return TaggedType(Kind::PTR_ODD); }
+  static TaggedType PtrInt() { return TaggedType(Kind::PTR_INT); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
-  static TaggedType IntOrPtr() { return TaggedType(Kind::INT_OR_PTR); }
+  static TaggedType Any() { return TaggedType(Kind::ANY); }
 
   void dump(llvm::raw_ostream &os) const;
 
