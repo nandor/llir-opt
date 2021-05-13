@@ -60,12 +60,12 @@ void Step::VisitCallSite(const CallSite &call)
       auto type = args[i];
       for (auto *inst : analysis_.args_[std::make_pair(f, i)]) {
         auto ref = inst->GetSubValue(0);
-        auto it = analysis_.types_.emplace(ref, type);
+        auto it = analysis_.types_.emplace(ref, Clamp(type, inst->GetType()));
         if (it.second) {
           analysis_.Enqueue(ref);
         } else {
           if (it.first->second != type) {
-            auto lub = it.first->second | type;
+            auto lub = Clamp(it.first->second | type, inst->GetType());
             if (lub != it.first->second) {
               it.first->second = lub;
               analysis_.Enqueue(ref);
@@ -427,25 +427,18 @@ void Step::VisitAddInst(const AddInst &i)
         case TaggedType::Kind::UNKNOWN: {
           return;
         }
-        case TaggedType::Kind::ZERO:
-        case TaggedType::Kind::EVEN: {
+        case TaggedType::Kind::ZERO: {
           analysis_.Mark(i, TaggedType::Val());
           return;
         }
         case TaggedType::Kind::ODD:
         case TaggedType::Kind::ONE:
-        case TaggedType::Kind::ZERO_OR_ONE: {
-          analysis_.Mark(i, TaggedType::IntOrPtr());
-          return;
-        }
+        case TaggedType::Kind::ZERO_OR_ONE:
+        case TaggedType::Kind::EVEN:
         case TaggedType::Kind::VAL:
         case TaggedType::Kind::INT:
         case TaggedType::Kind::INT_OR_PTR: {
-          if (i.GetType() == Type::V64) {
-            analysis_.Mark(i, TaggedType::Val());
-          } else {
-            analysis_.Mark(i, TaggedType::IntOrPtr());
-          }
+          analysis_.Mark(i, Clamp(TaggedType::IntOrPtr(), i.GetType()));
           return;
         }
         case TaggedType::Kind::HEAP: {
@@ -846,8 +839,8 @@ void Step::VisitSubInst(const SubInst &i)
           return;
         }
         case TaggedType::Kind::EVEN:
-        case TaggedType::Kind::INT: 
-        case TaggedType::Kind::ODD: 
+        case TaggedType::Kind::INT:
+        case TaggedType::Kind::ODD:
         case TaggedType::Kind::ONE: {
           analysis_.Mark(i, TaggedType::Int());
           return;
@@ -1324,7 +1317,54 @@ void Step::VisitAndInst(const AndInst &i)
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::PTR: {
-      llvm_unreachable("not implemented");
+      switch (vr.GetKind()) {
+        case TaggedType::Kind::UNKNOWN: {
+          return;
+        }
+        case TaggedType::Kind::INT:
+        case TaggedType::Kind::EVEN:
+        case TaggedType::Kind::ODD: {
+          analysis_.Mark(i, TaggedType::IntOrPtr());
+          return;
+        }
+        case TaggedType::Kind::INT_OR_PTR: {
+          llvm_unreachable("not implemented");
+          return;
+        }
+        case TaggedType::Kind::ZERO: {
+          llvm_unreachable("not implemented");
+          return;
+        }
+        case TaggedType::Kind::ZERO_OR_ONE:
+          llvm_unreachable("not implemented");
+        case TaggedType::Kind::ONE: {
+          llvm_unreachable("not implemented");
+          return;
+        }
+        case TaggedType::Kind::VAL: {
+          // TODO: could be more strict.
+          llvm_unreachable("not implemented");
+          return;
+        }
+        case TaggedType::Kind::HEAP: {
+          llvm_unreachable("not implemented");
+        }
+        case TaggedType::Kind::PTR: {
+          llvm_unreachable("not implemented");
+        }
+        case TaggedType::Kind::YOUNG: {
+          llvm_unreachable("not implemented");
+        }
+        case TaggedType::Kind::UNDEF: {
+          llvm_unreachable("not implemented");
+        }
+        case TaggedType::Kind::ANY: {
+          llvm_unreachable("not implemented");
+          // TODO: this might be less generic than any.
+          return;
+        }
+      }
+      llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::YOUNG: {
       llvm_unreachable("not implemented");
@@ -1863,7 +1903,7 @@ void Step::VisitShiftRightInst(const ShiftRightInst &i)
         case TaggedType::Kind::EVEN:
         case TaggedType::Kind::INT: {
           // TODO: distinguish even from constant.
-          analysis_.Mark(i, TaggedType::Even());
+          analysis_.Mark(i, TaggedType::Int());
           return;
         }
         case TaggedType::Kind::ODD:
@@ -1949,15 +1989,13 @@ void Step::VisitShiftRightInst(const ShiftRightInst &i)
       }
       llvm_unreachable("invalid value kind");
     }
-    case TaggedType::Kind::PTR: {
-      llvm_unreachable("not implemented");
-    }
     case TaggedType::Kind::YOUNG: {
       llvm_unreachable("not implemented");
     }
     case TaggedType::Kind::UNDEF: {
       llvm_unreachable("not implemented");
     }
+    case TaggedType::Kind::PTR:
     case TaggedType::Kind::ANY:
     case TaggedType::Kind::INT_OR_PTR: {
       analysis_.Mark(i, TaggedType::Int());

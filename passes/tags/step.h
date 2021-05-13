@@ -50,6 +50,10 @@ public:
   void VisitTerminatorInst(const TerminatorInst &i) override {}
   void VisitSetInst(const SetInst &i) override {}
   void VisitX86_OutInst(const X86_OutInst &i) override {}
+  void VisitX86_WrMsrInst(const X86_WrMsrInst &i) override {}
+  void VisitX86_LidtInst(const X86_LidtInst &i) override {}
+  void VisitX86_LgdtInst(const X86_LgdtInst &i) override {}
+  void VisitX86_LtrInst(const X86_LtrInst &i) override {}
 
   // Values do not change since init.
   void VisitBitCountInst(const BitCountInst &i) override {}

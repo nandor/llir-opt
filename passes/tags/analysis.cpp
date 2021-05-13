@@ -82,9 +82,6 @@ void TypeAnalysis::Solve()
   // Over-approximate all arguments to exported or indirectly reachable
   // functions to the most generic type. Use these values to seed the analysis.
   for (Func &func : prog_) {
-    if (!func.HasAddressTaken() && !func.IsLocal()) {
-      continue;
-    }
     for (auto &block : func) {
       for (auto &inst : block) {
         Init(*this, target_).Dispatch(inst);

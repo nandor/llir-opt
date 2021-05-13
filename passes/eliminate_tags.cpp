@@ -27,21 +27,30 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   TypeAnalysis analysis(prog, GetTarget());
   analysis.Solve();
-  //analysis.dump();
+  analysis.dump();
 
   bool changed = false;
   for (Func &func : prog) {
     for (Block &block : func) {
       for (Inst &inst : block) {
-        if (inst.Is(Inst::Kind::MOV) || inst.GetNumRets() > 1) {
+        if (inst.Is(Inst::Kind::MOV)) {
           continue;
         }
-        auto val = analysis.Find(inst.GetSubValue(0));
-        if (val.IsOne()) {
-          llvm::errs() << "1 " << func.getName() << " " << block.getName() << " " << inst << "\n";
+
+        llvm::SmallVector<bool, 4> used(inst.GetNumRets());
+        for (Use &use : inst.uses()) {
+          used[(*use).Index()] = true;
         }
-        if (val.IsZero()) {
-          llvm::errs() << "0 " << func.getName() << " " << block.getName() << " " << inst << "\n";
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          if (used[i]) {
+            auto val = analysis.Find(inst.GetSubValue(i));
+            if (val.IsOne()) {
+              llvm::errs() << "1 " << func.getName() << " " << block.getName() << " " << inst << "\n";
+            }
+            if (val.IsZero()) {
+              llvm::errs() << "0 " << func.getName() << " " << block.getName() << " " << inst << "\n";
+            }
+          }
         }
       }
     }

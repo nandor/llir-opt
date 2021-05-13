@@ -140,7 +140,7 @@ void Init::VisitMovInst(const MovInst &i)
   {
     switch (g->GetKind()) {
       case Global::Kind::EXTERN: {
-        analysis_.Mark(i, TaggedType::Heap());
+        analysis_.Mark(i, TaggedType::Ptr());
         return;
       }
       case Global::Kind::FUNC:
