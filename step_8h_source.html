@@ -120,37 +120,41 @@ $(function() {
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(<span class="keyword">const</span> TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(<span class="keyword">const</span> SetInst &amp;i)<span class="keyword"> override </span>{}</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> VisitX86_OutInst(<span class="keyword">const</span> X86_OutInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="comment">// Values do not change since init.</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> VisitBitCountInst(<span class="keyword">const</span> BitCountInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> VisitVaStartInst(<span class="keyword">const</span> VaStartInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">void</span> VisitFrameInst(<span class="keyword">const</span> FrameInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> VisitAllocaInst(<span class="keyword">const</span> AllocaInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(<span class="keyword">const</span> GetInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> VisitUndefInst(<span class="keyword">const</span> UndefInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> VisitX86_RdTscInst(<span class="keyword">const</span> X86_RdTscInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> VisitCmpInst(<span class="keyword">const</span> CmpInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitStoreInst(<span class="keyword">const</span> StoreInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">void</span> VisitLoadInst(<span class="keyword">const</span> LoadInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> VisitNegInst(<span class="keyword">const</span> NegInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> VisitRotateInst(<span class="keyword">const</span> RotateInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="comment">// All instruction classes should be handled.</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span> VisitInst(<span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> &amp;i)<span class="keyword"> override</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">  </span>{</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    llvm::errs() &lt;&lt; i &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    llvm_unreachable(<span class="stringliteral">&quot;not implemented&quot;</span>);</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  }</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keywordtype">void</span> Return(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> *from, <span class="keyword">const</span> std::vector&lt;TaggedType&gt; &amp;values);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">void</span> VisitX86_WrMsrInst(<span class="keyword">const</span> X86_WrMsrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> VisitX86_LidtInst(<span class="keyword">const</span> X86_LidtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> VisitX86_LgdtInst(<span class="keyword">const</span> X86_LgdtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> VisitX86_LtrInst(<span class="keyword">const</span> X86_LtrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="comment">// Values do not change since init.</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span> VisitBitCountInst(<span class="keyword">const</span> BitCountInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> VisitVaStartInst(<span class="keyword">const</span> VaStartInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> VisitFrameInst(<span class="keyword">const</span> FrameInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> VisitAllocaInst(<span class="keyword">const</span> AllocaInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(<span class="keyword">const</span> GetInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">void</span> VisitUndefInst(<span class="keyword">const</span> UndefInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> VisitX86_RdTscInst(<span class="keyword">const</span> X86_RdTscInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> VisitCmpInst(<span class="keyword">const</span> CmpInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span> VisitStoreInst(<span class="keyword">const</span> StoreInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">void</span> VisitLoadInst(<span class="keyword">const</span> LoadInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span> VisitNegInst(<span class="keyword">const</span> NegInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">void</span> VisitRotateInst(<span class="keyword">const</span> RotateInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="comment">// All instruction classes should be handled.</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">void</span> VisitInst(<span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> &amp;i)<span class="keyword"> override</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">  </span>{</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    llvm::errs() &lt;&lt; i &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    llvm_unreachable(<span class="stringliteral">&quot;not implemented&quot;</span>);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  }</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;} <span class="comment">// end namespace</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keywordtype">void</span> Return(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> *from, <span class="keyword">const</span> std::vector&lt;TaggedType&gt; &amp;values);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;};</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
