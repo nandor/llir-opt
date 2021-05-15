@@ -29,13 +29,9 @@ public:
     HEAP,
     // Caml values.
     VAL,
-    VAL_NULL,
-    VAL_EVEN,
     // Regular pointers.
     PTR,
     PTR_NULL,
-    PTR_EVEN,
-    PTR_ODD,
     PTR_INT,
     // Undefined/imprecise.
     UNDEF,
@@ -52,8 +48,8 @@ public:
   bool IsAny() const { return k_ == Kind::ANY; }
   bool IsVal() const { return k_ == Kind::VAL; }
   bool IsInt() const { return k_ == Kind::INT; }
+  bool IsPtrNull() const { return k_ == Kind::PTR_NULL; }
   bool IsPtrInt() const { return k_ == Kind::PTR_INT; }
-  bool IsPtrOdd() const { return k_ == Kind::PTR_ODD; }
   bool IsPtr() const { return k_ == Kind::PTR; }
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
@@ -88,12 +84,8 @@ public:
   static TaggedType Young() { return TaggedType(Kind::YOUNG); }
   static TaggedType Heap() { return TaggedType(Kind::HEAP); }
   static TaggedType Val() { return TaggedType(Kind::VAL); }
-  static TaggedType ValNull() { return TaggedType(Kind::VAL_NULL); }
-  static TaggedType ValEven() { return TaggedType(Kind::VAL_EVEN); }
   static TaggedType Ptr() { return TaggedType(Kind::PTR); }
   static TaggedType PtrNull() { return TaggedType(Kind::PTR_NULL); }
-  static TaggedType PtrEven() { return TaggedType(Kind::PTR_EVEN); }
-  static TaggedType PtrOdd() { return TaggedType(Kind::PTR_ODD); }
   static TaggedType PtrInt() { return TaggedType(Kind::PTR_INT); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
   static TaggedType Any() { return TaggedType(Kind::ANY); }

@@ -314,9 +314,14 @@ void Init::VisitNegInst(const NegInst &i)
   analysis_.Mark(i, TaggedType::Int());
 }
 
-
 // -----------------------------------------------------------------------------
 void Init::VisitRotateInst(const RotateInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
+}
+
+// -----------------------------------------------------------------------------
+void Init::VisitSyscallInst(const SyscallInst &i)
+{
+  analysis_.Mark(i, TaggedType::PtrInt());
 }

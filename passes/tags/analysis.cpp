@@ -12,31 +12,32 @@
 
 using namespace tags;
 
-
+// -----------------------------------------------------------------------------
+static bool Converges(Type ty, TaggedType told, TaggedType tnew)
+{
+  return (told < tnew) && (ty != Type::V64 || tnew <= TaggedType::Val());
+}
 
 // -----------------------------------------------------------------------------
-bool TypeAnalysis::Mark(ConstRef<Inst> inst, const TaggedType &type)
+bool TypeAnalysis::Mark(ConstRef<Inst> inst, const TaggedType &tnew)
 {
-  auto it = types_.emplace(inst, type);
+  auto it = types_.emplace(inst, tnew);
   if (it.second) {
     Enqueue(inst);
     return true;
   } else {
-    if (it.first->second == type) {
+    auto told = it.first->second;
+    if (told == tnew) {
       return false;
     } else {
-      if (!(it.first->second < type)) {
-        llvm::errs() << it.first->second << " " << type << "\n";
+      if (!Converges(inst.GetType(), told, tnew)) {
+        llvm::errs() << told << " " << tnew << "\n";
         llvm::errs() << inst->getParent()->getName() << "\n";
       }
-      if (!(inst.GetType() != Type::V64 || type <= TaggedType::Val())) {
-        llvm::errs() << type << "\n";
-      }
       #ifndef NDEBUG
-      assert(it.first->second < type && "no convergence");
-      assert(inst.GetType() != Type::V64 || type <= TaggedType::Val());
+      assert(Converges(inst.GetType(), told, tnew) && "no convergence");
       #endif
-      it.first->second = type;
+      it.first->second = tnew;
       Enqueue(inst);
       return true;
     }
@@ -103,6 +104,8 @@ void TypeAnalysis::Solve()
       Step(*this, target_).Dispatch(*inst);
     }
   }
+  // Propagate information from uses to definitions.
+
 }
 
 // -----------------------------------------------------------------------------

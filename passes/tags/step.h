@@ -41,6 +41,7 @@ public:
   void VisitTruncInst(const TruncInst &i) override;
   void VisitBitCastInst(const BitCastInst &i) override;
   void VisitByteSwapInst(const ByteSwapInst &i) override;
+  void VisitMemoryExchangeInst(const MemoryExchangeInst &i) override;
   void VisitMemoryCompareExchangeInst(const MemoryCompareExchangeInst &i) override;
   void VisitSelectInst(const SelectInst &i) override;
   void VisitPhiInst(const PhiInst &i) override;
@@ -68,6 +69,7 @@ public:
   void VisitLoadInst(const LoadInst &i) override {}
   void VisitNegInst(const NegInst &i) override {}
   void VisitRotateInst(const RotateInst &i) override {}
+  void VisitSyscallInst(const SyscallInst &i) override {}
 
   // All instruction classes should be handled.
   void VisitInst(const Inst &i) override

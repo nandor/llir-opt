@@ -36,6 +36,7 @@ public:
   void VisitLoadInst(const LoadInst &i) override;
   void VisitBitCountInst(const BitCountInst &i) override;
   void VisitRotateInst(const RotateInst &i) override;
+  void VisitSyscallInst(const SyscallInst &i) override;
 
   void VisitControlInst(const ControlInst &i) override {}
   void VisitBarrierInst(const BarrierInst &i) override {}
