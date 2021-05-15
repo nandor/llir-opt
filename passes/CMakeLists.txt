@@ -48,6 +48,7 @@ add_library(passes
     tags/init.cpp
     tags/step.cpp
     tags/tagged_type.cpp
+    tags/refine.cpp
 
     atom_simplify.cpp
     bypass_phi.cpp
