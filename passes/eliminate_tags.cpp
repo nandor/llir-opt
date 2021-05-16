@@ -54,6 +54,33 @@ bool EliminateTagsPass::Run(Prog &prog)
         }
       }
     }
+
+    for (User *user : func.users()) {
+      auto *mov = ::cast_or_null<MovInst>(user);
+      if (!mov) {
+        continue;
+      }
+      for (User *movUser : mov->users()) {
+        auto *call = ::cast_or_null<CallSite>(movUser);
+        if (!call) {
+          continue;
+        }
+
+        bool specialised = false;
+        for (auto arg : call->args()) {
+          if (arg.GetType() != Type::V64) {
+            continue;
+          }
+          auto val = analysis.Find(arg);
+          if (val.IsOdd()) {
+            specialised = true;
+          }
+        }
+        if (specialised) {
+          llvm::errs() << call->getParent()->getParent()->getName() << " -> " << func.getName() << "\n";
+        }
+      }
+    }
   }
   return changed;
 }

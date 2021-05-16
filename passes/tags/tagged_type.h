@@ -47,6 +47,7 @@ public:
   bool IsOdd() const { return k_ == Kind::ODD; }
   bool IsAny() const { return k_ == Kind::ANY; }
   bool IsVal() const { return k_ == Kind::VAL; }
+  bool IsHeap() const { return k_ == Kind::HEAP; }
   bool IsInt() const { return k_ == Kind::INT; }
   bool IsPtrNull() const { return k_ == Kind::PTR_NULL; }
   bool IsPtrInt() const { return k_ == Kind::PTR_INT; }

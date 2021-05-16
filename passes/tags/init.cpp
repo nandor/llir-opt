@@ -43,7 +43,7 @@ void Init::VisitArgInst(ArgInst &i)
                 return;
               }
               default: {
-                if (func.HasAddressTaken()) {
+                if (func.HasAddressTaken() || !func.IsLocal()) {
                   switch (auto ty = i.GetType()) {
                     case Type::V64: {
                       analysis_.Mark(i, TaggedType::Val());

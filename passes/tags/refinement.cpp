@@ -44,6 +44,10 @@ void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
 {
   if (pdt_.dominates(i.getParent(), ref->getParent())) {
     analysis_.Refine(ref, type);
+    auto *source = &*ref;
+    if (inQueue_.insert(source).second) {
+      queue_.push(source);
+    }
   } else {
     // TODO
   }
@@ -101,6 +105,23 @@ void Refinement::VisitCmpInst(CmpInst &i)
     if (vr.IsVal() && vl.IsOdd()) {
       Refine(i, i.GetRHS(), TaggedType::Odd());
       return;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitPhiInst(PhiInst &phi)
+{
+  auto vphi = analysis_.Find(phi);
+  if (vphi.IsUnknown()) {
+    return;
+  }
+
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    auto ref = phi.GetValue(i);
+    auto vin = analysis_.Find(ref);
+    if (vphi < vin) {
+      Refine(phi, ref, vphi);
     }
   }
 }
