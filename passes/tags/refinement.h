@@ -33,6 +33,7 @@ private:
 
 private:
   void VisitLoadInst(LoadInst &i) override;
+  void VisitCmpInst(CmpInst &i) override;
   void VisitInst(Inst &i) override {}
 
 private:

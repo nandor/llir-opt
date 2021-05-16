@@ -84,3 +84,23 @@ void Refinement::VisitLoadInst(LoadInst &i)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitCmpInst(CmpInst &i)
+{
+  auto cc = i.GetCC();
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+
+  bool isEquality = cc == Cond::EQ || cc == Cond::NE;
+  if (!isEquality) {
+    if (vl.IsVal() && vr.IsOdd()) {
+      Refine(i, i.GetLHS(), TaggedType::Odd());
+      return;
+    }
+    if (vr.IsVal() && vl.IsOdd()) {
+      Refine(i, i.GetRHS(), TaggedType::Odd());
+      return;
+    }
+  }
+}

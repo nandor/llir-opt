@@ -332,7 +332,7 @@ void Step::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
   if (ref.IsUnknown() || val.IsUnknown() || val.IsUnknown()) {
     return;
   }
-  Mark(i, ref);
+  Mark(i, Clamp(TaggedType::PtrInt(), i.GetType()));
 }
 
 // -----------------------------------------------------------------------------
