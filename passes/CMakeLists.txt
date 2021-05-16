@@ -46,9 +46,16 @@ add_library(passes
 
     tags/analysis.cpp
     tags/init.cpp
+    tags/refinement.cpp
     tags/step.cpp
     tags/tagged_type.cpp
-    tags/refine.cpp
+    tags/eval/add.cpp
+    tags/eval/sub.cpp
+    tags/eval/and.cpp
+    tags/eval/xor.cpp
+    tags/eval/or.cpp
+    tags/eval/conv.cpp
+    tags/eval/shift.cpp
 
     atom_simplify.cpp
     bypass_phi.cpp

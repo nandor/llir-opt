@@ -162,12 +162,11 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           k_ = that.k_;
           return *this;
         }
+        case Kind::PTR_NULL:
         case Kind::PTR: {
           k_ = Kind::PTR_NULL;
           return *this;
         }
-
-        case Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");
     }
@@ -424,7 +423,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
         }
         case Kind::VAL:
         case Kind::HEAP: {
-          k_ = Kind::ANY;
+          k_ = Kind::PTR_INT;
           return *this;
         }
         case Kind::UNDEF: {

@@ -14,7 +14,7 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
-void Init::VisitArgInst(const ArgInst &i)
+void Init::VisitArgInst(ArgInst &i)
 {
   auto &func = *i.getParent()->getParent();
   switch (func.GetCallingConv()) {
@@ -134,7 +134,7 @@ void Init::VisitArgInst(const ArgInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitMovInst(const MovInst &i)
+void Init::VisitMovInst(MovInst &i)
 {
   auto global = [this, &i](ConstRef<Global> g)
   {
@@ -204,19 +204,19 @@ void Init::VisitMovInst(const MovInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitFrameInst(const FrameInst &i)
+void Init::VisitFrameInst(FrameInst &i)
 {
   analysis_.Mark(i, TaggedType::Ptr());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitAllocaInst(const AllocaInst &i)
+void Init::VisitAllocaInst(AllocaInst &i)
 {
   analysis_.Mark(i, TaggedType::Ptr());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitGetInst(const GetInst &i)
+void Init::VisitGetInst(GetInst &i)
 {
   switch (i.GetReg()) {
     case Register::SP:
@@ -253,25 +253,25 @@ void Init::VisitGetInst(const GetInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitUndefInst(const UndefInst &i)
+void Init::VisitUndefInst(UndefInst &i)
 {
   analysis_.Mark(i, TaggedType::Undef());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitX86_RdTscInst(const X86_RdTscInst &i)
+void Init::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitCmpInst(const CmpInst &i)
+void Init::VisitCmpInst(CmpInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitLoadInst(const LoadInst &i)
+void Init::VisitLoadInst(LoadInst &i)
 {
   switch (auto ty = i.GetType()) {
     case Type::V64: {
@@ -302,26 +302,26 @@ void Init::VisitLoadInst(const LoadInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitBitCountInst(const BitCountInst &i)
+void Init::VisitBitCountInst(BitCountInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitNegInst(const NegInst &i)
+void Init::VisitNegInst(NegInst &i)
 {
   // TODO: propagate even/odd.
   analysis_.Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitRotateInst(const RotateInst &i)
+void Init::VisitRotateInst(RotateInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitSyscallInst(const SyscallInst &i)
+void Init::VisitSyscallInst(SyscallInst &i)
 {
   analysis_.Mark(i, TaggedType::PtrInt());
 }

@@ -16,7 +16,7 @@ class TypeAnalysis;
 /**
  * Helper to produce the initial types for known values.
  */
-class Init : public ConstInstVisitor<void> {
+class Init : public InstVisitor<void> {
 public:
   Init(TypeAnalysis &analysis, const Target *target)
     : analysis_(analysis)
@@ -24,26 +24,26 @@ public:
   {
   }
 
-  void VisitArgInst(const ArgInst &i) override;
-  void VisitMovInst(const MovInst &i) override;
-  void VisitNegInst(const NegInst &i) override;
-  void VisitFrameInst(const FrameInst &i) override;
-  void VisitAllocaInst(const AllocaInst &i) override;
-  void VisitGetInst(const GetInst &i) override;
-  void VisitUndefInst(const UndefInst &i) override;
-  void VisitX86_RdTscInst(const X86_RdTscInst &i) override;
-  void VisitCmpInst(const CmpInst &i) override;
-  void VisitLoadInst(const LoadInst &i) override;
-  void VisitBitCountInst(const BitCountInst &i) override;
-  void VisitRotateInst(const RotateInst &i) override;
-  void VisitSyscallInst(const SyscallInst &i) override;
+  void VisitArgInst(ArgInst &i) override;
+  void VisitMovInst(MovInst &i) override;
+  void VisitNegInst(NegInst &i) override;
+  void VisitFrameInst(FrameInst &i) override;
+  void VisitAllocaInst(AllocaInst &i) override;
+  void VisitGetInst(GetInst &i) override;
+  void VisitUndefInst(UndefInst &i) override;
+  void VisitX86_RdTscInst(X86_RdTscInst &i) override;
+  void VisitCmpInst(CmpInst &i) override;
+  void VisitLoadInst(LoadInst &i) override;
+  void VisitBitCountInst(BitCountInst &i) override;
+  void VisitRotateInst(RotateInst &i) override;
+  void VisitSyscallInst(SyscallInst &i) override;
 
-  void VisitControlInst(const ControlInst &i) override {}
-  void VisitBarrierInst(const BarrierInst &i) override {}
-  void VisitX86_PauseInst(const X86_PauseInst &i) override {}
-  void VisitX86_HltInst(const X86_HltInst &i) override {}
+  void VisitControlInst(ControlInst &i) override {}
+  void VisitBarrierInst(BarrierInst &i) override {}
+  void VisitX86_PauseInst(X86_PauseInst &i) override {}
+  void VisitX86_HltInst(X86_HltInst &i) override {}
 
-  void VisitInst(const Inst &i) override
+  void VisitInst(Inst &i) override
   {
     for (auto v : i.operand_values()) {
       if (v->Is(Value::Kind::INST)) {

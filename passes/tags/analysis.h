@@ -31,7 +31,7 @@ public:
 
   /// Dump the results of the analysis.
   void dump(llvm::raw_ostream &os = llvm::errs());
-  
+
   /// Find the type assigned to a vreg.
   TaggedType Find(ConstRef<Inst> ref)
   {
@@ -42,13 +42,26 @@ public:
 private:
   friend class Init;
   friend class Step;
+  friend class Refinement;
 
   /// Mark an instruction with a type.
-  bool Mark(ConstRef<Inst> inst, const TaggedType &type);
+  bool Mark(Ref<Inst> inst, const TaggedType &type);
   /// Mark operators with a type.
-  bool Mark(Inst &inst, const TaggedType &type);
+  bool Mark(Inst &inst, const TaggedType &type)
+  {
+    return Mark(inst.GetSubValue(0), type);
+  }
+
+  /// Refine an instruction with a type.
+  bool Refine(Ref<Inst> inst, const TaggedType &type);
+  /// Refine operators with a type.
+  bool Refine(Inst &inst, const TaggedType &type)
+  {
+    return Refine(inst.GetSubValue(0), type);
+  }
+
   /// Queue the users of an instruction to be updated.
-  void Enqueue(ConstRef<Inst> inst);
+  void Enqueue(Ref<Inst> inst);
 
 private:
   /// Reference to the underlying program.
@@ -56,20 +69,28 @@ private:
   /// Reference to the target arch.
   const Target *target_;
   /// Queue of instructions to propagate information from.
-  std::queue<const Inst *> queue_;
+  std::queue<Inst *> forwardQueue_;
   /// Queue of PHI nodes, evaluated after other instructions.
-  std::queue<const PhiInst *> phiQueue_;
+  std::queue<PhiInst *> forwardPhiQueue_;
   /// Set of instructions in the queue.
-  std::unordered_set<const Inst *> inQueue_;
+  std::unordered_set<Inst *> inForwardQueue_;
+  /// Queue of functions for backward propagation.
+  std::queue<Func *> backwardQueue_;
+  /// Set of functions in the backward queue.
+  std::unordered_set<Func *> inBackwardQueue_;
+  /// Queue of functions for refine propagation.
+  std::queue<Inst *> refineQueue_;
+  /// Set of functions in the refine queue.
+  std::unordered_set<Inst *> inRefineQueue_;
   /// Mapping from instructions to their types.
   std::unordered_map<ConstRef<Inst>, TaggedType> types_;
   /// Mapping from indices to arguments.
   std::unordered_map
     < std::pair<const Func *, unsigned>
-    , std::vector<const ArgInst *>
+    , std::vector<ArgInst *>
     > args_;
   /// Mapping from functions to their return values.
-  std::unordered_map< const Func *, std::vector<TaggedType>> rets_;
+  std::unordered_map<const Func *, std::vector<TaggedType>> rets_;
 };
 
 } // end namespace

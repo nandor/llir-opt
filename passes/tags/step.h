@@ -15,78 +15,97 @@ namespace tags {
 class TypeAnalysis;
 
 /**
- * Helper to propagate types.
+ * Helper class to evaluate instructions and propagate values.
  */
-class Step : public ConstInstVisitor<void> {
+class Step final : public InstVisitor<void> {
 public:
-  Step(TypeAnalysis &analysis, const Target *target)
+  enum class Kind {
+    REFINE,
+    FORWARD
+  };
+
+public:
+  Step(TypeAnalysis &analysis, const Target *target, Kind kind)
     : analysis_(analysis)
     , target_(target)
-  {
-  }
-
-  void VisitCallSite(const CallSite &i) override;
-  void VisitMovInst(const MovInst &i) override;
-  void VisitAddInst(const AddInst &i) override;
-  void VisitSubInst(const SubInst &i) override;
-  void VisitMultiplyInst(const MultiplyInst &i) override;
-  void VisitDivisionRemainderInst(const DivisionRemainderInst &i) override;
-  void VisitAndInst(const AndInst &i) override;
-  void VisitXorInst(const XorInst &i) override;
-  void VisitOrInst(const OrInst &i) override;
-  void VisitShiftRightInst(const ShiftRightInst &i) override;
-  void VisitSllInst(const SllInst &i) override;
-  void VisitRotlInst(const RotlInst &i) override;
-  void VisitExtensionInst(const ExtensionInst &i) override;
-  void VisitTruncInst(const TruncInst &i) override;
-  void VisitBitCastInst(const BitCastInst &i) override;
-  void VisitByteSwapInst(const ByteSwapInst &i) override;
-  void VisitMemoryExchangeInst(const MemoryExchangeInst &i) override;
-  void VisitMemoryCompareExchangeInst(const MemoryCompareExchangeInst &i) override;
-  void VisitSelectInst(const SelectInst &i) override;
-  void VisitPhiInst(const PhiInst &i) override;
-  void VisitReturnInst(const ReturnInst &i) override;
-
-  // Instructions with no effect.
-  void VisitTerminatorInst(const TerminatorInst &i) override {}
-  void VisitSetInst(const SetInst &i) override {}
-  void VisitX86_OutInst(const X86_OutInst &i) override {}
-  void VisitX86_WrMsrInst(const X86_WrMsrInst &i) override {}
-  void VisitX86_LidtInst(const X86_LidtInst &i) override {}
-  void VisitX86_LgdtInst(const X86_LgdtInst &i) override {}
-  void VisitX86_LtrInst(const X86_LtrInst &i) override {}
-
-  // Values do not change since init.
-  void VisitBitCountInst(const BitCountInst &i) override {}
-  void VisitVaStartInst(const VaStartInst &i) override {}
-  void VisitFrameInst(const FrameInst &i) override {}
-  void VisitAllocaInst(const AllocaInst &i) override {}
-  void VisitGetInst(const GetInst &i) override {}
-  void VisitUndefInst(const UndefInst &i) override {}
-  void VisitX86_RdTscInst(const X86_RdTscInst &i) override {}
-  void VisitCmpInst(const CmpInst &i) override {}
-  void VisitStoreInst(const StoreInst &i) override {}
-  void VisitLoadInst(const LoadInst &i) override {}
-  void VisitNegInst(const NegInst &i) override {}
-  void VisitRotateInst(const RotateInst &i) override {}
-  void VisitSyscallInst(const SyscallInst &i) override {}
-
-  // All instruction classes should be handled.
-  void VisitInst(const Inst &i) override
-  {
-    llvm::errs() << i << "\n";
-    llvm_unreachable("not implemented");
-  }
+    , kind_(kind)
+  {}
 
 private:
+  void VisitCallSite(CallSite &i) override;
+  void VisitMovInst(MovInst &i) override;
+  void VisitAddInst(AddInst &i) override;
+  void VisitSubInst(SubInst &i) override;
+  void VisitMultiplyInst(MultiplyInst &i) override;
+  void VisitDivisionRemainderInst(DivisionRemainderInst &i) override;
+  void VisitAndInst(AndInst &i) override;
+  void VisitXorInst(XorInst &i) override;
+  void VisitOrInst(OrInst &i) override;
+  void VisitShiftRightInst(ShiftRightInst &i) override;
+  void VisitSllInst(SllInst &i) override;
+  void VisitRotlInst(RotlInst &i) override;
+  void VisitExtensionInst(ExtensionInst &i) override;
+  void VisitTruncInst(TruncInst &i) override;
+  void VisitBitCastInst(BitCastInst &i) override;
+  void VisitByteSwapInst(ByteSwapInst &i) override;
+  void VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
+  void VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
+  void VisitSelectInst(SelectInst &i) override;
+  void VisitPhiInst(PhiInst &i) override;
+  void VisitReturnInst(ReturnInst &i) override;
+
+  // Instructions with no effect.
+  void VisitTerminatorInst(TerminatorInst &i) override {}
+  void VisitSetInst(SetInst &i) override {}
+  void VisitX86_OutInst(X86_OutInst &i) override {}
+  void VisitX86_WrMsrInst(X86_WrMsrInst &i) override {}
+  void VisitX86_LidtInst(X86_LidtInst &i) override {}
+  void VisitX86_LgdtInst(X86_LgdtInst &i) override {}
+  void VisitX86_LtrInst(X86_LtrInst &i) override {}
+
+  // Values do not change since init.
+  void VisitBitCountInst(BitCountInst &i) override {}
+  void VisitVaStartInst(VaStartInst &i) override {}
+  void VisitFrameInst(FrameInst &i) override {}
+  void VisitAllocaInst(AllocaInst &i) override {}
+  void VisitGetInst(GetInst &i) override {}
+  void VisitUndefInst(UndefInst &i) override {}
+  void VisitX86_RdTscInst(X86_RdTscInst &i) override {}
+  void VisitCmpInst(CmpInst &i) override {}
+  void VisitStoreInst(StoreInst &i) override {}
+  void VisitLoadInst(LoadInst &i) override {}
+  void VisitNegInst(NegInst &i) override {}
+  void VisitRotateInst(RotateInst &i) override {}
+  void VisitSyscallInst(SyscallInst &i) override {}
+
+  // All instruction classes should be handled.
+  void VisitInst(Inst &i) override;
+
+private:
+  TaggedType Clamp(TaggedType type, Type ty);
+  TaggedType Add(TaggedType vl, TaggedType vr);
+  TaggedType Sub(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType And(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Xor(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Or(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Shr(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Shl(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Ext(Type ty, TaggedType arg);
+  TaggedType Trunc(Type ty, TaggedType arg);
+
+private:
+  /// Mark an instruction with a type.
+  bool Mark(Ref<Inst> inst, const TaggedType &type);
   /// Return values through tail calls.
-  void Return(const Func *from, const std::vector<TaggedType> &values);
+  void Return(Func *from, const std::vector<TaggedType> &values);
 
 private:
   /// Reference to the analysis.
   TypeAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
+  /// Operation mode.
+  Kind kind_;
 };
 
 } // end namespace
