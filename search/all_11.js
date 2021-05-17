@@ -15,7 +15,7 @@ var searchData=
   ['refbase_3c_20const_20t_20_3e_794',['RefBase&lt; const T &gt;',['../classRefBase.html',1,'']]],
   ['refbase_3c_20value_20_3e_795',['RefBase&lt; Value &gt;',['../classRefBase.html',1,'']]],
   ['referencegraph_796',['ReferenceGraph',['../classReferenceGraph.html',1,'ReferenceGraph'],['../classReferenceGraph.html#a1ede7c3b4697f034c44862bea8e84e83',1,'ReferenceGraph::ReferenceGraph()']]],
-  ['refine_797',['Refine',['../classtags_1_1Refine.html',1,'tags']]],
+  ['refinement_797',['Refinement',['../classtags_1_1Refinement.html',1,'tags']]],
   ['reg_798',['Reg',['../structCallLowering_1_1ArgPart.html#a7dbacd876dfead144339734495f332ab',1,'CallLowering::ArgPart::Reg()'],['../structCallLowering_1_1RetPart.html#a8ec0e9ac694d34b9f2f0b8d34e5d03cf',1,'CallLowering::RetPart::Reg()'],['../classLexer.html#aeddd2489e5a7ef72ef749d4f5c124cfd',1,'Lexer::Reg()']]],
   ['register_799',['Register',['../classPassRegistry.html#ab6d4fea7c4965664e96b81f52dc8760c',1,'PassRegistry']]],
   ['regs_5f_800',['regs_',['../classISel.html#a54350ecd79772e262cb0df81d2781cfc',1,'ISel']]],

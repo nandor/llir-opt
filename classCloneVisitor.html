@@ -79,10 +79,11 @@ Inheritance diagram for CloneVisitor:</div>
 <div class="dyncontent">
 <div class="center"><img src="classCloneVisitor__inherit__graph.png" border="0" usemap="#CloneVisitor_inherit__map" alt="Inheritance graph"/></div>
 <map name="CloneVisitor_inherit__map" id="CloneVisitor_inherit__map">
-<area shape="rect" title=" " alt="" coords="159,5,260,32"/>
+<area shape="rect" title=" " alt="" coords="257,5,359,32"/>
 <area shape="rect" href="classInlineHelper.html" title=" " alt="" coords="5,87,107,114"/>
 <area shape="rect" href="classProgramCloneVisitor.html" title=" " alt="" coords="131,87,287,114"/>
 <area shape="rect" href="classSpecialisePass_1_1SpecialiseClone.html" title=" " alt="" coords="311,80,502,121"/>
+<area shape="rect" href="classTypeRewriter.html" title=" " alt="" coords="527,87,633,114"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -128,6 +129,10 @@ virtual <a class="el" href="classAnnotSet.html">AnnotSet</a>&#160;</td><td class
 virtual <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCloneVisitor.html#af51ea87a2a295a8b1e0019ec82006c3a">Map</a> (<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
 <tr class="memdesc:af51ea87a2a295a8b1e0019ec82006c3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maps an instruction reference to a new one. <br /></td></tr>
 <tr class="separator:af51ea87a2a295a8b1e0019ec82006c3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2606282a92587eb3547414413bb2cf2"><td class="memItemLeft" align="right" valign="top"><a id="af2606282a92587eb3547414413bb2cf2"></a>
+virtual Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCloneVisitor.html#af2606282a92587eb3547414413bb2cf2">Map</a> (Type ty, <a class="el" href="classInst.html">Inst</a> *inst, unsigned idx)</td></tr>
+<tr class="memdesc:af2606282a92587eb3547414413bb2cf2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maps a type to a new one. <br /></td></tr>
+<tr class="separator:af2606282a92587eb3547414413bb2cf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab3096e46148db23d6c54f69b43484217"><td class="memItemLeft" align="right" valign="top"><a id="ab3096e46148db23d6c54f69b43484217"></a>
 virtual <a class="el" href="classInst.html">Inst</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCloneVisitor.html#ab3096e46148db23d6c54f69b43484217">Clone</a> (<a class="el" href="classInst.html">Inst</a> *inst)</td></tr>
 <tr class="memdesc:ab3096e46148db23d6c54f69b43484217"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clones an instruction. <br /></td></tr>

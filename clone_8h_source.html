@@ -105,48 +105,49 @@ $(function() {
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classCloneVisitor.html#af51ea87a2a295a8b1e0019ec82006c3a">   47</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> <a class="code" href="classCloneVisitor.html#af51ea87a2a295a8b1e0019ec82006c3a">Map</a>(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> inst) { <span class="keywordflow">return</span> inst; }</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classInst.html">Inst</a> *<a class="code" href="classCloneVisitor.html#ab3096e46148db23d6c54f69b43484217">Clone</a>(<a class="code" href="classInst.html">Inst</a> *inst);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7">Fixup</a>();</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="comment">// Declaration of individual clone methods.</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">  #define GET_INST(kind, type, name, sort) \</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">    virtual Inst *Clone(type *i);</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">  #include &quot;instructions.def&quot;</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <a class="code" href="classRef.html">Ref&lt;Value&gt;</a> <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(<a class="code" href="classRef.html">Ref&lt;Value&gt;</a> value);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <a class="code" href="classRef.html">Ref&lt;Block&gt;</a> <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(<a class="code" href="classRef.html">Ref&lt;Block&gt;</a> value);</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> It, <span class="keyword">typename</span> T = <span class="keyword">typename</span> It::value_type&gt;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  std::vector&lt;T&gt; <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(llvm::iterator_range&lt;It&gt; range)</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  {</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    std::vector&lt;T&gt; args;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordflow">for</span> (T arg : range) {</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;      args.push_back(<a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(arg));</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    }</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">return</span> args;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  }</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">   79</a></span>&#160;  llvm::SmallVector&lt;std::pair&lt;PhiInst *, PhiInst *&gt;, 10&gt; <a class="code" href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">fixups_</a>;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;};</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;std::pair&lt;std::unique_ptr&lt;Prog&gt;, <a class="code" href="classInst.html">Inst</a> *&gt; Clone(<a class="code" href="classProg.html">Prog</a> &amp;oldProg, <a class="code" href="classInst.html">Inst</a> *inst);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;std::pair&lt;std::unique_ptr&lt;Prog&gt;, T *&gt; CloneT(<a class="code" href="classProg.html">Prog</a> &amp;oldProg, T *inst)</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;{</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keyword">auto</span> &amp;&amp;[prog, newInst] = Clone(oldProg, inst);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordflow">return</span> { std::move(prog), <span class="keyword">static_cast&lt;</span>T *<span class="keyword">&gt;</span>(newInst) };</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;}</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;std::unique_ptr&lt;Prog&gt; Clone(<a class="code" href="classProg.html">Prog</a> &amp;oldProg);</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classCloneVisitor.html#af2606282a92587eb3547414413bb2cf2">   49</a></span>&#160;  <span class="keyword">virtual</span> Type <a class="code" href="classCloneVisitor.html#af2606282a92587eb3547414413bb2cf2">Map</a>(Type ty, <a class="code" href="classInst.html">Inst</a> *inst, <span class="keywordtype">unsigned</span> idx) { <span class="keywordflow">return</span> ty; }</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classInst.html">Inst</a> *<a class="code" href="classCloneVisitor.html#ab3096e46148db23d6c54f69b43484217">Clone</a>(<a class="code" href="classInst.html">Inst</a> *inst);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7">Fixup</a>();</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="comment">// Declaration of individual clone methods.</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">  #define GET_INST(kind, type, name, sort) \</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">    virtual Inst *Clone(type *i);</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">  #include &quot;instructions.def&quot;</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <a class="code" href="classRef.html">Ref&lt;Value&gt;</a> <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(<a class="code" href="classRef.html">Ref&lt;Value&gt;</a> value);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <a class="code" href="classRef.html">Ref&lt;Block&gt;</a> <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(<a class="code" href="classRef.html">Ref&lt;Block&gt;</a> value);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> It, <span class="keyword">typename</span> T = <span class="keyword">typename</span> It::value_type&gt;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  std::vector&lt;T&gt; <a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(llvm::iterator_range&lt;It&gt; range)</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  {</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    std::vector&lt;T&gt; args;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">for</span> (T arg : range) {</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;      args.push_back(<a class="code" href="classCloneVisitor.html#a491141642c31e4a2845c14582aae4429">Map</a>(arg));</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    }</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordflow">return</span> args;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  }</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">   81</a></span>&#160;  llvm::SmallVector&lt;std::pair&lt;PhiInst *, PhiInst *&gt;, 10&gt; <a class="code" href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">fixups_</a>;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;};</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;std::pair&lt;std::unique_ptr&lt;Prog&gt;, <a class="code" href="classInst.html">Inst</a> *&gt; Clone(<a class="code" href="classProg.html">Prog</a> &amp;oldProg, <a class="code" href="classInst.html">Inst</a> *inst);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;std::pair&lt;std::unique_ptr&lt;Prog&gt;, T *&gt; CloneT(<a class="code" href="classProg.html">Prog</a> &amp;oldProg, T *inst)</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;{</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keyword">auto</span> &amp;&amp;[prog, newInst] = Clone(oldProg, inst);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordflow">return</span> { std::move(prog), <span class="keyword">static_cast&lt;</span>T *<span class="keyword">&gt;</span>(newInst) };</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;}</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;std::unique_ptr&lt;Prog&gt; Clone(<a class="code" href="classProg.html">Prog</a> &amp;oldProg);</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassCloneVisitor_html_a803ffdd787cbd6aa8712d26b66de99b7"><div class="ttname"><a href="classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7">CloneVisitor::Fixup</a></div><div class="ttdeci">void Fixup()</div><div class="ttdoc">Fixes PHI nodes.</div><div class="ttdef"><b>Definition:</b> clone.cpp:21</div></div>
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
@@ -155,11 +156,12 @@ $(function() {
 <div class="ttc" id="aclassCloneVisitor_html_ab9be5b11dc79977007843f043a78f924"><div class="ttname"><a href="classCloneVisitor.html#ab9be5b11dc79977007843f043a78f924">CloneVisitor::Map</a></div><div class="ttdeci">virtual Atom * Map(Atom *atom)</div><div class="ttdoc">Maps an atom to a new one.</div><div class="ttdef"><b>Definition:</b> clone.h:35</div></div>
 <div class="ttc" id="aclassCloneVisitor_html_acdf288a9d88b8be719ff7cd789206a7b"><div class="ttname"><a href="classCloneVisitor.html#acdf288a9d88b8be719ff7cd789206a7b">CloneVisitor::Map</a></div><div class="ttdeci">virtual Constant * Map(Constant *constant)</div><div class="ttdoc">Maps a constant to a new one.</div><div class="ttdef"><b>Definition:</b> clone.h:37</div></div>
 <div class="ttc" id="aclassCloneVisitor_html_a4f68f222b83b924fd5675b1d4bb60602"><div class="ttname"><a href="classCloneVisitor.html#a4f68f222b83b924fd5675b1d4bb60602">CloneVisitor::Annot</a></div><div class="ttdeci">virtual AnnotSet Annot(const Inst *inst)</div><div class="ttdoc">Clones an annotation.</div><div class="ttdef"><b>Definition:</b> clone.cpp:91</div></div>
-<div class="ttc" id="aclassCloneVisitor_html_a43cdaa062f3d8101ee0db89877788d70"><div class="ttname"><a href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">CloneVisitor::fixups_</a></div><div class="ttdeci">llvm::SmallVector&lt; std::pair&lt; PhiInst *, PhiInst * &gt;, 10 &gt; fixups_</div><div class="ttdoc">PHI instruction delayed fixups.</div><div class="ttdef"><b>Definition:</b> clone.h:79</div></div>
+<div class="ttc" id="aclassCloneVisitor_html_a43cdaa062f3d8101ee0db89877788d70"><div class="ttname"><a href="classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70">CloneVisitor::fixups_</a></div><div class="ttdeci">llvm::SmallVector&lt; std::pair&lt; PhiInst *, PhiInst * &gt;, 10 &gt; fixups_</div><div class="ttdoc">PHI instruction delayed fixups.</div><div class="ttdef"><b>Definition:</b> clone.h:81</div></div>
 <div class="ttc" id="aclassCloneVisitor_html_a9ab1dccb32552fa43571c7db6a952e1d"><div class="ttname"><a href="classCloneVisitor.html#a9ab1dccb32552fa43571c7db6a952e1d">CloneVisitor::Map</a></div><div class="ttdeci">virtual Extern * Map(Extern *ext)</div><div class="ttdoc">Maps a block to a new one.</div><div class="ttdef"><b>Definition:</b> clone.h:33</div></div>
 <div class="ttc" id="aclassCloneVisitor_html_a1ec4d10805edb1ede8377e41e46849e1"><div class="ttname"><a href="classCloneVisitor.html#a1ec4d10805edb1ede8377e41e46849e1">CloneVisitor::~CloneVisitor</a></div><div class="ttdeci">virtual ~CloneVisitor()</div><div class="ttdoc">Destroys the visitor.</div><div class="ttdef"><b>Definition:</b> clone.cpp:16</div></div>
 <div class="ttc" id="aclassConstant_html"><div class="ttname"><a href="classConstant.html">Constant</a></div><div class="ttdef"><b>Definition:</b> constant.h:21</div></div>
 <div class="ttc" id="aclassExpr_html"><div class="ttname"><a href="classExpr.html">Expr</a></div><div class="ttdef"><b>Definition:</b> expr.h:19</div></div>
+<div class="ttc" id="aclassCloneVisitor_html_af2606282a92587eb3547414413bb2cf2"><div class="ttname"><a href="classCloneVisitor.html#af2606282a92587eb3547414413bb2cf2">CloneVisitor::Map</a></div><div class="ttdeci">virtual Type Map(Type ty, Inst *inst, unsigned idx)</div><div class="ttdoc">Maps a type to a new one.</div><div class="ttdef"><b>Definition:</b> clone.h:49</div></div>
 <div class="ttc" id="aclassAnnotSet_html"><div class="ttname"><a href="classAnnotSet.html">AnnotSet</a></div><div class="ttdef"><b>Definition:</b> annot.h:43</div></div>
 <div class="ttc" id="aclassCloneVisitor_html"><div class="ttname"><a href="classCloneVisitor.html">CloneVisitor</a></div><div class="ttdef"><b>Definition:</b> clone.h:22</div></div>
 <div class="ttc" id="aclassCloneVisitor_html_a78238def335ee9d797f559f056a68dae"><div class="ttname"><a href="classCloneVisitor.html#a78238def335ee9d797f559f056a68dae">CloneVisitor::Map</a></div><div class="ttdeci">virtual Func * Map(Func *func)</div><div class="ttdoc">Maps a block to a new one.</div><div class="ttdef"><b>Definition:</b> clone.h:31</div></div>

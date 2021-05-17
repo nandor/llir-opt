@@ -24,6 +24,7 @@ var searchData=
   ['type_5fsize_955',['type_size',['../classCallSite.html#a5cf128dcbc98e8b3290fa42999499c10',1,'CallSite']]],
   ['typeanalysis_956',['TypeAnalysis',['../classtags_1_1TypeAnalysis.html',1,'tags']]],
   ['typeflag_957',['TypeFlag',['../classTypeFlag.html',1,'']]],
-  ['types_958',['types',['../classCallSite.html#acbe28f154fe33bb1242f1f5fcf1dd1fa',1,'CallSite']]],
-  ['types_5f_959',['types_',['../classCallSite.html#a5e8dc08aa221eb7bbab643a3536ca325',1,'CallSite']]]
+  ['typerewriter_958',['TypeRewriter',['../classTypeRewriter.html',1,'']]],
+  ['types_959',['types',['../classCallSite.html#acbe28f154fe33bb1242f1f5fcf1dd1fa',1,'CallSite']]],
+  ['types_5f_960',['types_',['../classCallSite.html#a5e8dc08aa221eb7bbab643a3536ca325',1,'CallSite']]]
 ];

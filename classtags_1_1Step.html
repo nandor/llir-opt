@@ -68,10 +68,11 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classtags_1_1Step-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">tags::Step Class Reference</div>  </div>
+<div class="title">tags::Step Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -81,8 +82,8 @@ Inheritance diagram for tags::Step:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtags_1_1Step__inherit__graph.png" border="0" usemap="#tags_1_1Step_inherit__map" alt="Inheritance graph"/></div>
 <map name="tags_1_1Step_inherit__map" id="tags_1_1Step_inherit__map">
-<area shape="rect" title=" " alt="" coords="53,80,140,107"/>
-<area shape="rect" href="classConstInstVisitor.html" title=" " alt="" coords="5,5,188,32"/>
+<area shape="rect" title=" " alt="" coords="35,80,122,107"/>
+<area shape="rect" href="classInstVisitor.html" title=" " alt="" coords="5,5,152,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -90,145 +91,39 @@ Collaboration diagram for tags::Step:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtags_1_1Step__coll__graph.png" border="0" usemap="#tags_1_1Step_coll__map" alt="Collaboration graph"/></div>
 <map name="tags_1_1Step_coll__map" id="tags_1_1Step_coll__map">
-<area shape="rect" title=" " alt="" coords="53,80,140,107"/>
-<area shape="rect" href="classConstInstVisitor.html" title=" " alt="" coords="5,5,188,32"/>
+<area shape="rect" title=" " alt="" coords="35,80,122,107"/>
+<area shape="rect" href="classInstVisitor.html" title=" " alt="" coords="5,5,152,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:ac6d729f68df05975edcb564c987a7d5c"><td class="memItemLeft" align="right" valign="top"><a id="ac6d729f68df05975edcb564c987a7d5c"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>Kind</b> { <b>REFINE</b>, 
+<b>FORWARD</b>
+ }</td></tr>
+<tr class="separator:ac6d729f68df05975edcb564c987a7d5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a83445f9c8775f24bc1a599e7e1b7c5f4"><td class="memItemLeft" align="right" valign="top"><a id="a83445f9c8775f24bc1a599e7e1b7c5f4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Step</b> (<a class="el" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis, const <a class="el" href="classTarget.html">Target</a> *target)</td></tr>
-<tr class="separator:a83445f9c8775f24bc1a599e7e1b7c5f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac90eae3248621018a81c4d43c1554f2"><td class="memItemLeft" align="right" valign="top"><a id="aac90eae3248621018a81c4d43c1554f2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCallSite</b> (const <a class="el" href="classCallSite.html">CallSite</a> &amp;i) override</td></tr>
-<tr class="separator:aac90eae3248621018a81c4d43c1554f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a11d7c5aef4b78b885f065c6326e67df2"><td class="memItemLeft" align="right" valign="top"><a id="a11d7c5aef4b78b885f065c6326e67df2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMovInst</b> (const <a class="el" href="classMovInst.html">MovInst</a> &amp;i) override</td></tr>
-<tr class="separator:a11d7c5aef4b78b885f065c6326e67df2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d6d9ef21e2664db7d68f9c688dbc9e7"><td class="memItemLeft" align="right" valign="top"><a id="a9d6d9ef21e2664db7d68f9c688dbc9e7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAddInst</b> (const AddInst &amp;i) override</td></tr>
-<tr class="separator:a9d6d9ef21e2664db7d68f9c688dbc9e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adaa98dee8b677c62b44c5466deeb5365"><td class="memItemLeft" align="right" valign="top"><a id="adaa98dee8b677c62b44c5466deeb5365"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSubInst</b> (const SubInst &amp;i) override</td></tr>
-<tr class="separator:adaa98dee8b677c62b44c5466deeb5365"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb66e42592d7772ea9cc5e811276ea21"><td class="memItemLeft" align="right" valign="top"><a id="aeb66e42592d7772ea9cc5e811276ea21"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMultiplyInst</b> (const MultiplyInst &amp;i) override</td></tr>
-<tr class="separator:aeb66e42592d7772ea9cc5e811276ea21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4acacca078a8020f0c0073ed3f3d41bf"><td class="memItemLeft" align="right" valign="top"><a id="a4acacca078a8020f0c0073ed3f3d41bf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitDivisionRemainderInst</b> (const DivisionRemainderInst &amp;i) override</td></tr>
-<tr class="separator:a4acacca078a8020f0c0073ed3f3d41bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfcab603114a2688aecdcb5caafb4e9a"><td class="memItemLeft" align="right" valign="top"><a id="abfcab603114a2688aecdcb5caafb4e9a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAndInst</b> (const AndInst &amp;i) override</td></tr>
-<tr class="separator:abfcab603114a2688aecdcb5caafb4e9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a594419ae0adafbbd8a026f452d5505f3"><td class="memItemLeft" align="right" valign="top"><a id="a594419ae0adafbbd8a026f452d5505f3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitXorInst</b> (const XorInst &amp;i) override</td></tr>
-<tr class="separator:a594419ae0adafbbd8a026f452d5505f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67f536afe084787c45049ab1cda8458b"><td class="memItemLeft" align="right" valign="top"><a id="a67f536afe084787c45049ab1cda8458b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitOrInst</b> (const OrInst &amp;i) override</td></tr>
-<tr class="separator:a67f536afe084787c45049ab1cda8458b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78929b19ee9d11ca9227a71f770df4f5"><td class="memItemLeft" align="right" valign="top"><a id="a78929b19ee9d11ca9227a71f770df4f5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitShiftRightInst</b> (const ShiftRightInst &amp;i) override</td></tr>
-<tr class="separator:a78929b19ee9d11ca9227a71f770df4f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99a29e2547938b51b6bb05e62a029776"><td class="memItemLeft" align="right" valign="top"><a id="a99a29e2547938b51b6bb05e62a029776"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSllInst</b> (const SllInst &amp;i) override</td></tr>
-<tr class="separator:a99a29e2547938b51b6bb05e62a029776"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b6c3e722ee65d9f06d193d57e318325"><td class="memItemLeft" align="right" valign="top"><a id="a3b6c3e722ee65d9f06d193d57e318325"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitRotlInst</b> (const RotlInst &amp;i) override</td></tr>
-<tr class="separator:a3b6c3e722ee65d9f06d193d57e318325"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c1452877adc5a9b51fa21b313c03582"><td class="memItemLeft" align="right" valign="top"><a id="a2c1452877adc5a9b51fa21b313c03582"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitExtensionInst</b> (const ExtensionInst &amp;i) override</td></tr>
-<tr class="separator:a2c1452877adc5a9b51fa21b313c03582"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20396180687adbd0aa308e07f3ffdaad"><td class="memItemLeft" align="right" valign="top"><a id="a20396180687adbd0aa308e07f3ffdaad"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTruncInst</b> (const TruncInst &amp;i) override</td></tr>
-<tr class="separator:a20396180687adbd0aa308e07f3ffdaad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7df42a67376bdb41d5f2e255f9ce7bf3"><td class="memItemLeft" align="right" valign="top"><a id="a7df42a67376bdb41d5f2e255f9ce7bf3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitBitCastInst</b> (const BitCastInst &amp;i) override</td></tr>
-<tr class="separator:a7df42a67376bdb41d5f2e255f9ce7bf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acec76be49f92e860b186d35f743f5d93"><td class="memItemLeft" align="right" valign="top"><a id="acec76be49f92e860b186d35f743f5d93"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitByteSwapInst</b> (const ByteSwapInst &amp;i) override</td></tr>
-<tr class="separator:acec76be49f92e860b186d35f743f5d93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab825502fe3f69f1061a144f867dfd734"><td class="memItemLeft" align="right" valign="top"><a id="ab825502fe3f69f1061a144f867dfd734"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMemoryCompareExchangeInst</b> (const MemoryCompareExchangeInst &amp;i) override</td></tr>
-<tr class="separator:ab825502fe3f69f1061a144f867dfd734"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a688e5210fcaf8cda7637385c0887e681"><td class="memItemLeft" align="right" valign="top"><a id="a688e5210fcaf8cda7637385c0887e681"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSelectInst</b> (const SelectInst &amp;i) override</td></tr>
-<tr class="separator:a688e5210fcaf8cda7637385c0887e681"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae775ec91ba1914a2be7c25a98fdc24ce"><td class="memItemLeft" align="right" valign="top"><a id="ae775ec91ba1914a2be7c25a98fdc24ce"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitPhiInst</b> (const <a class="el" href="classPhiInst.html">PhiInst</a> &amp;i) override</td></tr>
-<tr class="separator:ae775ec91ba1914a2be7c25a98fdc24ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe3e561992f0f55750b565c3cd0f86ab"><td class="memItemLeft" align="right" valign="top"><a id="afe3e561992f0f55750b565c3cd0f86ab"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitReturnInst</b> (const ReturnInst &amp;i) override</td></tr>
-<tr class="separator:afe3e561992f0f55750b565c3cd0f86ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a10de9c5daf8561d0583946fc866c3aca"><td class="memItemLeft" align="right" valign="top"><a id="a10de9c5daf8561d0583946fc866c3aca"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTerminatorInst</b> (const TerminatorInst &amp;i) override</td></tr>
-<tr class="separator:a10de9c5daf8561d0583946fc866c3aca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97280642f3966803bed85fda9729042b"><td class="memItemLeft" align="right" valign="top"><a id="a97280642f3966803bed85fda9729042b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSetInst</b> (const SetInst &amp;i) override</td></tr>
-<tr class="separator:a97280642f3966803bed85fda9729042b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5eb57ed8b3d9fae2f5ef65cb3564334b"><td class="memItemLeft" align="right" valign="top"><a id="a5eb57ed8b3d9fae2f5ef65cb3564334b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_OutInst</b> (const X86_OutInst &amp;i) override</td></tr>
-<tr class="separator:a5eb57ed8b3d9fae2f5ef65cb3564334b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a26da09cfaadb22caedc9283827a38b68"><td class="memItemLeft" align="right" valign="top"><a id="a26da09cfaadb22caedc9283827a38b68"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_WrMsrInst</b> (const X86_WrMsrInst &amp;i) override</td></tr>
-<tr class="separator:a26da09cfaadb22caedc9283827a38b68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71598c78f9fc014df1170cf1b5f0685b"><td class="memItemLeft" align="right" valign="top"><a id="a71598c78f9fc014df1170cf1b5f0685b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LidtInst</b> (const X86_LidtInst &amp;i) override</td></tr>
-<tr class="separator:a71598c78f9fc014df1170cf1b5f0685b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8351849a659406a1d66362f80fe2c4f"><td class="memItemLeft" align="right" valign="top"><a id="aa8351849a659406a1d66362f80fe2c4f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LgdtInst</b> (const X86_LgdtInst &amp;i) override</td></tr>
-<tr class="separator:aa8351849a659406a1d66362f80fe2c4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b3f58e638c67b984b892e84ef8f83b6"><td class="memItemLeft" align="right" valign="top"><a id="a2b3f58e638c67b984b892e84ef8f83b6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LtrInst</b> (const X86_LtrInst &amp;i) override</td></tr>
-<tr class="separator:a2b3f58e638c67b984b892e84ef8f83b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a337400cafc3f2f573795720de2cef58e"><td class="memItemLeft" align="right" valign="top"><a id="a337400cafc3f2f573795720de2cef58e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitBitCountInst</b> (const BitCountInst &amp;i) override</td></tr>
-<tr class="separator:a337400cafc3f2f573795720de2cef58e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a316f093028f4addac990be30d6bc01ac"><td class="memItemLeft" align="right" valign="top"><a id="a316f093028f4addac990be30d6bc01ac"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitVaStartInst</b> (const VaStartInst &amp;i) override</td></tr>
-<tr class="separator:a316f093028f4addac990be30d6bc01ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08e23d692dcb95cdf8262d17a0dde66c"><td class="memItemLeft" align="right" valign="top"><a id="a08e23d692dcb95cdf8262d17a0dde66c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitFrameInst</b> (const FrameInst &amp;i) override</td></tr>
-<tr class="separator:a08e23d692dcb95cdf8262d17a0dde66c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a19c19266aabed70a7f43d196f8617d0b"><td class="memItemLeft" align="right" valign="top"><a id="a19c19266aabed70a7f43d196f8617d0b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAllocaInst</b> (const AllocaInst &amp;i) override</td></tr>
-<tr class="separator:a19c19266aabed70a7f43d196f8617d0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa18e4c0ea478fd79c35252b88c51fd71"><td class="memItemLeft" align="right" valign="top"><a id="aa18e4c0ea478fd79c35252b88c51fd71"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitGetInst</b> (const GetInst &amp;i) override</td></tr>
-<tr class="separator:aa18e4c0ea478fd79c35252b88c51fd71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b582ef9e58a22ce873bc4008973258b"><td class="memItemLeft" align="right" valign="top"><a id="a8b582ef9e58a22ce873bc4008973258b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitUndefInst</b> (const UndefInst &amp;i) override</td></tr>
-<tr class="separator:a8b582ef9e58a22ce873bc4008973258b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39a3516ab781ab969a9023be4cfe4049"><td class="memItemLeft" align="right" valign="top"><a id="a39a3516ab781ab969a9023be4cfe4049"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_RdTscInst</b> (const X86_RdTscInst &amp;i) override</td></tr>
-<tr class="separator:a39a3516ab781ab969a9023be4cfe4049"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6c614b1bdb7a5af5b979b3e6aa38b63"><td class="memItemLeft" align="right" valign="top"><a id="aa6c614b1bdb7a5af5b979b3e6aa38b63"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCmpInst</b> (const CmpInst &amp;i) override</td></tr>
-<tr class="separator:aa6c614b1bdb7a5af5b979b3e6aa38b63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4333a9a415c5a3e05a31a1f5c0e53d1"><td class="memItemLeft" align="right" valign="top"><a id="aa4333a9a415c5a3e05a31a1f5c0e53d1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitStoreInst</b> (const StoreInst &amp;i) override</td></tr>
-<tr class="separator:aa4333a9a415c5a3e05a31a1f5c0e53d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac81feec9453d2a7bca6627e93bfebecd"><td class="memItemLeft" align="right" valign="top"><a id="ac81feec9453d2a7bca6627e93bfebecd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitLoadInst</b> (const LoadInst &amp;i) override</td></tr>
-<tr class="separator:ac81feec9453d2a7bca6627e93bfebecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf60987f8d87972a3f6af156b61c68a9"><td class="memItemLeft" align="right" valign="top"><a id="adf60987f8d87972a3f6af156b61c68a9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitNegInst</b> (const NegInst &amp;i) override</td></tr>
-<tr class="separator:adf60987f8d87972a3f6af156b61c68a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80d23169637aa64267154d676624e38f"><td class="memItemLeft" align="right" valign="top"><a id="a80d23169637aa64267154d676624e38f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitRotateInst</b> (const RotateInst &amp;i) override</td></tr>
-<tr class="separator:a80d23169637aa64267154d676624e38f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5241241163f2492a1a8293fc6f35eb65"><td class="memItemLeft" align="right" valign="top"><a id="a5241241163f2492a1a8293fc6f35eb65"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitInst</b> (const <a class="el" href="classInst.html">Inst</a> &amp;i) override</td></tr>
-<tr class="separator:a5241241163f2492a1a8293fc6f35eb65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classConstInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classConstInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classConstInstVisitor.html">ConstInstVisitor&lt; void &gt;</a></td></tr>
-<tr class="memitem:a5a840498b372c5cd9c130e6dff5ccbd1 inherit pub_methods_classConstInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a5a840498b372c5cd9c130e6dff5ccbd1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (const <a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
-<tr class="separator:a5a840498b372c5cd9c130e6dff5ccbd1 inherit pub_methods_classConstInstVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f679801fb2f281046b398b540d8b4c8"><td class="memItemLeft" align="right" valign="top"><a id="a9f679801fb2f281046b398b540d8b4c8"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Step</b> (<a class="el" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis, const <a class="el" href="classTarget.html">Target</a> *target, Kind kind)</td></tr>
+<tr class="separator:a9f679801fb2f281046b398b540d8b4c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classInstVisitor.html">InstVisitor&lt; void &gt;</a></td></tr>
+<tr class="memitem:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb5fda7220fe1cae4a579d4470e0e4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
+<tr class="separator:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Helper to propagate types. </p>
+<div class="textblock"><p>Helper class to evaluate instructions and propagate values. </p>
 </div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/tags/<a class="el" href="step_8h_source.html">step.h</a></li>
+<li>passes/tags/eval/add.cpp</li>
+<li>passes/tags/eval/and.cpp</li>
+<li>passes/tags/eval/conv.cpp</li>
+<li>passes/tags/eval/or.cpp</li>
+<li>passes/tags/eval/shift.cpp</li>
+<li>passes/tags/eval/sub.cpp</li>
+<li>passes/tags/eval/xor.cpp</li>
 <li>passes/tags/step.cpp</li>
 </ul>
 </div><!-- contents -->
