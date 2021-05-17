@@ -273,32 +273,7 @@ void Init::VisitCmpInst(CmpInst &i)
 // -----------------------------------------------------------------------------
 void Init::VisitLoadInst(LoadInst &i)
 {
-  switch (auto ty = i.GetType()) {
-    case Type::V64: {
-      analysis_.Mark(i, TaggedType::Val());
-      return;
-    }
-    case Type::I8:
-    case Type::I16:
-    case Type::I32:
-    case Type::I64:
-    case Type::I128: {
-      if (target_->GetPointerType() == ty) {
-        analysis_.Mark(i, TaggedType::PtrInt());
-      } else {
-        analysis_.Mark(i, TaggedType::Int());
-      }
-      return;
-    }
-    case Type::F32:
-    case Type::F64:
-    case Type::F80:
-    case Type::F128: {
-      analysis_.Mark(i, TaggedType::Int());
-      return;
-    }
-  }
-  llvm_unreachable("invalid type");
+  Infer(i.GetSubValue(0));
 }
 
 // -----------------------------------------------------------------------------
@@ -324,4 +299,64 @@ void Init::VisitRotateInst(RotateInst &i)
 void Init::VisitSyscallInst(SyscallInst &i)
 {
   analysis_.Mark(i, TaggedType::PtrInt());
+}
+
+// -----------------------------------------------------------------------------
+void Init::VisitLandingPadInst(LandingPadInst &pad)
+{
+  if (target_) {
+    switch (target_->GetKind()) {
+      case Target::Kind::X86: {
+        analysis_.Mark(pad.GetSubValue(0), TaggedType::Ptr());
+        analysis_.Mark(pad.GetSubValue(1), TaggedType::Young());
+        for (unsigned i = 2, n = pad.GetNumRets(); i < n; ++i) {
+          Infer(pad.GetSubValue(i));
+        }
+        return;
+      }
+      case Target::Kind::PPC: {
+        llvm_unreachable("not implemented");
+      }
+      case Target::Kind::AARCH64: {
+        llvm_unreachable("not implemented");
+      }
+      case Target::Kind::RISCV: {
+        llvm_unreachable("not implemented");
+      }
+    }
+    llvm_unreachable("invalid target kind");
+  } else {
+    llvm_unreachable("not implemented");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Init::Infer(Ref<Inst> inst)
+{
+  switch (auto ty = inst.GetType()) {
+    case Type::V64: {
+      analysis_.Mark(inst, TaggedType::Val());
+      return;
+    }
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::I128: {
+      if (target_->GetPointerType() == ty) {
+        analysis_.Mark(inst, TaggedType::PtrInt());
+      } else {
+        analysis_.Mark(inst, TaggedType::Int());
+      }
+      return;
+    }
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      analysis_.Mark(inst, TaggedType::Int());
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
 }

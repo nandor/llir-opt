@@ -55,6 +55,11 @@ bool EliminateTagsPass::Run(Prog &prog)
       }
     }
 
+    if (!func.HasAddressTaken() && func.IsLocal()) {
+      llvm::errs() << func.getName() << "\n";
+    }
+
+    /*
     for (User *user : func.users()) {
       auto *mov = ::cast_or_null<MovInst>(user);
       if (!mov) {
@@ -81,6 +86,7 @@ bool EliminateTagsPass::Run(Prog &prog)
         }
       }
     }
+    */
   }
   return changed;
 }

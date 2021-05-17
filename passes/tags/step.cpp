@@ -27,7 +27,7 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
 // -----------------------------------------------------------------------------
 void Step::VisitCallSite(CallSite &call)
 {
-  const Func *caller = call.getParent()->getParent();
+  Func *caller = call.getParent()->getParent();
   if (auto *f = call.GetDirectCallee()) {
     // Only evaluate if all args are known.
     llvm::SmallVector<TaggedType, 8> args;
@@ -75,7 +75,7 @@ void Step::VisitCallSite(CallSite &call)
             llvm_unreachable("not implemented");
           }
         }
-        Return(tcall->getParent()->getParent(), values);
+        Return(caller, values);
       } else {
         for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
           if (i < it->second.size()) {
@@ -94,45 +94,37 @@ void Step::VisitCallSite(CallSite &call)
       case CallingConv::MULTIBOOT:
       case CallingConv::WIN64:
       case CallingConv::C: {
-        for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
-          Mark(call.GetSubValue(i), TaggedType::Val());
+        if (auto *tcall = ::cast_or_null<const TailCallInst>(&call)) {
+          std::vector<TaggedType> values(call.type_size(), TaggedType::PtrInt());
+          Return(caller, values);
+        } else {
+          for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
+            Mark(call.GetSubValue(i), TaggedType::PtrInt());
+          }
         }
         return;
       }
       case CallingConv::CAML: {
         if (target_) {
-          Mark(call.GetSubValue(0), TaggedType::Ptr());
-          Mark(call.GetSubValue(1), TaggedType::Young());
-          for (unsigned i = 2, n = call.GetNumRets(); i < n; ++i) {
-            auto ref = call.GetSubValue(i);
-            switch (auto ty = call.type(i)) {
-              case Type::V64: {
-                Mark(ref, TaggedType::Val());
-                continue;
-              }
-              case Type::I8:
-              case Type::I16:
-              case Type::I32:
-              case Type::I64:
-              case Type::I128: {
-                if (target_->GetPointerType() == ty) {
-                  Mark(ref, TaggedType::PtrInt());
-                } else {
-                  Mark(ref, TaggedType::Int());
-                }
-                continue;
-              }
-              case Type::F32:
-              case Type::F64:
-              case Type::F80:
-              case Type::F128: {
-                Mark(ref, TaggedType::Int());
-                continue;
-              }
+          if (auto *tcall = ::cast_or_null<const TailCallInst>(&call)) {
+            std::vector<TaggedType> values;
+            values.push_back(TaggedType::Ptr());
+            values.push_back(TaggedType::Young());
+            for (unsigned i = 2, n = call.type_size(); i < n; ++i) {
+              values.push_back(Infer(call.type(i)));
             }
-            llvm_unreachable("invalid type");
+            Return(caller, values);
+          } else {
+            Mark(call.GetSubValue(0), TaggedType::Ptr());
+            Mark(call.GetSubValue(1), TaggedType::Young());
+            for (unsigned i = 2, n = call.GetNumRets(); i < n; ++i) {
+              auto ref = call.GetSubValue(i);
+              Mark(ref, Infer(ref.GetType()));
+            }
           }
-        } else llvm_unreachable("not implemented");
+        } else {
+          llvm_unreachable("not implemented");
+        }
         return;
       }
       case CallingConv::CAML_ALLOC: {
@@ -142,7 +134,9 @@ void Step::VisitCallSite(CallSite &call)
         if (target_) {
           Mark(call.GetSubValue(0), TaggedType::Ptr());
           Mark(call.GetSubValue(1), TaggedType::Young());
-        } else llvm_unreachable("not implemented");
+        } else {
+          llvm_unreachable("not implemented");
+        }
         return;
       }
     }
@@ -459,4 +453,32 @@ void Step::VisitInst(Inst &i)
   llvm::raw_string_ostream os(msg);
   os << i << "\n";
   llvm::report_fatal_error(msg.c_str());
+}
+
+// -----------------------------------------------------------------------------
+TaggedType Step::Infer(Type ty)
+{
+  switch (ty) {
+    case Type::V64: {
+      return TaggedType::Val();
+    }
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::I128: {
+      if (target_->GetPointerType() == ty) {
+        return TaggedType::PtrInt();
+      } else {
+        return TaggedType::Int();
+      }
+    }
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      return TaggedType::Int();
+    }
+  }
+  llvm_unreachable("invalid type");
 }

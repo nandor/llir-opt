@@ -82,6 +82,7 @@ private:
   void VisitInst(Inst &i) override;
 
 private:
+  TaggedType Infer(Type ty);
   TaggedType Clamp(TaggedType type, Type ty);
   TaggedType Add(TaggedType vl, TaggedType vr);
   TaggedType Sub(Type ty, TaggedType vl, TaggedType vr);

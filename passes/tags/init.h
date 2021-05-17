@@ -37,6 +37,7 @@ public:
   void VisitBitCountInst(BitCountInst &i) override;
   void VisitRotateInst(RotateInst &i) override;
   void VisitSyscallInst(SyscallInst &i) override;
+  void VisitLandingPadInst(LandingPadInst &i) override;
 
   void VisitControlInst(ControlInst &i) override {}
   void VisitBarrierInst(BarrierInst &i) override {}
@@ -53,6 +54,9 @@ public:
     i.dump();
     llvm_unreachable("instruction not handled");
   }
+
+private:
+  void Infer(Ref<Inst> inst);
 
 private:
   /// Reference to the analysis.
