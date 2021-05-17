@@ -45,6 +45,8 @@ public:
 public:
   /// Maps an instruction reference to a new one.
   virtual Ref<Inst> Map(Ref<Inst> inst) { return inst; }
+  /// Maps a type to a new one.
+  virtual Type Map(Type ty, Inst *inst, unsigned idx) { return ty; }
 
 public:
   /// Clones an instruction.

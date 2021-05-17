@@ -6,6 +6,7 @@
 
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/ADT/Statistic.h>
 #include <llvm/CodeGen/LiveVariables.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
@@ -26,6 +27,11 @@
 namespace TargetOpcode = llvm::TargetOpcode;
 using TargetInstrInfo = llvm::TargetInstrInfo;
 using StackVal = llvm::FixedStackPseudoSourceValue;
+
+#define DEBUG_TYPE "annot-printer"
+
+STATISTIC(NumFrames, "Number of calls with frames");
+STATISTIC(NumFrameEntries, "Number of registers in frames");
 
 
 
@@ -65,6 +71,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
         auto &MI = *it++;
         switch (MI.getOpcode()) {
           case TargetOpcode::GC_FRAME_ROOT: {
+            NumFrames++;
             roots_.emplace_back(
                 MI.getOperand(0).getMCSymbol(),
                 GetFrameOffset(MI)
@@ -72,6 +79,8 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             break;
           }
           case TargetOpcode::GC_FRAME_ALLOC: {
+            NumFrames++;
+
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.Offset = GetFrameOffset(MI);
@@ -83,6 +92,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                   if (auto reg = GetRegisterIndex(regNo)) {
                     // Actual register - yay.
                     frame.Live.insert((*reg << 1) | 1);
+                    NumFrameEntries++;
                   } else {
                     // Regalloc should ensure this is valid.
                     llvm_unreachable("invalid live reg");
@@ -101,6 +111,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                 auto offset = TFL->getFrameIndexReference(MF, index, base);
                 assert(base == GetStackPointer() && "offset not sp-relative");
                 frame.Live.insert(offset.getFixed());
+                NumFrameEntries++;
                 continue;
               }
               llvm_unreachable("invalid live spill");
@@ -128,6 +139,8 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
           case TargetOpcode::GC_FRAME_CALL: {
             assert(MI.getNumOperands() == 1 && "invalid frame instruction");
 
+            NumFrames++;
+
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
@@ -141,6 +154,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                 auto offset = TFL->getFrameIndexReference(MF, index, base);
                 assert(base == GetStackPointer() && "offset not sp-relative");
                 frame.Live.insert(offset.getFixed());
+                NumFrameEntries++;
                 continue;
               }
               llvm_unreachable("invalid live spill");

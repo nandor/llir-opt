@@ -122,7 +122,7 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
         case TaggedType::Kind::EVEN: llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT: llvm_unreachable("not implemented");
+        case TaggedType::Kind::INT:     return TaggedType::PtrInt();
         case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
         case TaggedType::Kind::ODD:
         case TaggedType::Kind::ONE: return TaggedType::Odd();
