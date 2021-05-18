@@ -62,6 +62,7 @@ private:
   void VisitX86_LidtInst(X86_LidtInst &i) override {}
   void VisitX86_LgdtInst(X86_LgdtInst &i) override {}
   void VisitX86_LtrInst(X86_LtrInst &i) override {}
+  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override {}
 
   // Values do not change since init.
   void VisitBitCountInst(BitCountInst &i) override {}
@@ -70,6 +71,8 @@ private:
   void VisitAllocaInst(AllocaInst &i) override {}
   void VisitGetInst(GetInst &i) override {}
   void VisitUndefInst(UndefInst &i) override {}
+  void VisitCopySignInst(CopySignInst &i) override {}
+  void VisitFloatInst(FloatInst &i) override {}
   void VisitX86_RdTscInst(X86_RdTscInst &i) override {}
   void VisitCmpInst(CmpInst &i) override {}
   void VisitStoreInst(StoreInst &i) override {}
@@ -77,6 +80,7 @@ private:
   void VisitNegInst(NegInst &i) override {}
   void VisitRotateInst(RotateInst &i) override {}
   void VisitSyscallInst(SyscallInst &i) override {}
+  void VisitCloneInst(CloneInst &i) override {}
 
   // All instruction classes should be handled.
   void VisitInst(Inst &i) override;

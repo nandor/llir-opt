@@ -73,7 +73,8 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
     }
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::PTR_INT: {
+    case TaggedType::Kind::PTR_INT:
+    case TaggedType::Kind::PTR_NULL: {
       if (fitsPointer) {
         return arg;
       } else {
@@ -88,7 +89,6 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
         return TaggedType::Int();
       }
     }
-    case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid value kind");
 }

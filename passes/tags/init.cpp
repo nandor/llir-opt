@@ -259,6 +259,18 @@ void Init::VisitUndefInst(UndefInst &i)
 }
 
 // -----------------------------------------------------------------------------
+void Init::VisitCopySignInst(CopySignInst &i)
+{
+  analysis_.Mark(i, TaggedType::Int());
+}
+
+// -----------------------------------------------------------------------------
+void Init::VisitFloatInst(FloatInst &i)
+{
+  analysis_.Mark(i, TaggedType::Int());
+}
+
+// -----------------------------------------------------------------------------
 void Init::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
   analysis_.Mark(i, TaggedType::Int());
@@ -297,6 +309,12 @@ void Init::VisitRotateInst(RotateInst &i)
 
 // -----------------------------------------------------------------------------
 void Init::VisitSyscallInst(SyscallInst &i)
+{
+  analysis_.Mark(i, TaggedType::PtrInt());
+}
+
+// -----------------------------------------------------------------------------
+void Init::VisitCloneInst(CloneInst &i)
 {
   analysis_.Mark(i, TaggedType::PtrInt());
 }

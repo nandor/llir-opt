@@ -128,7 +128,13 @@ void Step::VisitCallSite(CallSite &call)
         return;
       }
       case CallingConv::CAML_ALLOC: {
-        llvm_unreachable("not implemented");
+        if (target_) {
+          Mark(call.GetSubValue(0), TaggedType::Ptr());
+          Mark(call.GetSubValue(1), TaggedType::Young());
+        } else {
+          llvm_unreachable("not implemented");
+        }
+        return;
       }
       case CallingConv::CAML_GC: {
         if (target_) {
@@ -184,14 +190,50 @@ void Step::VisitMultiplyInst(MultiplyInst &i)
   if (vl.IsUnknown() || vr.IsUnknown()) {
     return;
   }
-
+  
+  if (vl.IsZero() || vr.IsZero()) {
+    Mark(i, TaggedType::Zero());
+    return;
+  }
+  if (vl.IsOne() || vr.IsOne()) {
+    auto other = vl.IsOne() ? vr : vl;
+    switch (other.GetKind()) {
+      case TaggedType::Kind::UNKNOWN:
+      case TaggedType::Kind::EVEN:
+      case TaggedType::Kind::ODD:
+      case TaggedType::Kind::INT:
+      case TaggedType::Kind::ZERO:
+      case TaggedType::Kind::ONE:
+      case TaggedType::Kind::ZERO_ONE: {
+        Mark(i, other);
+        return;
+      }
+      case TaggedType::Kind::YOUNG:
+      case TaggedType::Kind::HEAP:
+      case TaggedType::Kind::VAL:
+      case TaggedType::Kind::PTR:
+      case TaggedType::Kind::PTR_INT:
+      case TaggedType::Kind::PTR_NULL:
+      case TaggedType::Kind::ANY: {
+        Mark(i, TaggedType::Int());
+        return;
+      }
+      case TaggedType::Kind::UNDEF: {
+        Mark(i, TaggedType::Undef());
+        return;
+      }
+    }
+    llvm_unreachable("invalid kind");
+  } 
   if (vl.IsEven() || vr.IsEven()) {
     Mark(i, TaggedType::Even());
-  } else if (vl.IsOdd() && vr.IsOdd()) {
-    Mark(i, TaggedType::Odd());
-  } else {
-    Mark(i, TaggedType::Int());
+    return;
   }
+  if (vl.IsOdd() && vr.IsOdd()) {
+    Mark(i, TaggedType::Odd());
+    return;
+  } 
+  Mark(i, TaggedType::Int());
 }
 
 // -----------------------------------------------------------------------------
@@ -425,7 +467,7 @@ void Step::Return(Func *from, const std::vector<TaggedType> &values)
         }
         for (auto *movUser : mov->users()) {
           auto *call = ::cast_or_null<CallSite>(movUser);
-          if (!call) {
+          if (!call || call->GetCallee() != mov->GetSubValue(0)) {
             continue;
           }
 

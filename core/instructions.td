@@ -144,6 +144,9 @@ class BitCountInst : UnaryInst {
 class ConversionInst : UnaryInst {
 }
 
+class FloatInst : UnaryInst {
+}
+
 class ExtensionInst : ConversionInst {
 }
 
@@ -491,18 +494,18 @@ def X_EXT : ExtensionInst;
 def TRUNC : ConversionInst;
 def BIT_CAST : ConversionInst;
 
-def ABS : UnaryInst;
-def NEG : UnaryInst;
-def SQRT : UnaryInst;
-def SIN : UnaryInst;
-def COS : UnaryInst;
-def EXP : UnaryInst;
-def EXP2 : UnaryInst;
-def LOG : UnaryInst;
-def LOG2 : UnaryInst;
-def LOG10 : UnaryInst;
-def F_CEIL : UnaryInst;
-def F_FLOOR : UnaryInst;
+def ABS : FloatInst;
+def NEG : FloatInst;
+def SQRT : FloatInst;
+def SIN : FloatInst;
+def COS : FloatInst;
+def EXP : FloatInst;
+def EXP2 : FloatInst;
+def LOG : FloatInst;
+def LOG2 : FloatInst;
+def LOG10 : FloatInst;
+def F_CEIL : FloatInst;
+def F_FLOOR : FloatInst;
 
 def POP_COUNT : BitCountInst;
 def CLZ : BitCountInst;

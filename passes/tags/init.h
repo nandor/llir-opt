@@ -31,18 +31,23 @@ public:
   void VisitAllocaInst(AllocaInst &i) override;
   void VisitGetInst(GetInst &i) override;
   void VisitUndefInst(UndefInst &i) override;
+  void VisitCopySignInst(CopySignInst &i) override;
+  void VisitFloatInst(FloatInst &i) override;
   void VisitX86_RdTscInst(X86_RdTscInst &i) override;
   void VisitCmpInst(CmpInst &i) override;
   void VisitLoadInst(LoadInst &i) override;
   void VisitBitCountInst(BitCountInst &i) override;
   void VisitRotateInst(RotateInst &i) override;
   void VisitSyscallInst(SyscallInst &i) override;
+  void VisitCloneInst(CloneInst &i) override;
   void VisitLandingPadInst(LandingPadInst &i) override;
 
   void VisitControlInst(ControlInst &i) override {}
   void VisitBarrierInst(BarrierInst &i) override {}
   void VisitX86_PauseInst(X86_PauseInst &i) override {}
   void VisitX86_HltInst(X86_HltInst &i) override {}
+  void VisitX86_FnClExInst(X86_FnClExInst &i) override {}
+  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override {}
 
   void VisitInst(Inst &i) override
   {

@@ -108,13 +108,11 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
-    case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
+    case TaggedType::Kind::UNDEF: return TaggedType::Undef();
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::ANY:
     case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::PTR_NULL: {
-      return TaggedType::Int();
-    }
+    case TaggedType::Kind::PTR_NULL: return TaggedType::Int();
   }
   llvm_unreachable("invalid value kind");
 }

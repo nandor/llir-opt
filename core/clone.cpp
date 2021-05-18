@@ -96,7 +96,7 @@ AnnotSet CloneVisitor::Annot(const Inst *inst)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(PhiInst *i)
 {
-  auto *phi = new PhiInst(i->GetType(), Annot(i));
+  auto *phi = new PhiInst(Map(i->GetType(), i, 0), Annot(i));
   fixups_.emplace_back(i, phi);
   return phi;
 }

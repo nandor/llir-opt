@@ -38,7 +38,7 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::ODD: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
-        case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ZERO:    return TaggedType::Odd();
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
         case TaggedType::Kind::ODD:
@@ -110,7 +110,7 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ONE: return TaggedType::Odd();
         case TaggedType::Kind::VAL: return TaggedType::Val();
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR: return TaggedType::PtrInt();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::ANY: return TaggedType::Any();
@@ -123,9 +123,9 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
         case TaggedType::Kind::EVEN: llvm_unreachable("not implemented");
         case TaggedType::Kind::INT:     return TaggedType::PtrInt();
-        case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
         case TaggedType::Kind::ODD:
-        case TaggedType::Kind::ONE: return TaggedType::Odd();
+        case TaggedType::Kind::ONE:     return TaggedType::Odd();
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::VAL: return TaggedType::Val();
@@ -142,13 +142,13 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::PTR: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
-        case TaggedType::Kind::EVEN: return TaggedType::Ptr();
-        case TaggedType::Kind::INT: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ODD: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ONE: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
+        case TaggedType::Kind::EVEN: return TaggedType::PtrInt();
+        case TaggedType::Kind::INT:  return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_INT:  return TaggedType::Int();
+        case TaggedType::Kind::ODD:      return TaggedType::PtrInt();
+        case TaggedType::Kind::ONE:      return TaggedType::Ptr();
+        case TaggedType::Kind::ZERO:     return TaggedType::Ptr();
+        case TaggedType::Kind::ZERO_ONE: return TaggedType::Ptr();
         case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
@@ -160,11 +160,13 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
-    case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
+    case TaggedType::Kind::UNDEF: {
+      return vr.IsUnknown() ? TaggedType::Unknown() : TaggedType::Undef();
+    }
     case TaggedType::Kind::PTR_INT: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
-        case TaggedType::Kind::ZERO: return TaggedType::Zero();
+        case TaggedType::Kind::ZERO: return TaggedType::PtrInt();
         case TaggedType::Kind::EVEN: return vl;
         case TaggedType::Kind::ODD:
         case TaggedType::Kind::INT:

@@ -48,7 +48,7 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::INT:      return TaggedType::Int();
         case TaggedType::Kind::VAL:      return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP:     llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR:      return TaggedType::Ptr();
         case TaggedType::Kind::YOUNG:    llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:    llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT:  return TaggedType::PtrInt();
@@ -108,13 +108,13 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ZERO:
         case TaggedType::Kind::ZERO_ONE: return vl;
         case TaggedType::Kind::VAL: return TaggedType::PtrInt();
-        case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
+        case TaggedType::Kind::HEAP: return TaggedType::Ptr();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR:
         case TaggedType::Kind::PTR_INT: return vr;
         case TaggedType::Kind::ANY: return TaggedType::Any();
-        case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_NULL: return TaggedType::PtrInt();
       }
       llvm_unreachable("invalid value kind");
     }
@@ -146,7 +146,7 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::EVEN:
         case TaggedType::Kind::INT: return TaggedType::Ptr();
         case TaggedType::Kind::ZERO: return TaggedType::Heap();
-        case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ZERO_ONE: return TaggedType::Ptr();
         case TaggedType::Kind::VAL: return TaggedType::Ptr();
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
