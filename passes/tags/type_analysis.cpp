@@ -6,12 +6,14 @@
 
 #include "core/prog.h"
 #include "core/printer.h"
-#include "passes/tags/analysis.h"
 #include "passes/tags/init.h"
 #include "passes/tags/step.h"
 #include "passes/tags/refinement.h"
+#include "passes/tags/type_analysis.h"
 
 using namespace tags;
+
+
 
 // -----------------------------------------------------------------------------
 static bool Converges(Type ty, TaggedType told, TaggedType tnew)

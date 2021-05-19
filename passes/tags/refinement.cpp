@@ -7,7 +7,7 @@
 #include "core/data.h"
 #include "passes/tags/refinement.h"
 #include "passes/tags/tagged_type.h"
-#include "passes/tags/analysis.h"
+#include "passes/tags/type_analysis.h"
 
 using namespace tags;
 
@@ -54,9 +54,9 @@ void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
 }
 
 // -----------------------------------------------------------------------------
-void Refinement::VisitLoadInst(LoadInst &i)
+void Refinement::RefineAddr(Inst &i, Ref<Inst> addr)
 {
-  switch (analysis_.Find(i.GetAddr()).GetKind()) {
+  switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
     case TaggedType::Kind::ZERO:
     case TaggedType::Kind::EVEN:
@@ -76,17 +76,29 @@ void Refinement::VisitLoadInst(LoadInst &i)
     }
     case TaggedType::Kind::VAL: {
       // Refine to HEAP.
-      Refine(i, i.GetAddr(), TaggedType::Heap());
+      Refine(i, addr, TaggedType::Heap());
       return;
     }
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::ANY: {
       // Refine to PTR.
-      Refine(i, i.GetAddr(), TaggedType::Ptr());
+      Refine(i, addr, TaggedType::Ptr());
       return;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMemoryLoadInst(MemoryLoadInst &i)
+{
+  RefineAddr(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMemoryStoreInst(MemoryStoreInst &i)
+{
+  RefineAddr(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------

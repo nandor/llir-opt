@@ -25,6 +25,7 @@ public:
     : prog_(prog)
     , target_(target)
   {
+    Solve();
   }
 
   void Solve();

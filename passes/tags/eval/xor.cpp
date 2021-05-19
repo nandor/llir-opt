@@ -4,7 +4,7 @@
 
 #include "core/cast.h"
 #include "passes/tags/step.h"
-#include "passes/tags/analysis.h"
+#include "passes/tags/type_analysis.h"
 
 using namespace tags;
 

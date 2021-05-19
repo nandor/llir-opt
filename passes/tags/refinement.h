@@ -30,9 +30,12 @@ public:
 private:
   /// Refine a type to a more precise one.
   void Refine(Inst &i, Ref<Inst> ref, const TaggedType &type);
+  /// Refine a reference to an address.
+  void RefineAddr(Inst &i, Ref<Inst> addr);
 
 private:
-  void VisitLoadInst(LoadInst &i) override;
+  void VisitMemoryLoadInst(MemoryLoadInst &i) override;
+  void VisitMemoryStoreInst(MemoryStoreInst &i) override;
   void VisitCmpInst(CmpInst &i) override;
   void VisitPhiInst(PhiInst &phi) override;
   void VisitInst(Inst &i) override {}

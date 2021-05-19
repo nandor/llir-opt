@@ -44,11 +44,12 @@ add_library(passes
     sccp/solver.cpp
     sccp/x86.cpp
 
-    tags/analysis.cpp
     tags/init.cpp
     tags/refinement.cpp
     tags/step.cpp
     tags/tagged_type.cpp
+    tags/type_analysis.cpp
+    tags/value_analysis.cpp
     tags/eval/add.cpp
     tags/eval/sub.cpp
     tags/eval/and.cpp

@@ -14,7 +14,8 @@
 #include "core/prog.h"
 #include "core/target.h"
 #include "passes/eliminate_tags.h"
-#include "passes/tags/analysis.h"
+#include "passes/tags/type_analysis.h"
+#include "passes/tags/value_analysis.h"
 #include "passes/tags/tagged_type.h"
 
 using namespace tags;
@@ -31,14 +32,14 @@ const char *EliminateTagsPass::kPassID = DEBUG_TYPE;
 // -----------------------------------------------------------------------------
 class TypeRewriter final : public CloneVisitor {
 public:
-  TypeRewriter(TypeAnalysis &analysis) : analysis_(analysis) {}
+  TypeRewriter(TypeAnalysis &types) : types_(types) {}
 
   ~TypeRewriter() { Fixup(); }
 
   Type Map(Type ty, Inst *inst, unsigned idx) override
   {
     if (ty == Type::V64) {
-      if (analysis_.Find(inst->GetSubValue(idx)).IsOdd()) {
+      if (types_.Find(inst->GetSubValue(idx)).IsOdd()) {
         return Type::I64;
       } else {
         return ty;
@@ -49,16 +50,18 @@ public:
   }
 
 private:
-  TypeAnalysis &analysis_;
+  TypeAnalysis &types_;
 };
 
 // -----------------------------------------------------------------------------
 bool EliminateTagsPass::Run(Prog &prog)
 {
-  TypeAnalysis analysis(prog, GetTarget());
-  analysis.Solve();
-
+  TypeAnalysis types(prog, GetTarget());
+  //ValueAnalysis values(types, prog);
+  types.dump();
   bool changed = false;
+ 
+  // Analyse values and identify candidates for simplification.
 
   // Rewrite V64 to I64 if the classification is odd.
   for (Func &func : prog) {
@@ -69,14 +72,14 @@ bool EliminateTagsPass::Run(Prog &prog)
         bool rewrite = false;
         for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
           auto type = inst.GetType(i);
-          auto val = analysis.Find(inst.GetSubValue(i));
+          auto val = types.Find(inst.GetSubValue(i));
           if (type == Type::V64 && val.IsOdd()) {
             rewrite = true;
           }
         }
 
         if (rewrite) {
-          auto newInst = TypeRewriter(analysis).Clone(&inst);
+          auto newInst = TypeRewriter(types).Clone(&inst);
           block.AddInst(newInst, &inst);
           inst.replaceAllUsesWith(newInst);
           inst.eraseFromParent();
