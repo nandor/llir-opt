@@ -1,18 +1,18 @@
 var searchData=
 [
-  ['tailcallinst_1986',['TailCallInst',['../classTailCallInst.html#a6e9ba048f632b44f687e04521c6b2c60',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, AnnotSet &amp;&amp;annot)'],['../classTailCallInst.html#a9ff4d4662d55075ab8bdaf33aa2feac1',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, const AnnotSet &amp;annot)']]],
-  ['tailrecelimpass_1987',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
-  ['taint_1988',['Taint',['../classSymbolicContext.html#a563cff7c4e6f9d9b1ea1711280770728',1,'SymbolicContext']]],
-  ['timeout_1989',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
-  ['tograph_1990',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
-  ['toobject_1991',['ToObject',['../classSymbolicAddress.html#a0f1cc917c945a09df3166fb5b8a8c1e6',1,'SymbolicAddress']]],
-  ['toobjectrange_1992',['ToObjectRange',['../classSymbolicAddress.html#ad38a33696418f8169111494dc1b503b0',1,'SymbolicAddress']]],
-  ['trampolinegraph_1993',['TrampolineGraph',['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph']]],
-  ['traverse_1994',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
-  ['type_1995',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite']]],
-  ['type_5fbegin_1996',['type_begin',['../classCallSite.html#a79dd4e0fa9a0a3dd1ffdff2d04dfe6e4',1,'CallSite']]],
-  ['type_5fempty_1997',['type_empty',['../classCallSite.html#a993907d7f9ec6db4a32d0cfa70546ddc',1,'CallSite']]],
-  ['type_5fend_1998',['type_end',['../classCallSite.html#a21bc89454d1cb803ebf1b4054e7f5bbf',1,'CallSite']]],
-  ['type_5fsize_1999',['type_size',['../classCallSite.html#a5cf128dcbc98e8b3290fa42999499c10',1,'CallSite']]],
-  ['types_2000',['types',['../classCallSite.html#acbe28f154fe33bb1242f1f5fcf1dd1fa',1,'CallSite']]]
+  ['tailcallinst_1988',['TailCallInst',['../classTailCallInst.html#a6e9ba048f632b44f687e04521c6b2c60',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, AnnotSet &amp;&amp;annot)'],['../classTailCallInst.html#a9ff4d4662d55075ab8bdaf33aa2feac1',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, const AnnotSet &amp;annot)']]],
+  ['tailrecelimpass_1989',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
+  ['taint_1990',['Taint',['../classSymbolicContext.html#a563cff7c4e6f9d9b1ea1711280770728',1,'SymbolicContext']]],
+  ['timeout_1991',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
+  ['tograph_1992',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
+  ['toobject_1993',['ToObject',['../classSymbolicAddress.html#a0f1cc917c945a09df3166fb5b8a8c1e6',1,'SymbolicAddress']]],
+  ['toobjectrange_1994',['ToObjectRange',['../classSymbolicAddress.html#ad38a33696418f8169111494dc1b503b0',1,'SymbolicAddress']]],
+  ['trampolinegraph_1995',['TrampolineGraph',['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph']]],
+  ['traverse_1996',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
+  ['type_1997',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite']]],
+  ['type_5fbegin_1998',['type_begin',['../classCallSite.html#a79dd4e0fa9a0a3dd1ffdff2d04dfe6e4',1,'CallSite']]],
+  ['type_5fempty_1999',['type_empty',['../classCallSite.html#a993907d7f9ec6db4a32d0cfa70546ddc',1,'CallSite']]],
+  ['type_5fend_2000',['type_end',['../classCallSite.html#a21bc89454d1cb803ebf1b4054e7f5bbf',1,'CallSite']]],
+  ['type_5fsize_2001',['type_size',['../classCallSite.html#a5cf128dcbc98e8b3290fa42999499c10',1,'CallSite']]],
+  ['types_2002',['types',['../classCallSite.html#acbe28f154fe33bb1242f1f5fcf1dd1fa',1,'CallSite']]]
 ];

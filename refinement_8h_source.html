@@ -99,30 +99,32 @@ $(function() {
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">void</span> Refine(<a class="code" href="classInst.html">Inst</a> &amp;i, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> ref, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">void</span> VisitLoadInst(LoadInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">void</span> VisitCmpInst(CmpInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">void</span> VisitPhiInst(<a class="code" href="classPhiInst.html">PhiInst</a> &amp;phi) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <a class="code" href="classFunc.html">Func</a> &amp;func_;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <a class="code" href="classPostDominatorTree.html">PostDominatorTree</a> pdt_;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <a class="code" href="classPostDominanceFrontier.html">PostDominanceFrontier</a> pdf_;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  std::queue&lt;Inst *&gt; queue_;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  std::unordered_set&lt;Inst *&gt; inQueue_;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;};</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;} <span class="comment">// end namespace</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">void</span> RefineAddr(<a class="code" href="classInst.html">Inst</a> &amp;i, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> addr);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">void</span> VisitMemoryLoadInst(MemoryLoadInst &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">void</span> VisitMemoryStoreInst(MemoryStoreInst &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordtype">void</span> VisitCmpInst(CmpInst &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">void</span> VisitPhiInst(<a class="code" href="classPhiInst.html">PhiInst</a> &amp;phi) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <a class="code" href="classFunc.html">Func</a> &amp;func_;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <a class="code" href="classPostDominatorTree.html">PostDominatorTree</a> pdt_;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="classPostDominanceFrontier.html">PostDominanceFrontier</a> pdf_;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  std::queue&lt;Inst *&gt; queue_;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  std::unordered_set&lt;Inst *&gt; inQueue_;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;};</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
 <div class="ttc" id="aclassPostDominatorTree_html"><div class="ttname"><a href="classPostDominatorTree.html">PostDominatorTree</a></div><div class="ttdef"><b>Definition:</b> dominator.h:39</div></div>
 <div class="ttc" id="aclassTarget_html"><div class="ttname"><a href="classTarget.html">Target</a></div><div class="ttdef"><b>Definition:</b> target.h:24</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html">tags::TypeAnalysis</a></div><div class="ttdef"><b>Definition:</b> analysis.h:22</div></div>
+<div class="ttc" id="aclasstags_1_1TypeAnalysis_html"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html">tags::TypeAnalysis</a></div><div class="ttdef"><b>Definition:</b> type_analysis.h:22</div></div>
 <div class="ttc" id="aclassPostDominanceFrontier_html"><div class="ttname"><a href="classPostDominanceFrontier.html">PostDominanceFrontier</a></div><div class="ttdef"><b>Definition:</b> dominator.h:47</div></div>
 <div class="ttc" id="aclasstags_1_1Refinement_html"><div class="ttname"><a href="classtags_1_1Refinement.html">tags::Refinement</a></div><div class="ttdef"><b>Definition:</b> refinement.h:24</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
