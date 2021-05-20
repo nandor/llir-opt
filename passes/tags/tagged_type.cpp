@@ -233,6 +233,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           llvm_unreachable("not implemented");
         }
         case Kind::PTR:
+        case Kind::PTR_NULL: 
         case Kind::PTR_INT: {
           k_ = Kind::PTR_INT;
           return *this;
@@ -242,7 +243,6 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           return *this;
         }
 
-        case Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");
     }
