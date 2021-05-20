@@ -58,7 +58,7 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   TypeAnalysis types(prog, GetTarget());
   //ValueAnalysis values(types, prog);
-  types.dump();
+  //types.dump();
   bool changed = false;
  
   // Analyse values and identify candidates for simplification.

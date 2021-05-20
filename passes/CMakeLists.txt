@@ -71,6 +71,7 @@ add_library(passes
     dead_func_elim.cpp
     dead_store.cpp
     dedup_block.cpp
+    dedup_const.cpp
     eliminate_select.cpp
     eliminate_tags.cpp
     global_forward.cpp

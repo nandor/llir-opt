@@ -40,6 +40,7 @@
 #include "passes/dead_func_elim.h"
 #include "passes/dead_store.h"
 #include "passes/dedup_block.h"
+#include "passes/dedup_const.h"
 #include "passes/eliminate_select.h"
 #include "passes/eliminate_tags.h"
 #include "passes/global_forward.h"
@@ -182,7 +183,6 @@ static void AddOpt1(PassManager &mngr)
     < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
-    , BypassPhiPass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
@@ -216,6 +216,7 @@ static void AddOpt2(PassManager &mngr)
     , SCCPPass
     , LibCSimplifyPass
     , SimplifyCfgPass
+    , DedupConstPass
     , BypassPhiPass
     , SpecialisePass
     , DeadCodeElimPass
@@ -255,6 +256,7 @@ static void AddOpt3(PassManager &mngr)
     , SCCPPass
     , LibCSimplifyPass
     , SimplifyCfgPass
+    , DedupConstPass
     , BypassPhiPass
     , SpecialisePass
     , DeadCodeElimPass
@@ -295,6 +297,7 @@ static void AddOpt4(PassManager &mngr)
     , ConstGlobalPass
     , LibCSimplifyPass
     , SCCPPass
+    , DedupConstPass
     , SimplifyCfgPass
     , BypassPhiPass
     , SpecialisePass
@@ -346,6 +349,7 @@ static void AddOptS(PassManager &mngr)
     , SCCPPass
     , DedupBlockPass
     , SimplifyCfgPass
+    , DedupConstPass
     , BypassPhiPass
     , VerifierPass
     , DeadCodeElimPass
