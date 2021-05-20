@@ -56,6 +56,18 @@ std::pair<unsigned, unsigned> InlinerPass::CountUses(const Func &func)
   return count;
 }
 
+
+// -----------------------------------------------------------------------------
+static bool IsLeaf(const Func &f)
+{
+  for (const Block &b : f) {
+    if (::cast_or_null<const CallSite>(b.GetTerminator())) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // -----------------------------------------------------------------------------
 bool InlinerPass::CheckGlobalCost(const Func &caller, const Func &callee)
 {
@@ -65,6 +77,10 @@ bool InlinerPass::CheckGlobalCost(const Func &caller, const Func &callee)
   }
   // Always inline very short functions.
   if (callee.size() <= 2 && callee.inst_size() < 20) {
+    return true;
+  }
+  // Inline larger leaf functions.
+  if (callee.inst_size() < 40 && IsLeaf(callee)) {
     return true;
   }
   auto [dataUses, codeUses] = CountUses(callee);
@@ -87,20 +103,20 @@ bool InlinerPass::CheckGlobalCost(const Func &caller, const Func &callee)
 }
 
 // -----------------------------------------------------------------------------
-bool InlinerPass::CheckInitCost(const Func &caller, const Func &f)
+bool InlinerPass::CheckInitCost(const Func &caller, const Func &callee)
 {
   // Always inline functions which are used once.
-  auto [data, code] = CountUses(f);
+  auto [data, code] = CountUses(callee);
   if (code == 1) {
     return true;
   }
   // Inline very small functions.
-  if (f.inst_size() < 20) {
+  if (callee.inst_size() < 20) {
     return true;
   }
   // Inline short functions without increasing code size too much.
   unsigned copies = (data ? 1 : 0) + code;
-  if (copies * f.inst_size() < 100) {
+  if (copies * callee.inst_size() < 100) {
     return true;
   }
   return false;
