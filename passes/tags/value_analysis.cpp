@@ -6,6 +6,7 @@
 
 #include "core/prog.h"
 #include "core/printer.h"
+#include "passes/tags/type_analysis.h"
 #include "passes/tags/value_analysis.h"
 
 using namespace tags;
@@ -25,6 +26,49 @@ void ValueAnalysis::Solve()
 }
 
 // ----------------------------------------------------------------------------
+void ValueAnalysis::dump(llvm::raw_ostream &os)
+{
+
+  class AnalysisPrinter : public Printer {
+  public:
+    AnalysisPrinter(llvm::raw_ostream &os, ValueAnalysis &values)
+      : Printer(os)
+      , values_(values)
+      , types_(values_.analysis_)
+    {
+    }
+
+    void PrintFuncHeader(const Func &func)
+    {
+    }
+
+    void PrintInstHeader(const Inst &inst)
+    {
+      std::string str;
+      llvm::raw_string_ostream os(str);
+      for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+        if (i != 0) {
+          os << ", ";
+        }
+        os << types_.Find(inst.GetSubValue(i));
+      }
+      os_ << str;
+      for (unsigned i = str.size(); i < 30; ++i) {
+        os_ << ' ';
+      }
+    }
+
+  private:
+    /// Reference to the value analysis.
+    ValueAnalysis &values_;
+    /// Reference to the analysis.
+    TypeAnalysis &types_;
+  };
+
+  AnalysisPrinter(os, *this).Print(prog_);
+}
+
+// ----------------------------------------------------------------------------
 void ValueAnalysis::Shift(Inst &inst)
 {
 }
@@ -32,6 +76,7 @@ void ValueAnalysis::Shift(Inst &inst)
 // ----------------------------------------------------------------------------
 void ValueAnalysis::VisitMovInst(MovInst &inst)
 {
+  /*
   auto arg = inst.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
@@ -48,13 +93,16 @@ void ValueAnalysis::VisitMovInst(MovInst &inst)
     }
   }
   llvm_unreachable("invalid value kind");
+  */
 }
 
 // ----------------------------------------------------------------------------
 void ValueAnalysis::VisitInst(Inst &inst)
 {
+  /*
   std::string msg;
   llvm::raw_string_ostream os(msg);
   os << inst << "\n";
   llvm::report_fatal_error(msg.c_str());
+  */
 }

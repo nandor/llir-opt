@@ -27,9 +27,12 @@ public:
     Solve();
   }
 
-  void Solve();
+  /// Dump the results of the analysis.
+  void dump(llvm::raw_ostream &os = llvm::errs());
 
 protected:
+  void Solve();
+  
   void Shift(Inst &i);
 
 protected:
