@@ -100,33 +100,35 @@ $(function() {
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    Solve();</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  }</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">void</span> Solve();</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">void</span> Shift(<a class="code" href="classInst.html">Inst</a> &amp;i);</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">void</span> VisitMovInst(<a class="code" href="classMovInst.html">MovInst</a> &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i)<span class="keyword"> override </span>{ Shift(i); }</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="comment">// Instructions with no effect.</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(SetInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">void</span> VisitX86_OutInst(X86_OutInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">void</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">void</span> VisitX86_LidtInst(X86_LidtInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">void</span> VisitX86_LgdtInst(X86_LgdtInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> VisitX86_LtrInst(X86_LtrInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordtype">void</span> VisitX86_FPUControlInst(X86_FPUControlInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;inst) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;};</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;}</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">dump</a>(llvm::raw_ostream &amp;os = llvm::errs());</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">void</span> Solve();</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">void</span> Shift(<a class="code" href="classInst.html">Inst</a> &amp;i);</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordtype">void</span> VisitMovInst(<a class="code" href="classMovInst.html">MovInst</a> &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i)<span class="keyword"> override </span>{ Shift(i); }</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="comment">// Instructions with no effect.</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(SetInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">void</span> VisitX86_OutInst(X86_OutInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordtype">void</span> VisitX86_LidtInst(X86_LidtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> VisitX86_LgdtInst(X86_LgdtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordtype">void</span> VisitX86_LtrInst(X86_LtrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> VisitX86_FPUControlInst(X86_FPUControlInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;inst) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;};</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;}</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclasstags_1_1ValueAnalysis_html"><div class="ttname"><a href="classtags_1_1ValueAnalysis.html">tags::ValueAnalysis</a></div><div class="ttdef"><b>Definition:</b> value_analysis.h:21</div></div>
@@ -134,6 +136,7 @@ $(function() {
 <div class="ttc" id="aclassMovInst_html"><div class="ttname"><a href="classMovInst.html">MovInst</a></div><div class="ttdef"><b>Definition:</b> mov.h:17</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
+<div class="ttc" id="aclasstags_1_1ValueAnalysis_html_aecde7c18b79dfa0f588d8b6c2a49e108"><div class="ttname"><a href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">tags::ValueAnalysis::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdoc">Dump the results of the analysis.</div><div class="ttdef"><b>Definition:</b> value_analysis.cpp:29</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

@@ -99,9 +99,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0a5e499351a5aaf31acc9f5e29a9ef5e"><td class="memItemLeft" align="right" valign="top"><a id="a0a5e499351a5aaf31acc9f5e29a9ef5e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ValueAnalysis</b> (<a class="el" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis, <a class="el" href="classProg.html">Prog</a> &amp;prog)</td></tr>
 <tr class="separator:a0a5e499351a5aaf31acc9f5e29a9ef5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memItemLeft" align="right" valign="top"><a id="a24a18ee4942e92fddc6cd7a3cd850586"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Solve</b> ()</td></tr>
-<tr class="separator:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">dump</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
+<tr class="memdesc:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump the results of the analysis.  <a href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">More...</a><br /></td></tr>
+<tr class="separator:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classInstVisitor.html">InstVisitor&lt; void &gt;</a></td></tr>
 <tr class="memitem:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb5fda7220fe1cae4a579d4470e0e4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
@@ -109,6 +109,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a clas
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memItemLeft" align="right" valign="top"><a id="a24a18ee4942e92fddc6cd7a3cd850586"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Solve</b> ()</td></tr>
+<tr class="separator:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecf829918e21e168805121e64adb0bc9"><td class="memItemLeft" align="right" valign="top"><a id="aecf829918e21e168805121e64adb0bc9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Shift</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
 <tr class="separator:aecf829918e21e168805121e64adb0bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,6 +149,29 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_FPUControlIn
 void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitInst</b> (<a class="el" href="classInst.html">Inst</a> &amp;inst) override</td></tr>
 <tr class="separator:a3a8eda3e85d00f16eb30bcc377300f6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aecde7c18b79dfa0f588d8b6c2a49e108"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aecde7c18b79dfa0f588d8b6c2a49e108">&#9670;&nbsp;</a></span>dump()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ValueAnalysis::dump </td>
+          <td>(</td>
+          <td class="paramtype">llvm::raw_ostream &amp;&#160;</td>
+          <td class="paramname"><em>os</em> = <code>llvm::errs()</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Dump the results of the analysis. </p>
+<p>Reference to the value analysis.</p>
+<p>Reference to the analysis.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/tags/<a class="el" href="value__analysis_8h_source.html">value_analysis.h</a></li>
 <li>passes/tags/value_analysis.cpp</li>
