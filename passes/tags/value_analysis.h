@@ -20,8 +20,8 @@ class TypeAnalysis;
 
 class ValueAnalysis : public InstVisitor<void> {
 public:
-  ValueAnalysis(TypeAnalysis &analysis, Prog &prog)
-    : analysis_(analysis)
+  ValueAnalysis(TypeAnalysis &types, Prog &prog)
+    : types_(types)
     , prog_(prog)
   {
     Solve();
@@ -32,27 +32,12 @@ public:
 
 protected:
   void Solve();
-  
-  void Shift(Inst &i);
-
-protected:
-  void VisitMovInst(MovInst &i) override;
-  void VisitGetInst(GetInst &i) override { Shift(i); }
 
   // Instructions with no effect.
-  void VisitTerminatorInst(TerminatorInst &i) override {}
-  void VisitSetInst(SetInst &i) override {}
-  void VisitX86_OutInst(X86_OutInst &i) override {}
-  void VisitX86_WrMsrInst(X86_WrMsrInst &i) override {}
-  void VisitX86_LidtInst(X86_LidtInst &i) override {}
-  void VisitX86_LgdtInst(X86_LgdtInst &i) override {}
-  void VisitX86_LtrInst(X86_LtrInst &i) override {}
-  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override {}
-
   void VisitInst(Inst &inst) override;
 
 private:
-  TypeAnalysis &analysis_;
+  TypeAnalysis &types_;
   Prog &prog_;
 };
 

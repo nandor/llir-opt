@@ -398,12 +398,11 @@ void SCCPSolver::VisitCmpInst(CmpInst &inst)
           return;
         }
         case Lattice::Kind::INT: {
-          auto knownLHS = lhs.GetKnown() & lhs.GetValue();
-          auto knownRHS = lhs.GetKnown() & rhs.GetInt();
-          if (knownLHS != knownRHS) {
-            Mark(inst, Unequal());
-          } else {
+          auto mask = lhs.GetKnown() & (lhs.GetValue() ^ rhs.GetInt());
+          if (mask.isNullValue()) {
             MarkOverdefined(inst);
+          } else {
+            Mark(inst, Unequal());
           }
           return;
         }
@@ -506,7 +505,8 @@ void SCCPSolver::VisitCmpInst(CmpInst &inst)
           return;
         }
         case Lattice::Kind::INT: {
-          if (rhs.GetInt().isNullValue()) {
+          auto v = rhs.GetInt();
+          if (v.isNullValue() || v.isOneValue()) {
             Mark(inst, g->IsWeak() ? Lattice::Overdefined() : IntOrder(false));
           } else {
             MarkOverdefined(inst);

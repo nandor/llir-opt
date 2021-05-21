@@ -61,7 +61,7 @@ bool EliminateTagsPass::Run(Prog &prog)
   //types.dump();
   //values.dump();
   bool changed = false;
- 
+
   // Analyse values and identify candidates for simplification.
 
   // Rewrite V64 to I64 if the classification is odd.

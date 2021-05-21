@@ -102,6 +102,33 @@ void Refinement::VisitMemoryStoreInst(MemoryStoreInst &i)
 }
 
 // -----------------------------------------------------------------------------
+void Refinement::VisitSubInst(SubInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto vo = analysis_.Find(i);
+  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsIntLike()) {
+    RefineAddr(i, i.GetLHS());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitAddInst(AddInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto vo = analysis_.Find(i);
+  if (vo.IsPtr()) {
+    if (vl.IsIntLike() && vr.IsPtrUnion()) {
+      RefineAddr(i, i.GetRHS());
+    }
+    if (vr.IsIntLike() && vl.IsPtrUnion()) {
+      RefineAddr(i, i.GetLHS());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Refinement::VisitCmpInst(CmpInst &i)
 {
   auto cc = i.GetCC();
@@ -129,10 +156,11 @@ void Refinement::VisitPhiInst(PhiInst &phi)
     return;
   }
 
+  auto *parent = phi.getParent();
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     auto ref = phi.GetValue(i);
     auto vin = analysis_.Find(ref);
-    if (vphi < vin) {
+    if (vphi < vin && pdt_.Dominates(phi.GetBlock(i), parent, ref->getParent())) {
       Refine(phi, ref, vphi);
     }
   }

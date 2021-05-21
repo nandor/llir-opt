@@ -36,6 +36,8 @@ private:
 private:
   void VisitMemoryLoadInst(MemoryLoadInst &i) override;
   void VisitMemoryStoreInst(MemoryStoreInst &i) override;
+  void VisitSubInst(SubInst &i) override;
+  void VisitAddInst(AddInst &i) override;
   void VisitCmpInst(CmpInst &i) override;
   void VisitPhiInst(PhiInst &phi) override;
   void VisitInst(Inst &i) override {}

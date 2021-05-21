@@ -9,6 +9,33 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
+bool TaggedType::IsIntLike() const
+{
+  switch (k_) {
+    case Kind::ZERO:
+    case Kind::EVEN:
+    case Kind::ONE:
+    case Kind::ODD:
+    case Kind::ZERO_ONE:
+    case Kind::INT: {
+      return true;
+    }
+    case Kind::UNKNOWN:
+    case Kind::YOUNG:
+    case Kind::HEAP:
+    case Kind::VAL:
+    case Kind::PTR:
+    case Kind::PTR_NULL:
+    case Kind::PTR_INT:
+    case Kind::UNDEF:
+    case Kind::ANY: {
+      return false;
+    }
+  }
+  llvm_unreachable("invalid kind");
+}
+
+// -----------------------------------------------------------------------------
 TaggedType &TaggedType::operator|=(const TaggedType &that)
 {
   switch (k_) {
@@ -233,7 +260,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           llvm_unreachable("not implemented");
         }
         case Kind::PTR:
-        case Kind::PTR_NULL: 
+        case Kind::PTR_NULL:
         case Kind::PTR_INT: {
           k_ = Kind::PTR_INT;
           return *this;

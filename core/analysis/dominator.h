@@ -22,15 +22,28 @@
 class DominatorTree : public llvm::DominatorTreeBase<Block, false> {
 public:
   DominatorTree(Func &f) { recalculate(f); }
-};
 
-/**
- * Dominance frontier for blocks.
- */
-class DominanceFrontier : public llvm::ForwardDominanceFrontierBase<Block> {
-public:
-  using iterator       = llvm::DominanceFrontierBase<Block, false>::iterator;
-  using const_iterator = llvm::DominanceFrontierBase<Block, false>::const_iterator;
+  bool Dominates(const Block *start, const Block *end, const Block *block)
+  {
+    if (!dominates(end, block) || end->pred_size() == 1) {
+      return false;
+    }
+
+    bool isDuplicateEdge = false;
+    for (const Block *bb : end->predecessors()) {
+      if (bb == start) {
+        if (isDuplicateEdge) {
+          return false;
+        }
+        isDuplicateEdge = true;
+      } else {
+        if (!dominates(end, bb)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 };
 
 /**
@@ -39,6 +52,38 @@ public:
 class PostDominatorTree : public llvm::DominatorTreeBase<Block, true> {
 public:
   PostDominatorTree(Func &f) { recalculate(f); }
+
+  bool Dominates(const Block *start, const Block *end, const Block *block)
+  {
+    if (!dominates(start, block) || start->succ_size() == 1) {
+      return false;
+    }
+
+    bool isDuplicateEdge = false;
+    for (const Block *bb : end->successors()) {
+      if (bb == start) {
+        if (isDuplicateEdge) {
+          return false;
+        }
+        isDuplicateEdge = true;
+      } else {
+        if (!dominates(start, bb)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+};
+
+
+/**
+ * Dominance frontier for blocks.
+ */
+class DominanceFrontier : public llvm::ForwardDominanceFrontierBase<Block> {
+public:
+  using iterator       = llvm::DominanceFrontierBase<Block, false>::iterator;
+  using const_iterator = llvm::DominanceFrontierBase<Block, false>::const_iterator;
 };
 
 /**

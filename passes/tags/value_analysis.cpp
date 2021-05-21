@@ -12,6 +12,9 @@
 using namespace tags;
 
 
+#include <llvm/Support/GraphWriter.h>
+#include "core/cfg.h"
+
 
 // ----------------------------------------------------------------------------
 void ValueAnalysis::Solve()
@@ -19,7 +22,18 @@ void ValueAnalysis::Solve()
   for (Func &func : prog_) {
     for (Block &block : func) {
       for (Inst &inst : block) {
-        Dispatch(inst);
+        if (auto *binary = ::cast_or_null<BinaryInst>(&inst)) {
+          auto tl = types_.Find(binary->GetLHS());
+          auto tr = types_.Find(binary->GetRHS());
+          if (auto *shift = ::cast_or_null<ShiftRightInst>(binary)) {
+            // TODO
+          }
+          if (auto *cmp = ::cast_or_null<CmpInst>(binary)) {
+            if (tl.IsOddLike() && tr.IsOddLike()) {
+            // TODO
+            }
+          }
+        }
       }
     }
   }
@@ -28,13 +42,12 @@ void ValueAnalysis::Solve()
 // ----------------------------------------------------------------------------
 void ValueAnalysis::dump(llvm::raw_ostream &os)
 {
-
   class AnalysisPrinter : public Printer {
   public:
     AnalysisPrinter(llvm::raw_ostream &os, ValueAnalysis &values)
       : Printer(os)
       , values_(values)
-      , types_(values_.analysis_)
+      , types_(values_.types_)
     {
     }
 
@@ -69,40 +82,10 @@ void ValueAnalysis::dump(llvm::raw_ostream &os)
 }
 
 // ----------------------------------------------------------------------------
-void ValueAnalysis::Shift(Inst &inst)
-{
-}
-
-// ----------------------------------------------------------------------------
-void ValueAnalysis::VisitMovInst(MovInst &inst)
-{
-  /*
-  auto arg = inst.GetArg();
-  switch (arg->GetKind()) {
-    case Value::Kind::INST: {
-      llvm_unreachable("not implemented");
-    }
-    case Value::Kind::GLOBAL: {
-      llvm_unreachable("not implemented");
-    }
-    case Value::Kind::CONST: {
-      llvm_unreachable("not implemented");
-    }
-    case Value::Kind::EXPR: {
-      llvm_unreachable("not implemented");
-    }
-  }
-  llvm_unreachable("invalid value kind");
-  */
-}
-
-// ----------------------------------------------------------------------------
 void ValueAnalysis::VisitInst(Inst &inst)
 {
-  /*
   std::string msg;
   llvm::raw_string_ostream os(msg);
   os << inst << "\n";
   llvm::report_fatal_error(msg.c_str());
-  */
 }

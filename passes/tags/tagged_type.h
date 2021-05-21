@@ -55,6 +55,10 @@ public:
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
 
+  bool IsOddLike() const { return IsOdd() || IsOne(); }
+  bool IsIntLike() const;
+  bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
+
   TaggedType &operator|=(const TaggedType &that);
 
   TaggedType operator|(const TaggedType &that) const

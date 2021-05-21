@@ -74,6 +74,12 @@ bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
 }
 
 // -----------------------------------------------------------------------------
+bool TypeAnalysis::Refine(ArgInst &arg, const TaggedType &type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void TypeAnalysis::Enqueue(Ref<Inst> inst)
 {
   Func *f = const_cast<Func *>(inst->getParent()->getParent());
