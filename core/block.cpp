@@ -176,6 +176,16 @@ llvm::iterator_range<Block::phi_iterator> Block::phis()
 }
 
 // -----------------------------------------------------------------------------
+Block::iterator Block::first_non_phi()
+{
+  iterator it = begin();
+  while (it != end() && it->Is(Inst::Kind::PHI)) {
+    ++it;
+  }
+  return it;
+}
+
+// -----------------------------------------------------------------------------
 Block *Block::splitBlock(iterator I)
 {
   static unsigned uniqueID = 0;

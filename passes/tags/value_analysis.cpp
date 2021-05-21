@@ -65,6 +65,12 @@ void ValueAnalysis::dump(llvm::raw_ostream &os)
         }
         os << types_.Find(inst.GetSubValue(i));
       }
+      if (auto *mov = ::cast_or_null<const MovInst>(&inst)) {
+        if (auto arg = ::cast_or_null<const Inst>(mov->GetArg())) {
+          os << " REFINE ";
+        }
+      }
+
       os_ << str;
       for (unsigned i = str.size(); i < 30; ++i) {
         os_ << ' ';

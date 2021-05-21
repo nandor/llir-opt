@@ -54,20 +54,23 @@ bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
 // -----------------------------------------------------------------------------
 bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
 {
-  auto it = types_.find(inst);
-  assert(it != types_.end() && "no type to override");
-  auto told = it->second;
-  if (tnew < told) {
-    it->second = tnew;
-    for (Use &use : inst->uses()) {
-      if (use.get() == inst) {
-        auto *userInst = ::cast<Inst>(use.getUser());
-        if (inRefineQueue_.insert(userInst).second) {
-          refineQueue_.push(userInst);
+  auto it = types_.emplace(inst, tnew);
+  if (!it.second) {
+    auto told = it.first->second;
+    if (tnew < told) {
+      it.first->second = tnew;
+      for (Use &use : inst->uses()) {
+        if (use.get() == inst) {
+          auto *userInst = ::cast<Inst>(use.getUser());
+          if (inRefineQueue_.insert(userInst).second) {
+            refineQueue_.push(userInst);
+          }
         }
       }
+      return true;
+    } else {
+      return false;
     }
-    return true;
   } else {
     return false;
   }

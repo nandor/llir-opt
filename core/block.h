@@ -214,7 +214,7 @@ public:
   bool IsTrap() const;
 
   /// Add an instruction to the block.
-  void insert(Inst *inst, iterator it); 
+  void insert(Inst *inst, iterator it);
 
   /// Removes an instruction.
   void remove(iterator it);
@@ -288,6 +288,9 @@ public:
     return const_cast<Block *>(this)->phis();
   }
   llvm::iterator_range<phi_iterator> phis();
+
+  /// Iterator to the first non-phi instruction.
+  iterator first_non_phi();
 
   /// Split the block at the given iterator.
   Block *splitBlock(iterator I);

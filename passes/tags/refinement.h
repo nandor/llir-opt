@@ -49,6 +49,8 @@ private:
   const Target *target_;
   /// Function to optimise.
   Func &func_;
+  /// Dominator tree.
+  DominatorTree dt_;
   /// Post-Dominator Tree.
   PostDominatorTree pdt_;
   /// Post-Dominance Frontier.

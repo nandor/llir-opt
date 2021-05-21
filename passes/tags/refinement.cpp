@@ -17,6 +17,7 @@ Refinement::Refinement(TypeAnalysis &analysis, const Target *target, Func &func)
   : analysis_(analysis)
   , target_(target)
   , func_(func)
+  , dt_(func_)
   , pdt_(func_)
 {
   pdf_.analyze(pdt_);
@@ -42,14 +43,41 @@ void Refinement::Run()
 // -----------------------------------------------------------------------------
 void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
 {
-  if (pdt_.dominates(i.getParent(), ref->getParent())) {
+  auto *parent = i.getParent();
+  if (pdt_.dominates(parent, ref->getParent())) {
+    // If the definition is post-dominated by the use, change its type.
     analysis_.Refine(ref, type);
     auto *source = &*ref;
     if (inQueue_.insert(source).second) {
       queue_.push(source);
     }
   } else {
-    // TODO
+    // Split live ranges, inserting moves at post-doms which follow the
+    // dominance frontier.
+    llvm::SmallPtrSet<Block *, 8> blocks;
+    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
+      for (auto *succ : front->successors()) {
+        if (pdt_.dominates(parent, succ)) {
+          blocks.insert(succ);
+        }
+      }
+    }
+    for (Block *block : blocks) {
+      llvm::SmallVector<Use *, 8> uses;
+      for (Use &use : ref->uses()) {
+        if (dt_.dominates(block, ::cast<Inst>(use.getUser())->getParent())) {
+          uses.push_back(&use);
+        }
+      }
+      if (!uses.empty()) {
+        auto *mov = new MovInst(ref.GetType(), ref, {});
+        block->insert(mov, block->first_non_phi());
+        for (Use *use : uses) {
+          *use = mov->GetSubValue(0);
+        }
+        analysis_.Refine(mov->GetSubValue(0), type);
+      }
+    }
   }
 }
 
