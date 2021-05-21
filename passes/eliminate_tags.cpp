@@ -38,12 +38,8 @@ public:
 
   Type Map(Type ty, Inst *inst, unsigned idx) override
   {
-    if (ty == Type::V64) {
-      if (types_.Find(inst->GetSubValue(idx)).IsOdd()) {
-        return Type::I64;
-      } else {
-        return ty;
-      }
+    if (ty == Type::V64 && types_.Find(inst->GetSubValue(idx)).IsOddLike()) {
+      return Type::I64;
     } else {
       return ty;
     }
@@ -58,32 +54,44 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   TypeAnalysis types(prog, GetTarget());
   ValueAnalysis values(types, prog);
-  //types.dump();
-  //values.dump();
-  bool changed = false;
-
-  // Analyse values and identify candidates for simplification.
 
   // Rewrite V64 to I64 if the classification is odd.
+  bool changed = false;
   for (Func &func : prog) {
-    for (Block &block : func) {
-      for (auto it = block.begin(); it != block.end(); ) {
-        Inst &inst = *it++;
+    for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
+      for (auto it = block->begin(); it != block->end(); ) {
+        Inst *inst = &*it++;
 
         bool rewrite = false;
-        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-          auto type = inst.GetType(i);
-          auto val = types.Find(inst.GetSubValue(i));
-          if (type == Type::V64 && val.IsOdd()) {
+        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+          auto type = inst->GetType(i);
+          auto val = types.Find(inst->GetSubValue(i));
+          if (type == Type::V64 && val.IsOddLike()) {
             rewrite = true;
           }
         }
 
-        if (rewrite) {
-          auto newInst = TypeRewriter(types).Clone(&inst);
-          block.AddInst(newInst, &inst);
-          inst.replaceAllUsesWith(newInst);
-          inst.eraseFromParent();
+        if (auto *mov = ::cast_or_null<MovInst>(inst)) {
+          auto ref = mov->GetArg();
+          Type ty = rewrite ? Type::I64 : mov->GetType();
+          if (auto arg = ::cast_or_null<Inst>(ref); arg && ty == arg.GetType()) {
+            mov->replaceAllUsesWith(arg);
+            mov->eraseFromParent();
+          } else if (rewrite) {
+            auto *newInst = new MovInst(Type::I64, ref, mov->GetAnnots());
+            block->AddInst(newInst, inst);
+            inst->replaceAllUsesWith(newInst);
+            inst->eraseFromParent();
+          }
+          if (rewrite) {
+            NumTypesRewritten++;
+            changed = true;
+          }
+        } else if (rewrite) {
+          auto newInst = TypeRewriter(types).Clone(inst);
+          block->AddInst(newInst, inst);
+          inst->replaceAllUsesWith(newInst);
+          inst->eraseFromParent();
           NumTypesRewritten++;
           changed = true;
         }
