@@ -55,6 +55,8 @@ bool EliminateTagsPass::Run(Prog &prog)
   TypeAnalysis types(prog, GetTarget());
   ValueAnalysis values(types, prog);
 
+  //values.dump();
+
   // Rewrite V64 to I64 if the classification is odd.
   bool changed = false;
   for (Func &func : prog) {
@@ -70,7 +72,6 @@ bool EliminateTagsPass::Run(Prog &prog)
             rewrite = true;
           }
         }
-
         if (auto *mov = ::cast_or_null<MovInst>(inst)) {
           auto ref = mov->GetArg();
           Type ty = rewrite ? Type::I64 : mov->GetType();
@@ -83,15 +84,13 @@ bool EliminateTagsPass::Run(Prog &prog)
             inst->replaceAllUsesWith(newInst);
             inst->eraseFromParent();
           }
-          if (rewrite) {
-            NumTypesRewritten++;
-            changed = true;
-          }
         } else if (rewrite) {
           auto newInst = TypeRewriter(types).Clone(inst);
           block->AddInst(newInst, inst);
           inst->replaceAllUsesWith(newInst);
           inst->eraseFromParent();
+        }
+        if (rewrite) {
           NumTypesRewritten++;
           changed = true;
         }

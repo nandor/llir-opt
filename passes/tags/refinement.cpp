@@ -65,6 +65,9 @@ void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
     for (Block *block : blocks) {
       llvm::SmallVector<Use *, 8> uses;
       for (Use &use : ref->uses()) {
+        if ((*use).Index() != ref.Index()) {
+          continue;
+        }
         if (dt_.dominates(block, ::cast<Inst>(use.getUser())->getParent())) {
           uses.push_back(&use);
         }
