@@ -127,28 +127,29 @@ $(function() {
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  {</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordflow">return</span> Refine(inst.<a class="code" href="classInst.html#ab76fe495a1a231b2190a8e3c6eb7e5c2">GetSubValue</a>(0), type);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  }</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> Enqueue(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> inst);</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  std::queue&lt;Inst *&gt; forwardQueue_;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  std::queue&lt;PhiInst *&gt; forwardPhiQueue_;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  std::unordered_set&lt;Inst *&gt; inForwardQueue_;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  std::queue&lt;Func *&gt; backwardQueue_;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  std::unordered_set&lt;Func *&gt; inBackwardQueue_;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::queue&lt;Inst *&gt; refineQueue_;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  std::unordered_set&lt;Inst *&gt; inRefineQueue_;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  std::unordered_map&lt;ConstRef&lt;Inst&gt;, TaggedType&gt; types_;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  std::unordered_map</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    &lt; std::pair&lt;const Func *, unsigned&gt;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    , std::vector&lt;ArgInst *&gt;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    &gt; args_;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  std::unordered_map&lt;const Func *, std::vector&lt;TaggedType&gt;&gt; rets_;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;};</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;} <span class="comment">// end namespace</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">bool</span> Refine(ArgInst &amp;arg, <span class="keyword">const</span> TaggedType &amp;type);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span> Enqueue(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> inst);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  std::queue&lt;Inst *&gt; forwardQueue_;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  std::queue&lt;PhiInst *&gt; forwardPhiQueue_;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  std::unordered_set&lt;Inst *&gt; inForwardQueue_;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  std::queue&lt;Func *&gt; backwardQueue_;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::unordered_set&lt;Func *&gt; inBackwardQueue_;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  std::queue&lt;Inst *&gt; refineQueue_;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  std::unordered_set&lt;Inst *&gt; inRefineQueue_;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  std::unordered_map&lt;ConstRef&lt;Inst&gt;, TaggedType&gt; types_;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  std::unordered_map</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    &lt; std::pair&lt;const Func *, unsigned&gt;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    , std::vector&lt;ArgInst *&gt;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    &gt; args_;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  std::unordered_map&lt;const Func *, std::vector&lt;TaggedType&gt;&gt; rets_;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;};</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassConstRef_html"><div class="ttname"><a href="classConstRef.html">ConstRef&lt; Inst &gt;</a></div></div>
@@ -159,7 +160,7 @@ $(function() {
 <div class="ttc" id="aclasstags_1_1Step_html"><div class="ttname"><a href="classtags_1_1Step.html">tags::Step</a></div><div class="ttdef"><b>Definition:</b> step.h:20</div></div>
 <div class="ttc" id="aclasstags_1_1Init_html"><div class="ttname"><a href="classtags_1_1Init.html">tags::Init</a></div><div class="ttdef"><b>Definition:</b> init.h:19</div></div>
 <div class="ttc" id="aclasstags_1_1Refinement_html"><div class="ttname"><a href="classtags_1_1Refinement.html">tags::Refinement</a></div><div class="ttdef"><b>Definition:</b> refinement.h:24</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_a55505ac04ec3d8df0503bc2e701f50aa"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#a55505ac04ec3d8df0503bc2e701f50aa">tags::TypeAnalysis::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdoc">Dump the results of the analysis.</div><div class="ttdef"><b>Definition:</b> type_analysis.cpp:153</div></div>
+<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_a55505ac04ec3d8df0503bc2e701f50aa"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#a55505ac04ec3d8df0503bc2e701f50aa">tags::TypeAnalysis::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdoc">Dump the results of the analysis.</div><div class="ttdef"><b>Definition:</b> type_analysis.cpp:159</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclassRef_html"><div class="ttname"><a href="classRef.html">Ref</a></div><div class="ttdef"><b>Definition:</b> ref.h:63</div></div>
 <div class="ttc" id="aclasstags_1_1TaggedType_html"><div class="ttname"><a href="classtags_1_1TaggedType.html">tags::TaggedType</a></div><div class="ttdef"><b>Definition:</b> tagged_type.h:16</div></div>

@@ -96,9 +96,9 @@ Collaboration diagram for tags::ValueAnalysis:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0a5e499351a5aaf31acc9f5e29a9ef5e"><td class="memItemLeft" align="right" valign="top"><a id="a0a5e499351a5aaf31acc9f5e29a9ef5e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ValueAnalysis</b> (<a class="el" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis, <a class="el" href="classProg.html">Prog</a> &amp;prog)</td></tr>
-<tr class="separator:a0a5e499351a5aaf31acc9f5e29a9ef5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fa49b00f2f9641f6d1012df88f75375"><td class="memItemLeft" align="right" valign="top"><a id="a9fa49b00f2f9641f6d1012df88f75375"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ValueAnalysis</b> (<a class="el" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;types, <a class="el" href="classProg.html">Prog</a> &amp;prog)</td></tr>
+<tr class="separator:a9fa49b00f2f9641f6d1012df88f75375"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">dump</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
 <tr class="memdesc:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump the results of the analysis.  <a href="classtags_1_1ValueAnalysis.html#aecde7c18b79dfa0f588d8b6c2a49e108">More...</a><br /></td></tr>
 <tr class="separator:aecde7c18b79dfa0f588d8b6c2a49e108"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -112,39 +112,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memItemLeft" align="right" valign="top"><a id="a24a18ee4942e92fddc6cd7a3cd850586"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Solve</b> ()</td></tr>
 <tr class="separator:a24a18ee4942e92fddc6cd7a3cd850586"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aecf829918e21e168805121e64adb0bc9"><td class="memItemLeft" align="right" valign="top"><a id="aecf829918e21e168805121e64adb0bc9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Shift</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
-<tr class="separator:aecf829918e21e168805121e64adb0bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a48be4b05a3d4058d39d3e468c1bd62bb"><td class="memItemLeft" align="right" valign="top"><a id="a48be4b05a3d4058d39d3e468c1bd62bb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMovInst</b> (<a class="el" href="classMovInst.html">MovInst</a> &amp;i) override</td></tr>
-<tr class="separator:a48be4b05a3d4058d39d3e468c1bd62bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e1b9ae5761887d30bb626afb30386dc"><td class="memItemLeft" align="right" valign="top"><a id="a1e1b9ae5761887d30bb626afb30386dc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitGetInst</b> (GetInst &amp;i) override</td></tr>
-<tr class="separator:a1e1b9ae5761887d30bb626afb30386dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad858ac9b16930e7b03d6edc6ac0ef2c2"><td class="memItemLeft" align="right" valign="top"><a id="ad858ac9b16930e7b03d6edc6ac0ef2c2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTerminatorInst</b> (TerminatorInst &amp;i) override</td></tr>
-<tr class="separator:ad858ac9b16930e7b03d6edc6ac0ef2c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dedec3171b838c151cf22611d02f631"><td class="memItemLeft" align="right" valign="top"><a id="a0dedec3171b838c151cf22611d02f631"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSetInst</b> (SetInst &amp;i) override</td></tr>
-<tr class="separator:a0dedec3171b838c151cf22611d02f631"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a59baca6665aaac6cdcc68a27e02fa5da"><td class="memItemLeft" align="right" valign="top"><a id="a59baca6665aaac6cdcc68a27e02fa5da"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_OutInst</b> (X86_OutInst &amp;i) override</td></tr>
-<tr class="separator:a59baca6665aaac6cdcc68a27e02fa5da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a584af9a7d1ef9c173b9c25e58888bf19"><td class="memItemLeft" align="right" valign="top"><a id="a584af9a7d1ef9c173b9c25e58888bf19"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_WrMsrInst</b> (X86_WrMsrInst &amp;i) override</td></tr>
-<tr class="separator:a584af9a7d1ef9c173b9c25e58888bf19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a974be24240a0abc8422da27292735537"><td class="memItemLeft" align="right" valign="top"><a id="a974be24240a0abc8422da27292735537"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LidtInst</b> (X86_LidtInst &amp;i) override</td></tr>
-<tr class="separator:a974be24240a0abc8422da27292735537"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade123981e4e626b2b2ef6073939eda74"><td class="memItemLeft" align="right" valign="top"><a id="ade123981e4e626b2b2ef6073939eda74"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LgdtInst</b> (X86_LgdtInst &amp;i) override</td></tr>
-<tr class="separator:ade123981e4e626b2b2ef6073939eda74"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a261f01bbc59ef5d0dde2db1df0c62fb5"><td class="memItemLeft" align="right" valign="top"><a id="a261f01bbc59ef5d0dde2db1df0c62fb5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LtrInst</b> (X86_LtrInst &amp;i) override</td></tr>
-<tr class="separator:a261f01bbc59ef5d0dde2db1df0c62fb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab34e853c4f0c06b17b6e8e0bf2c67245"><td class="memItemLeft" align="right" valign="top"><a id="ab34e853c4f0c06b17b6e8e0bf2c67245"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_FPUControlInst</b> (X86_FPUControlInst &amp;i) override</td></tr>
-<tr class="separator:ab34e853c4f0c06b17b6e8e0bf2c67245"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8eda3e85d00f16eb30bcc377300f6c"><td class="memItemLeft" align="right" valign="top"><a id="a3a8eda3e85d00f16eb30bcc377300f6c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitInst</b> (<a class="el" href="classInst.html">Inst</a> &amp;inst) override</td></tr>
 <tr class="separator:a3a8eda3e85d00f16eb30bcc377300f6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
