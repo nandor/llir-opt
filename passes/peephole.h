@@ -34,4 +34,5 @@ private:
   bool VisitAddInst(AddInst &inst) override;
   bool VisitSubInst(SubInst &inst) override;
   bool VisitStoreInst(StoreInst &inst) override;
+  bool VisitCmpInst(CmpInst &inst) override;
 };

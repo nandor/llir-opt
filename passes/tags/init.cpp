@@ -279,7 +279,7 @@ void Init::VisitX86_RdTscInst(X86_RdTscInst &i)
 // -----------------------------------------------------------------------------
 void Init::VisitCmpInst(CmpInst &i)
 {
-  analysis_.Mark(i, TaggedType::Int());
+  analysis_.Mark(i, TaggedType::ZeroOne());
 }
 
 // -----------------------------------------------------------------------------

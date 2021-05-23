@@ -56,6 +56,7 @@ public:
   bool IsUndef() const { return k_ == Kind::UNDEF; }
 
   bool IsOddLike() const { return IsOdd() || IsOne(); }
+  bool IsEvenLike() const { return IsEven() || IsZero(); }
   bool IsIntLike() const;
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
 

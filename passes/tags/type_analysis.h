@@ -40,6 +40,11 @@ public:
     return it == types_.end() ? TaggedType::Unknown() : it->second;
   }
 
+  /// Set the type, typically after rewriting an instruction.
+  void Replace(Ref<Inst> oldInst, Ref<Inst> newInst, const TaggedType &type);
+  /// Erase a type after deleting an instruction.
+  void Erase(Ref<Inst> oldInst);
+
 private:
   friend class Init;
   friend class Step;

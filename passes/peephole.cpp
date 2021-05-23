@@ -19,6 +19,7 @@
 STATISTIC(NumAddsSimplified, "Add instructions simplified");
 STATISTIC(NumSubsSimplified, "Subtractions simplified");
 STATISTIC(NumCastsEliminated, "Number of bit casts eliminated");
+STATISTIC(NumCmpSimplified, "Number of comparisons simplified");
 
 
 
@@ -118,3 +119,49 @@ bool PeepholePass::VisitStoreInst(StoreInst &inst)
   }
   return false;
 }
+
+// -----------------------------------------------------------------------------
+bool PeepholePass::VisitCmpInst(CmpInst &inst)
+{
+  auto *cmp = ::cast_or_null<CmpInst>(&inst);
+  if (!cmp) {
+    return false;
+  }
+  auto sll = ::cast_or_null<SllInst>(cmp->GetLHS());
+  auto ref = ::cast_or_null<MovInst>(cmp->GetRHS());
+  if (!sll || !ref) {
+    return false;
+  }
+
+  auto one = ::cast_or_null<MovInst>(sll->GetRHS());
+  auto zext = ::cast_or_null<ZExtInst>(sll->GetLHS());
+  if (!one || !zext) {
+    return false;
+  }
+
+  auto iref = ::cast_or_null<ConstantInt>(ref->GetArg());
+  auto ione = ::cast_or_null<ConstantInt>(one->GetArg());
+  if (!iref || !ione || !ione->GetValue().isOneValue()) {
+    return false;
+  }
+
+  auto *block = inst.getParent();
+
+  auto *newIRef = new ConstantInt(iref->GetValue().lshr(1));
+  auto newRef = new MovInst(ref->GetType(), newIRef, ref->GetAnnots());
+  block->AddInst(newRef, &inst);
+
+  auto newCmp = new CmpInst(
+      cmp->GetType(),
+      zext,
+      newRef,
+      cmp->GetCC(),
+      cmp->GetAnnots()
+  );
+  block->AddInst(newCmp, &inst);
+  cmp->replaceAllUsesWith(newCmp);
+  cmp->eraseFromParent();
+  ++NumCmpSimplified;
+  return true;
+}
+

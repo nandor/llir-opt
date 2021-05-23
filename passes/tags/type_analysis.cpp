@@ -22,6 +22,26 @@ static bool Converges(Type ty, TaggedType told, TaggedType tnew)
 }
 
 // -----------------------------------------------------------------------------
+void TypeAnalysis::Erase(Ref<Inst> oldInst)
+{
+  types_.erase(oldInst);
+}
+
+// -----------------------------------------------------------------------------
+void TypeAnalysis::Replace(
+    Ref<Inst> oldInst,
+    Ref<Inst> newInst,
+    const TaggedType &type)
+{
+  Erase(oldInst);
+#ifdef NDEBUG
+  types_[newInst] = type;
+#else
+  assert(types_.emplace(newInst, type).second && "value already exists");
+#endif
+}
+
+// -----------------------------------------------------------------------------
 bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
 {
   auto it = types_.emplace(inst, tnew);
