@@ -170,15 +170,18 @@ $(function() {
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">bool</span> Mark(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> inst, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">void</span> Return(<a class="code" href="classFunc.html">Func</a> *from, <span class="keyword">const</span> std::vector&lt;TaggedType&gt; &amp;values);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  Kind kind_;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;};</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;} <span class="comment">// end namespace</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">void</span> Return(</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;      <a class="code" href="classFunc.html">Func</a> *from,</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;      <span class="keyword">const</span> <a class="code" href="classInst.html">Inst</a> *inst,</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;      <span class="keyword">const</span> std::vector&lt;TaggedType&gt; &amp;values</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  );</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  Kind kind_;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;};</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
