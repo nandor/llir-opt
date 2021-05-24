@@ -82,8 +82,12 @@ bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
       for (Use &use : inst->uses()) {
         if (use.get() == inst) {
           auto *userInst = ::cast<Inst>(use.getUser());
+          auto *userFunc = userInst->getParent()->getParent();
           if (inRefineQueue_.insert(userInst).second) {
             refineQueue_.push(userInst);
+          }
+          if (inBackwardQueue_.insert(userFunc).second) {
+            backwardQueue_.push(userFunc);
           }
         }
       }

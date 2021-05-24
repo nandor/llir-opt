@@ -75,7 +75,7 @@ void Step::VisitCallSite(CallSite &call)
             llvm_unreachable("not implemented");
           }
         }
-        Return(caller, values);
+        Return(caller, tcall, values);
       } else {
         for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
           if (i < it->second.size()) {
@@ -96,7 +96,7 @@ void Step::VisitCallSite(CallSite &call)
       case CallingConv::C: {
         if (auto *tcall = ::cast_or_null<const TailCallInst>(&call)) {
           std::vector<TaggedType> values(call.type_size(), TaggedType::PtrInt());
-          Return(caller, values);
+          Return(caller, tcall, values);
         } else {
           for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
             Mark(call.GetSubValue(i), TaggedType::PtrInt());
@@ -113,7 +113,7 @@ void Step::VisitCallSite(CallSite &call)
             for (unsigned i = 2, n = call.type_size(); i < n; ++i) {
               values.push_back(Infer(call.type(i)));
             }
-            Return(caller, values);
+            Return(caller, tcall, values);
           } else {
             Mark(call.GetSubValue(0), TaggedType::Ptr());
             Mark(call.GetSubValue(1), TaggedType::Young());
@@ -411,7 +411,7 @@ void Step::VisitReturnInst(ReturnInst &r)
     }
     values.push_back(ret);
   }
-  return Return(r.getParent()->getParent(), values);
+  return Return(r.getParent()->getParent(), &r, values);
 }
 
 // -----------------------------------------------------------------------------
@@ -429,33 +429,117 @@ bool Step::Mark(Ref<Inst> inst, const TaggedType &type)
 }
 
 // -----------------------------------------------------------------------------
-void Step::Return(Func *from, const std::vector<TaggedType> &values)
+void Step::Return(
+    Func *from,
+    const Inst *inst,
+    const std::vector<TaggedType> &values)
 {
   // Aggregate the values with those that might be returned on other paths.
   // Propagate information to the callers of the function and chain tail calls.
-  std::queue<std::pair<Func *, std::vector<TaggedType>>> q;
-  q.emplace(from, values);
+  std::queue<std::tuple<Func *, const Inst *, std::vector<TaggedType>>> q;
+  q.emplace(from, inst, values);
   while (!q.empty()) {
-    auto [f, rets] = q.front();
+    auto [f, inst, rets] = q.front();
     q.pop();
 
-    auto &aggregate = analysis_.rets_.emplace(
-        f,
-        std::vector<TaggedType>{}
-    ).first->second;
-
     bool changed = false;
-    for (unsigned i = 0, n = rets.size(); i < n; ++i) {
-      if (aggregate.size() <= i) {
-        aggregate.resize(i, TaggedType::Undef());
-        aggregate.push_back(rets[i]);
-        changed = true;
-      } else {
-        const auto &ret = rets[i] |= aggregate[i];
-        if (aggregate[i] != ret) {
-          changed = true;
-          aggregate[i] = ret;
+    switch (kind_) {
+      case Kind::FORWARD: {
+        auto &aggregate = analysis_.rets_.emplace(
+            f,
+            std::vector<TaggedType>{}
+        ).first->second;
+
+        for (unsigned i = 0, n = rets.size(); i < n; ++i) {
+          if (aggregate.size() <= i) {
+            aggregate.resize(i, TaggedType::Undef());
+            aggregate.push_back(rets[i]);
+            changed = true;
+          } else {
+            const auto &ret = rets[i] |= aggregate[i];
+            if (aggregate[i] != ret) {
+              changed = true;
+              aggregate[i] = ret;
+            }
+          }
         }
+        break;
+      }
+      case Kind::REFINE: {
+        for (Block &block : *f) {
+          auto *term = block.GetTerminator();
+          if (term == inst) {
+            continue;
+          }
+
+          if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+            for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
+              if (i < rets.size()) {
+                rets[i] |= analysis_.Find(ret->arg(i));
+              } else {
+                llvm_unreachable("not implemented");
+              }
+            }
+            continue;
+          }
+          if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+            if (auto *f = tcall->GetDirectCallee()) {
+              auto it = analysis_.rets_.find(f);
+              if (it != analysis_.rets_.end()) {
+                for (unsigned i = 0, n =  it->second.size(); i < n; ++i) {
+                  if (i < rets.size()) {
+                    rets[i] |= it->second[i];
+                  } else {
+                    llvm_unreachable("not implemented");
+                  }
+                }
+              } else {
+                // No values to merge from this path.
+              }
+            } else {
+              for (unsigned i = 0, n = tcall->type_size(); i < n; ++i) {
+                auto type = [&, rets = &rets] (const TaggedType &ty) {
+                  if (i < rets->size()) {
+                    (*rets)[i] |= ty;
+                  } else {
+                    llvm_unreachable("not implemented");
+                  }
+                };
+
+                switch (tcall->GetCallingConv()) {
+                  case CallingConv::SETJMP:
+                  case CallingConv::XEN:
+                  case CallingConv::INTR:
+                  case CallingConv::MULTIBOOT:
+                  case CallingConv::WIN64:
+                  case CallingConv::C: {
+                    llvm_unreachable("not implemented");
+                  }
+                  case CallingConv::CAML: {
+                    switch (i) {
+                      case 0: type(TaggedType::Ptr()); continue;
+                      case 1: type(TaggedType::Young()); continue;
+                      default: type(Infer(tcall->type(i))); continue;
+                    }
+                    llvm_unreachable("invalid index");
+                  }
+                  case CallingConv::CAML_ALLOC: {
+                    llvm_unreachable("not implemented");
+                  }
+                  case CallingConv::CAML_GC: {
+                    llvm_unreachable("not implemented");
+                  }
+                }
+                llvm_unreachable("invalid calling convention");
+              }
+            }
+            continue;
+          }
+          assert(!term->IsReturn() && "unknown return instruction");
+        }
+        analysis_.rets_.erase(f);
+        analysis_.rets_.emplace(f, rets);
+        break;
       }
     }
 
@@ -472,7 +556,7 @@ void Step::Return(Func *from, const std::vector<TaggedType> &values)
           }
 
           if (auto *tcall = ::cast_or_null<TailCallInst>(call)) {
-            q.emplace(tcall->getParent()->getParent(), rets);
+            q.emplace(tcall->getParent()->getParent(), tcall, rets);
           } else {
             for (unsigned i = 0, n = call->GetNumRets(); i < n; ++i) {
               if (i < rets.size()) {

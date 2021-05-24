@@ -102,8 +102,11 @@ private:
   /// Mark an instruction with a type.
   bool Mark(Ref<Inst> inst, const TaggedType &type);
   /// Return values through tail calls.
-  void Return(Func *from, const std::vector<TaggedType> &values);
-
+  void Return(
+      Func *from,
+      const Inst *inst,
+      const std::vector<TaggedType> &values
+  );
 private:
   /// Reference to the analysis.
   TypeAnalysis &analysis_;
