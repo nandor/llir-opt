@@ -49,7 +49,6 @@ add_library(passes
     tags/step.cpp
     tags/tagged_type.cpp
     tags/type_analysis.cpp
-    tags/value_analysis.cpp
     tags/eval/add.cpp
     tags/eval/sub.cpp
     tags/eval/and.cpp

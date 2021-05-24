@@ -15,7 +15,6 @@
 #include "core/target.h"
 #include "passes/eliminate_tags.h"
 #include "passes/tags/type_analysis.h"
-#include "passes/tags/value_analysis.h"
 #include "passes/tags/tagged_type.h"
 
 using namespace tags;
@@ -56,7 +55,6 @@ public:
   EliminateTags(Prog &prog, const Target *target)
     : prog_(prog)
     , types_(prog, target)
-    , values_(types_, prog)
   {
   }
 
@@ -73,7 +71,6 @@ public:
 private:
   Prog &prog_;
   TypeAnalysis types_;
-  ValueAnalysis values_;
 };
 
 // -----------------------------------------------------------------------------
