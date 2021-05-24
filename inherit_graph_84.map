@@ -1,10 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classInstVisitor.html" title=" " alt="" coords="5,157,152,184"/>
-<area shape="rect" id="node2" href="$classDeadStoreVisitor.html" title=" " alt="" coords="209,5,341,32"/>
-<area shape="rect" id="node3" href="$classSCCPSolver.html" title=" " alt="" coords="226,56,323,83"/>
-<area shape="rect" id="node4" href="$classStoreToLoadVisitor.html" title=" " alt="" coords="203,107,346,133"/>
-<area shape="rect" id="node5" href="$classtags_1_1Init.html" title=" " alt="" coords="235,157,314,184"/>
-<area shape="rect" id="node6" href="$classtags_1_1Refinement.html" title=" " alt="" coords="208,208,341,235"/>
-<area shape="rect" id="node7" href="$classtags_1_1Step.html" title=" " alt="" coords="231,259,318,285"/>
-<area shape="rect" id="node8" href="$classtags_1_1ValueAnalysis.html" title=" " alt="" coords="200,309,349,336"/>
+<area shape="rect" id="node1" href="$classInstVisitor.html" title=" " alt="" coords="5,132,152,159"/>
+<area shape="rect" id="node2" href="$classDeadStoreVisitor.html" title=" " alt="" coords="205,5,337,32"/>
+<area shape="rect" id="node3" href="$classSCCPSolver.html" title=" " alt="" coords="223,56,320,83"/>
+<area shape="rect" id="node4" href="$classStoreToLoadVisitor.html" title=" " alt="" coords="200,107,343,133"/>
+<area shape="rect" id="node5" href="$classtags_1_1Init.html" title=" " alt="" coords="232,157,311,184"/>
+<area shape="rect" id="node6" href="$classtags_1_1Refinement.html" title=" " alt="" coords="205,208,338,235"/>
+<area shape="rect" id="node7" href="$classtags_1_1Step.html" title=" " alt="" coords="228,259,315,285"/>
 </map>
