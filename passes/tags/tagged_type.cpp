@@ -98,16 +98,14 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           k_ = Kind::INT;
           return *this;
         }
-        case Kind::HEAP: {
+        case Kind::HEAP: 
+        case Kind::YOUNG: {
           k_ = Kind::VAL;
           return *this;
         }
         case Kind::PTR: {
           k_ = Kind::PTR_INT;
           return *this;
-        }
-        case Kind::YOUNG: {
-          llvm_unreachable("not implemented");
         }
         case Kind::PTR_INT:
         case Kind::VAL:

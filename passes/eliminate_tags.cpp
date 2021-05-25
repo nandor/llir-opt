@@ -211,8 +211,8 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   EliminateTags pass(prog, GetTarget());
   bool changed = false;
-  //changed = pass.NarrowTypes() || changed;
-  //changed = pass.Peephole() || changed;
+  changed = pass.NarrowTypes() || changed;
+  changed = pass.Peephole() || changed;
   return changed;
 }
 

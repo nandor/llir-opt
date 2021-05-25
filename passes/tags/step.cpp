@@ -36,7 +36,7 @@ void Step::VisitCallSite(CallSite &call)
       if (arg.IsUnknown()) {
         return;
       }
-      if (!IsCamlCall(caller->GetCallingConv()) && IsCamlCall(f->GetCallingConv())) {
+      if (IsCamlCall(f->GetCallingConv())) {
         switch (i) {
           case 0: {
             args.push_back(TaggedType::Ptr());
@@ -402,6 +402,8 @@ void Step::VisitPhiInst(PhiInst &phi)
 // -----------------------------------------------------------------------------
 void Step::VisitReturnInst(ReturnInst &r)
 {
+  auto cc = r.getParent()->getParent()->GetCallingConv();
+
   // Collect the values returned by this function.
   std::vector<TaggedType> values;
   for (unsigned i = 0, n = r.arg_size(); i < n; ++i) {
@@ -409,7 +411,28 @@ void Step::VisitReturnInst(ReturnInst &r)
     if (ret.IsUnknown()) {
       return;
     }
-    values.push_back(ret);
+    switch (cc) {
+      case CallingConv::SETJMP:
+      case CallingConv::XEN:
+      case CallingConv::INTR:
+      case CallingConv::MULTIBOOT:
+      case CallingConv::WIN64:
+      case CallingConv::C: {
+      	values.push_back(ret);
+        continue;
+      }
+      case CallingConv::CAML:
+      case CallingConv::CAML_ALLOC: 
+      case CallingConv::CAML_GC: {
+        switch (i) {
+          case 0: values.push_back(TaggedType::Ptr()); continue;
+          case 1: values.push_back(TaggedType::Young()); continue;
+          default: values.push_back(ret); continue;
+        }
+        llvm_unreachable("invalid index");
+      }
+    }
+    llvm_unreachable("unknown calling convention");
   }
   return Return(r.getParent()->getParent(), &r, values);
 }
@@ -473,39 +496,31 @@ void Step::Return(
           }
 
           if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
-            for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
-              if (i < rets.size()) {
-                rets[i] |= analysis_.Find(ret->arg(i));
-              } else {
-                llvm_unreachable("not implemented");
-              }
+            unsigned n = ret->arg_size();
+            rets.resize(n, TaggedType::Unknown());
+            for (unsigned i = 0; i < n; ++i) {
+              rets[i] |= analysis_.Find(ret->arg(i));
             }
             continue;
           }
           if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+            unsigned n = tcall->type_size();
+            rets.resize(n, TaggedType::Unknown());
             if (auto *f = tcall->GetDirectCallee()) {
               auto it = analysis_.rets_.find(f);
               if (it != analysis_.rets_.end()) {
-                for (unsigned i = 0, n =  it->second.size(); i < n; ++i) {
-                  if (i < rets.size()) {
+                for (unsigned i = 0; i < n; ++i) {
+                  if (i < it->second.size()) {
                     rets[i] |= it->second[i];
                   } else {
-                    llvm_unreachable("not implemented");
+                    rets[i] |= TaggedType::Undef();
                   }
                 }
               } else {
                 // No values to merge from this path.
               }
             } else {
-              for (unsigned i = 0, n = tcall->type_size(); i < n; ++i) {
-                auto type = [&, rets = &rets] (const TaggedType &ty) {
-                  if (i < rets->size()) {
-                    (*rets)[i] |= ty;
-                  } else {
-                    llvm_unreachable("not implemented");
-                  }
-                };
-
+              for (unsigned i = 0; i < n; ++i) {
                 switch (tcall->GetCallingConv()) {
                   case CallingConv::SETJMP:
                   case CallingConv::XEN:
@@ -513,13 +528,23 @@ void Step::Return(
                   case CallingConv::MULTIBOOT:
                   case CallingConv::WIN64:
                   case CallingConv::C: {
-                    llvm_unreachable("not implemented");
+                    rets[i] |= Infer(tcall->type(i));
+                    continue;
                   }
                   case CallingConv::CAML: {
                     switch (i) {
-                      case 0: type(TaggedType::Ptr()); continue;
-                      case 1: type(TaggedType::Young()); continue;
-                      default: type(Infer(tcall->type(i))); continue;
+                      case 0: {
+                        rets[i] |= TaggedType::Ptr();
+                        continue;
+                      }
+                      case 1: {
+                        rets[i] |= TaggedType::Young();
+                        continue;
+                      }
+                      default: {
+                        rets[i] |= Infer(tcall->type(i));
+                        continue;
+                      }
                     }
                     llvm_unreachable("invalid index");
                   }
