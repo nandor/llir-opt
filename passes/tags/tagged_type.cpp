@@ -250,7 +250,8 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           return *this;
         }
         case Kind::HEAP: {
-          llvm_unreachable("not implemented");
+          k_ = Kind::PTR_INT;
+          return *this;
         }
         case Kind::YOUNG: {
           llvm_unreachable("not implemented");

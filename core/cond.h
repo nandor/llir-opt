@@ -28,6 +28,16 @@ enum class Cond : uint8_t {
 Cond GetInverseCond(Cond cc);
 
 /**
+ * Check if the condition is ordered.
+ */
+bool IsOrdered(Cond cc);
+
+/**
+ * Check if the condition is for equality.
+ */
+bool IsEquality(Cond cc);
+
+/**
  * Prints the condition code.
  */
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Cond reg);

@@ -58,6 +58,8 @@ private:
     return Mark(inst.GetSubValue(0), type);
   }
 
+  /// Define a new instruction with existing users.
+  bool Define(Ref<Inst> inst, const TaggedType &type);
   /// Refine an instruction with a type.
   bool Refine(Ref<Inst> inst, const TaggedType &type);
   /// Refine operators with a type.
@@ -69,7 +71,9 @@ private:
   bool Refine(ArgInst &arg, const TaggedType &type);
 
   /// Queue the users of an instruction to be updated.
-  void Enqueue(Ref<Inst> inst);
+  void ForwardQueue(Ref<Inst> inst);
+  /// Queue for the backward pass.
+  void BackwardQueue(Ref<Inst > inst);
 
 private:
   /// Reference to the underlying program.

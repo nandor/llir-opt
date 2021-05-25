@@ -61,3 +61,68 @@ Cond GetInverseCond(Cond cc)
   }
   llvm_unreachable("invalid condition code");
 }
+
+// -----------------------------------------------------------------------------
+bool IsOrdered(Cond cc)
+{
+  switch (cc) {
+    case Cond::OEQ:
+    case Cond::ONE:
+    case Cond::OLT:
+    case Cond::OGT:
+    case Cond::OLE:
+    case Cond::OGE:
+    case Cond::O: {
+      return true;
+    }
+    case Cond::EQ:
+    case Cond::UEQ:
+    case Cond::NE:
+    case Cond::UNE:
+    case Cond::LT:
+    case Cond::ULT:
+    case Cond::GT:
+    case Cond::UGT:
+    case Cond::LE:
+    case Cond::ULE:
+    case Cond::GE:
+    case Cond::UGE:
+    case Cond::UO: {
+      return false;
+    }
+  }
+  llvm_unreachable("invalid condition code");
+}
+
+
+// -----------------------------------------------------------------------------
+bool IsEquality(Cond cc)
+{
+  switch (cc) {
+    case Cond::EQ:
+    case Cond::UEQ:
+    case Cond::OEQ:
+    case Cond::NE:
+    case Cond::UNE:
+    case Cond::ONE: {
+      return true;
+    }
+    case Cond::OLT:
+    case Cond::OGT:
+    case Cond::OLE:
+    case Cond::OGE:
+    case Cond::O:
+    case Cond::LT:
+    case Cond::ULT:
+    case Cond::GT:
+    case Cond::UGT:
+    case Cond::LE:
+    case Cond::ULE:
+    case Cond::GE:
+    case Cond::UGE:
+    case Cond::UO: {
+      return false;
+    }
+  }
+  llvm_unreachable("invalid condition code");
+}

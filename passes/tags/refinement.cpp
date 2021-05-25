@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <stack>
+
 #include "core/atom.h"
 #include "core/object.h"
 #include "core/data.h"
@@ -12,6 +14,7 @@
 using namespace tags;
 
 
+
 // -----------------------------------------------------------------------------
 Refinement::Refinement(TypeAnalysis &analysis, const Target *target, Func &func)
   : analysis_(analysis)
@@ -20,6 +23,7 @@ Refinement::Refinement(TypeAnalysis &analysis, const Target *target, Func &func)
   , dt_(func_)
   , pdt_(func_)
 {
+  df_.analyze(dt_);
   pdf_.analyze(pdt_);
 }
 
@@ -41,9 +45,12 @@ void Refinement::Run()
 }
 
 // -----------------------------------------------------------------------------
-void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
+void Refinement::Refine(
+    Inst &inst,
+    Block *parent,
+    Ref<Inst> ref,
+    const TaggedType &type)
 {
-  auto *parent = i.getParent();
   if (pdt_.dominates(parent, ref->getParent())) {
     // If the definition is post-dominated by the use, change its type.
     analysis_.Refine(ref, type);
@@ -52,8 +59,48 @@ void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
       queue_.push(source);
     }
   } else {
-    // Split live ranges, inserting moves at post-doms which follow the
-    // dominance frontier.
+    #ifndef NDEBUG
+    bool changed = false;
+    #endif
+
+    // Find the set of nodes which lead into a use of the references.
+    llvm::SmallPtrSet<Block *, 8> live;
+    {
+      std::queue<Block *> q;
+      for (Use &use : ref->uses()) {
+        if ((*use).Index() != ref.Index()) {
+          continue;
+        }
+        if (auto *phi = ::cast_or_null<PhiInst>(use.getUser())) {
+          for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+            if (phi->GetValue(i) == ref) {
+              auto *b = phi->GetBlock(i);
+              if (b != ref->getParent()) {
+                live.insert(b);
+                q.push(b);
+              }
+            }
+          }
+        } else {
+          Block *b = &*::cast<Inst>(use.getUser())->getParent();
+          if (b != ref->getParent()) {
+            live.insert(b);
+            q.push(b);
+          }
+        }
+      }
+      while (!q.empty()) {
+        Block *b = q.front();
+        q.pop();
+        for (Block *pred : b->predecessors()) {
+          if (pred != ref->getParent() && live.insert(pred).second) {
+            q.push(pred);
+          }
+        }
+      }
+    }
+
+    // Find the post-dominated nodes which are successors of the frontier.
     llvm::SmallPtrSet<Block *, 8> blocks;
     for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
       for (auto *succ : front->successors()) {
@@ -62,30 +109,99 @@ void Refinement::Refine(Inst &i, Ref<Inst> ref, const TaggedType &type)
         }
       }
     }
-    for (Block *block : blocks) {
-      llvm::SmallVector<Use *, 8> uses;
-      for (Use &use : ref->uses()) {
-        if ((*use).Index() != ref.Index()) {
-          continue;
-        }
-        if (dt_.dominates(block, ::cast<Inst>(use.getUser())->getParent())) {
-          uses.push_back(&use);
-        }
+
+    // Place the PHIs for the blocks.
+    std::unordered_map<Block *, PhiInst *> phis;
+    {
+      std::queue<Block *> q;
+      for (Block *block : blocks) {
+        q.push(block);
       }
-      if (!uses.empty()) {
-        auto *mov = new MovInst(ref.GetType(), ref, {});
-        block->insert(mov, block->first_non_phi());
-        for (Use *use : uses) {
-          *use = mov->GetSubValue(0);
+      while (!q.empty()) {
+        Block *block = q.front();
+        q.pop();
+        for (auto front : df_.calculate(dt_, dt_.getNode(block))) {
+          if (live.count(front)) {
+            auto *phi = new PhiInst(ref.GetType(), {});
+            for (Block *pred : front->predecessors()) {
+              phi->Add(pred, ref);
+            }
+            phis.emplace(front, phi);
+            front->AddPhi(phi);
+          }
         }
-        analysis_.Refine(mov->GetSubValue(0), type);
       }
     }
+
+    std::stack<Inst *> defs;
+    llvm::SmallVector<MovInst *, 4> movs;
+    std::function<void(Block *)> rewrite = [&](Block *block)
+    {
+      Block::iterator begin;
+      if (blocks.count(block)) {
+        // Register the value, if defined in block.
+        auto *mov = new MovInst(ref.GetType(), ref, {});
+        block->insert(mov, block->first_non_phi());
+        defs.push(mov);
+        movs.push_back(mov);
+        begin = std::next(mov->getIterator());
+      } else {
+        if (auto it = phis.find(block); it != phis.end()) {
+          // Register value, if defined in PHI.
+          defs.push(it->second);
+        }
+        begin = block->first_non_phi();
+      }
+      // Rewrite, if there are uses to be rewritten.
+      if (!defs.empty()) {
+        for (auto it = begin; it != block->end(); ++it) {
+          auto mov = defs.top()->GetSubValue(0);
+          for (Use &use : it->operands()) {
+            if (::cast_or_null<Inst>(*use) == ref) {
+              #ifndef NDEBUG
+              if (use.getUser() == &inst) {
+                changed = true;
+              }
+              #endif
+              use = mov;
+            }
+          }
+          for (Block *succ : block->successors()) {
+            for (PhiInst &phi : succ->phis()) {
+              if (phi.GetValue(block) == ref) {
+                phi.Remove(block);
+                phi.Add(block, mov);
+                #ifndef NDEBUG
+                changed = true;
+                #endif
+              }
+            }
+          }
+        }
+      }
+      // Rewrite dominated nodes.
+      for (auto *child : *dt_[block]) {
+        rewrite(child->getBlock());
+      }
+      // Remove the definition.
+      if (blocks.count(block) || phis.count(block)) {
+        defs.pop();
+      }
+    };
+    rewrite(dt_.getRoot());
+
+    // Recompute the types of the users of the refined instructions.
+    for (MovInst *mov : movs) {
+      analysis_.Define(mov->GetSubValue(0), type);
+    }
+    #ifndef NDEBUG
+    assert(changed && "original use not changed");
+    #endif
   }
 }
 
 // -----------------------------------------------------------------------------
-void Refinement::RefineAddr(Inst &i, Ref<Inst> addr)
+void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -107,14 +223,14 @@ void Refinement::RefineAddr(Inst &i, Ref<Inst> addr)
     }
     case TaggedType::Kind::VAL: {
       // Refine to HEAP.
-      Refine(i, addr, TaggedType::Heap());
+      Refine(inst, inst.getParent(), addr, TaggedType::Heap());
       return;
     }
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::ANY: {
       // Refine to PTR.
-      Refine(i, addr, TaggedType::Ptr());
+      Refine(inst, inst.getParent(), addr, TaggedType::Ptr());
       return;
     }
   }
@@ -166,16 +282,39 @@ void Refinement::VisitCmpInst(CmpInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
 
-  bool isEquality = cc == Cond::EQ || cc == Cond::NE;
-  if (!isEquality) {
+  if (!IsEquality(cc) || IsOrdered(cc)) {
     if (vl.IsVal() && vr.IsOdd()) {
-      Refine(i, i.GetLHS(), TaggedType::Odd());
+      Refine(i, i.getParent(), i.GetLHS(), TaggedType::Odd());
       return;
     }
     if (vr.IsVal() && vl.IsOdd()) {
-      Refine(i, i.GetRHS(), TaggedType::Odd());
+      Refine(i, i.getParent(), i.GetRHS(), TaggedType::Odd());
       return;
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitAndInst(AndInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitOrInst(OrInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitXorInst(XorInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMovInst(MovInst &i)
+{
+  if (auto arg = ::cast_or_null<Inst>(i.GetArg())) {
+    auto va = analysis_.Find(arg);
+    auto vo = analysis_.Find(i);
   }
 }
 
@@ -191,8 +330,18 @@ void Refinement::VisitPhiInst(PhiInst &phi)
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     auto ref = phi.GetValue(i);
     auto vin = analysis_.Find(ref);
-    if (vphi < vin && pdt_.Dominates(phi.GetBlock(i), parent, ref->getParent())) {
-      Refine(phi, ref, vphi);
+    if (vphi < vin) {
+      Refine(phi, phi.GetBlock(i), ref, vphi);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitCallSite(CallSite &site)
+{
+  auto callee = analysis_.Find(site.GetCallee());
+  if (callee.IsUnknown()) {
+    return;
+  }
+  RefineAddr(site, site.GetCallee());
 }

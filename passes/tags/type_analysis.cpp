@@ -46,7 +46,7 @@ bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
 {
   auto it = types_.emplace(inst, tnew);
   if (it.second) {
-    Enqueue(inst);
+    ForwardQueue(inst);
     return true;
   } else {
     auto told = it.first->second;
@@ -65,10 +65,22 @@ bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
       }
       #endif
       it.first->second = tnew;
-      Enqueue(inst);
+      ForwardQueue(inst);
       return true;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+bool TypeAnalysis::Define(Ref<Inst> inst, const TaggedType &tnew)
+{
+#ifdef NDEBUG
+  types_.emplace(inst, tnew);
+#else
+  assert(types_.emplace(inst, tnew).second);
+#endif
+  BackwardQueue(inst);
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -79,18 +91,7 @@ bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
     auto told = it.first->second;
     if (tnew < told) {
       it.first->second = tnew;
-      for (Use &use : inst->uses()) {
-        if (use.get() == inst) {
-          auto *userInst = ::cast<Inst>(use.getUser());
-          auto *userFunc = userInst->getParent()->getParent();
-          if (inRefineQueue_.insert(userInst).second) {
-            refineQueue_.push(userInst);
-          }
-          if (inBackwardQueue_.insert(userFunc).second) {
-            backwardQueue_.push(userFunc);
-          }
-        }
-      }
+      BackwardQueue(inst);
       return true;
     } else {
       return false;
@@ -107,7 +108,7 @@ bool TypeAnalysis::Refine(ArgInst &arg, const TaggedType &type)
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::Enqueue(Ref<Inst> inst)
+void TypeAnalysis::ForwardQueue(Ref<Inst> inst)
 {
   Func *f = const_cast<Func *>(inst->getParent()->getParent());
   if (inBackwardQueue_.insert(f).second) {
@@ -123,6 +124,23 @@ void TypeAnalysis::Enqueue(Ref<Inst> inst)
         } else {
           forwardQueue_.push(userInst);
         }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void TypeAnalysis::BackwardQueue(Ref<Inst> inst)
+{
+  for (Use &use : inst->uses()) {
+    if (use.get() == inst) {
+      auto *userInst = ::cast<Inst>(use.getUser());
+      auto *userFunc = userInst->getParent()->getParent();
+      if (inRefineQueue_.insert(userInst).second) {
+        refineQueue_.push(userInst);
+      }
+      if (inBackwardQueue_.insert(userFunc).second) {
+        backwardQueue_.push(userFunc);
       }
     }
   }
@@ -154,30 +172,30 @@ void TypeAnalysis::Solve()
   while (!forwardQueue_.empty() || !forwardPhiQueue_.empty()) {
     while (!forwardQueue_.empty()) {
       auto *inst = forwardQueue_.front();
+      Step(*this, target_, Step::Kind::FORWARD).Dispatch(*inst);
       inForwardQueue_.erase(inst);
       forwardQueue_.pop();
-      Step(*this, target_, Step::Kind::FORWARD).Dispatch(*inst);
     }
     while (forwardQueue_.empty() && !forwardPhiQueue_.empty()) {
       auto *inst = forwardPhiQueue_.front();
+      Step(*this, target_, Step::Kind::FORWARD).Dispatch(*inst);
       inForwardQueue_.erase(inst);
       forwardPhiQueue_.pop();
-      Step(*this, target_, Step::Kind::FORWARD).Dispatch(*inst);
     }
   }
   // Propagate types through the queued instructions.
   while (!refineQueue_.empty() || !backwardQueue_.empty()) {
     while (!backwardQueue_.empty()) {
       auto *f = backwardQueue_.front();
+      Refinement(*this, target_, *f).Run();
       inBackwardQueue_.erase(f);
       backwardQueue_.pop();
-      Refinement(*this, target_, *f).Run();
     }
     while (!refineQueue_.empty()) {
       auto *inst = refineQueue_.front();
+      Step(*this, target_, Step::Kind::REFINE).Dispatch(*inst);
       inRefineQueue_.erase(inst);
       refineQueue_.pop();
-      Step(*this, target_, Step::Kind::REFINE).Dispatch(*inst);
     }
   }
 }

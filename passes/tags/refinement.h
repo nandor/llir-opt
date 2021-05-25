@@ -29,17 +29,22 @@ public:
 
 private:
   /// Refine a type to a more precise one.
-  void Refine(Inst &i, Ref<Inst> ref, const TaggedType &type);
+  void Refine(Inst &inst, Block *parent, Ref<Inst> ref, const TaggedType &type);
   /// Refine a reference to an address.
-  void RefineAddr(Inst &i, Ref<Inst> addr);
+  void RefineAddr(Inst &inst, Ref<Inst> addr);
 
 private:
   void VisitMemoryLoadInst(MemoryLoadInst &i) override;
   void VisitMemoryStoreInst(MemoryStoreInst &i) override;
   void VisitSubInst(SubInst &i) override;
   void VisitAddInst(AddInst &i) override;
+  void VisitAndInst(AndInst &i) override;
+  void VisitOrInst(OrInst &i) override;
+  void VisitXorInst(XorInst &i) override;
   void VisitCmpInst(CmpInst &i) override;
+  void VisitMovInst(MovInst &i) override;
   void VisitPhiInst(PhiInst &phi) override;
+  void VisitCallSite(CallSite &site) override;
   void VisitInst(Inst &i) override {}
 
 private:
@@ -51,6 +56,8 @@ private:
   Func &func_;
   /// Dominator tree.
   DominatorTree dt_;
+  /// Dominance frontier.
+  DominanceFrontier df_;
   /// Post-Dominator Tree.
   PostDominatorTree pdt_;
   /// Post-Dominance Frontier.
