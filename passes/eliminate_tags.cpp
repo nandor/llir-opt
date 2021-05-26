@@ -120,22 +120,22 @@ bool EliminateTags::NarrowTypes()
           }
         }
       }
-      auto oldTypes = func.params();
-      std::copy(oldTypes.begin(), oldTypes.end(), std::back_inserter(newTypes));
+      for (auto &param : func.params()) {
+        newTypes.push_back(param);
+      }
       for (unsigned i = 0, n = argsByIndex.size(); i < n; ++i) {
         auto &args = argsByIndex[i];
 
-        bool rewrite = true;
+        bool rewrite = !args.empty();
         for (auto &arg : args) {
           if (arg->GetType() != Type::V64) {
             rewrite = false;
             break;
           }
-          auto val = types_.Find(arg->GetSubValue(0));
-          rewrite = rewrite && val.IsOddLike();
+          rewrite = rewrite && types_.Find(arg->GetSubValue(0)).IsOddLike();
         }
         if (rewrite) {
-          newTypes[i] = FlaggedType(Type::I64, oldTypes[i].GetFlag());
+          newTypes[i] = FlaggedType(Type::I64, newTypes[i].GetFlag());
         }
       }
       func.SetParameters(newTypes);

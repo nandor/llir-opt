@@ -359,6 +359,8 @@ static void AddOptS(PassManager &mngr)
     , PhiTautPass
     , EliminateSelectPass
     , VerifierPass
+    , EliminateTagsPass
+    , VerifierPass
     , SpecialisePass
     , VerifierPass
     , InlinerPass
@@ -372,7 +374,6 @@ static void AddOptS(PassManager &mngr)
     , UnusedArgPass
     , VerifierPass
     , GlobalForwardPass
-    , EliminateTagsPass
     >();
   // Final simplification.
   mngr.Add<MergeStoresPass>();

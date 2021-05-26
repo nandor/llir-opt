@@ -160,7 +160,7 @@ TaggedType Step::Sub(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::INT: return TaggedType::Ptr();
         case TaggedType::Kind::ZERO: return TaggedType::Ptr();
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
-        case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::VAL:  return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR: return TaggedType::Int();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
