@@ -107,6 +107,40 @@ bool EliminateTags::NarrowTypes()
 {
   bool changed = false;
   for (Func &func : prog_) {
+    // Gather argument instructions and rewrite type if all match.
+    std::vector<FlaggedType> newTypes;
+    {
+      llvm::SmallVector<llvm::SmallVector<ArgInst *, 1>, 6> argsByIndex;
+      for (Block &block : func) {
+        for (Inst &inst : block) {
+          if (auto *arg = ::cast_or_null<ArgInst>(&inst)) {
+            auto idx = arg->GetIndex();
+            argsByIndex.resize(idx + 1);
+            argsByIndex[idx].push_back(arg);
+          }
+        }
+      }
+      auto oldTypes = func.params();
+      std::copy(oldTypes.begin(), oldTypes.end(), std::back_inserter(newTypes));
+      for (unsigned i = 0, n = argsByIndex.size(); i < n; ++i) {
+        auto &args = argsByIndex[i];
+
+        bool rewrite = true;
+        for (auto &arg : args) {
+          if (arg->GetType() != Type::V64) {
+            rewrite = false;
+            break;
+          }
+          auto val = types_.Find(arg->GetSubValue(0));
+          rewrite = rewrite && val.IsOddLike();
+        }
+        if (rewrite) {
+          newTypes[i] = FlaggedType(Type::I64, oldTypes[i].GetFlag());
+        }
+      }
+      func.SetParameters(newTypes);
+    }
+
     // Rewrite instructions and eliminate movs added by splits.
     for (auto *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
       for (auto it = block->begin(); it != block->end(); ) {
@@ -139,6 +173,19 @@ bool EliminateTags::NarrowTypes()
             block->AddInst(newInst, inst);
             inst->replaceAllUsesWith(newInst);
             inst->eraseFromParent();
+          }
+        } else if (auto *arg = ::cast_or_null<ArgInst>(inst)) {
+          Type ty = newTypes[arg->GetIndex()].GetType();
+          if (rewrite && ty != arg->GetType()) {
+            auto *newInst = new ArgInst(ty, arg->GetIndex(), arg->GetAnnots());
+            types_.Replace(
+                arg->GetSubValue(0),
+                newInst->GetSubValue(0),
+                types[0]
+            );
+            block->AddInst(newInst, arg);
+            arg->replaceAllUsesWith(newInst);
+            arg->eraseFromParent();
           }
         } else if (rewrite) {
           auto newInst = TypeRewriter(types).Clone(inst);
@@ -245,6 +292,7 @@ Inst *EliminateTags::PeepholeAddCmp(Inst &inst)
       cmp->GetCC(),
       cmp->GetAnnots()
   );
+  types_.Replace(cmp, newCmp);
   block->AddInst(newCmp, &inst);
   cmp->replaceAllUsesWith(newCmp);
   cmp->eraseFromParent();

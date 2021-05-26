@@ -24,7 +24,11 @@ static bool Converges(Type ty, TaggedType told, TaggedType tnew)
 // -----------------------------------------------------------------------------
 void TypeAnalysis::Erase(Ref<Inst> oldInst)
 {
+#ifdef NDEBUG
   types_.erase(oldInst);
+#else
+  assert(types_.erase(oldInst) == 1 && "value not erased");
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -39,6 +43,20 @@ void TypeAnalysis::Replace(
 #else
   assert(types_.emplace(newInst, type).second && "value already exists");
 #endif
+}
+
+// -----------------------------------------------------------------------------
+void TypeAnalysis::Replace(Inst *oldInst, Inst *newInst)
+{
+  unsigned n = oldInst->GetNumRets();
+  assert(n == newInst->GetNumRets() && "mismatched instructions");
+  for (unsigned i = 0; i < n; ++i) {
+    Replace(
+        oldInst->GetSubValue(i),
+        newInst->GetSubValue(i),
+        Find(oldInst->GetSubValue(i))
+    );
+  }
 }
 
 // -----------------------------------------------------------------------------

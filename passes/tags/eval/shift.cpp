@@ -88,7 +88,9 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNKNOWN: {
           return TaggedType::Unknown();
         }
-        case TaggedType::Kind::EVEN: llvm_unreachable("not implemented");
+        case TaggedType::Kind::EVEN: {
+          return TaggedType::PtrInt();
+        }
         case TaggedType::Kind::INT: llvm_unreachable("not implemented");
         case TaggedType::Kind::ODD: llvm_unreachable("not implemented");
         case TaggedType::Kind::ONE: {

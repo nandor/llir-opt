@@ -88,13 +88,13 @@ void Refinement::Refine(
             }
           }
         } else {
-          q.push(&*::cast<Inst>(use.getUser())->getParent());
+          q.push(::cast<Inst>(use.getUser())->getParent());
         }
       }
       while (!q.empty()) {
         Block *b = q.front();
         q.pop();
-        if (blocks.count(b)) {
+        if (blocks.count(b) || b == ref->getParent()) {
           continue;
         }
         if (live.insert(b).second) {
@@ -105,9 +105,9 @@ void Refinement::Refine(
       }
     }
 
-
     // Place the PHIs for the blocks.
     std::unordered_map<Block *, PhiInst *> phis;
+    llvm::SmallVector<PhiInst *, 4> newPhis;
     {
       std::queue<Block *> q;
       for (Block *block : blocks) {
@@ -123,6 +123,7 @@ void Refinement::Refine(
               phi->Add(pred, ref);
             }
             phis.emplace(front, phi);
+            newPhis.push_back(phi);
             front->AddPhi(phi);
           }
         }
@@ -130,7 +131,7 @@ void Refinement::Refine(
     }
 
     std::stack<Inst *> defs;
-    llvm::SmallVector<MovInst *, 4> movs;
+    llvm::SmallVector<MovInst *, 4> newMovs;
     std::function<void(Block *)> rewrite = [&](Block *block)
     {
       Block::iterator begin;
@@ -139,7 +140,7 @@ void Refinement::Refine(
         auto *mov = new MovInst(ref.GetType(), ref, {});
         block->insert(mov, block->first_non_phi());
         defs.push(mov);
-        movs.push_back(mov);
+        newMovs.push_back(mov);
         begin = std::next(mov->getIterator());
       } else {
         if (auto it = phis.find(block); it != phis.end()) {
@@ -150,8 +151,8 @@ void Refinement::Refine(
       }
       // Rewrite, if there are uses to be rewritten.
       if (!defs.empty()) {
+        auto mov = defs.top()->GetSubValue(0);
         for (auto it = begin; it != block->end(); ++it) {
-          auto mov = defs.top()->GetSubValue(0);
           for (Use &use : it->operands()) {
             if (::cast_or_null<Inst>(*use) == ref) {
               #ifndef NDEBUG
@@ -162,15 +163,15 @@ void Refinement::Refine(
               use = mov;
             }
           }
-          for (Block *succ : block->successors()) {
-            for (PhiInst &phi : succ->phis()) {
-              if (phi.GetValue(block) == ref) {
-                phi.Remove(block);
-                phi.Add(block, mov);
-                #ifndef NDEBUG
-                changed = true;
-                #endif
-              }
+        }
+        for (Block *succ : block->successors()) {
+          for (PhiInst &phi : succ->phis()) {
+            if (phi.GetValue(block) == ref) {
+              phi.Remove(block);
+              phi.Add(block, mov);
+              #ifndef NDEBUG
+              changed = true;
+              #endif
             }
           }
         }
@@ -187,9 +188,15 @@ void Refinement::Refine(
     rewrite(dt_.getRoot());
 
     // Recompute the types of the users of the refined instructions.
-    for (MovInst *mov : movs) {
+    for (MovInst *mov : newMovs) {
       analysis_.Define(mov->GetSubValue(0), type);
     }
+    // Schedule the PHIs to be recomputed.
+    for (PhiInst *phi : newPhis) {
+      analysis_.BackwardQueue(phi->GetSubValue(0));
+    }
+    // Trigger an update of anything relying on the reference.
+    analysis_.Refine(ref, analysis_.Find(ref));
     #ifndef NDEBUG
     assert(changed && "original use not changed");
     #endif

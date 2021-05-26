@@ -102,7 +102,20 @@ void VerifierPass::Verify(Func &func)
         ins.insert(phi.GetBlock(i));
       }
       if (preds != ins) {
-        Error(phi, "invalid PHI predecessors");
+        std::string msg;
+        llvm::raw_string_ostream os(msg);
+        os << "invalid PHI predecessors: ";
+        for (auto *pred : preds) {
+          if (!ins.count(pred)) {
+            os << " missing " << pred->getName();
+          }
+        }
+        for (auto *in : ins) {
+          if (!preds.count(in)) {
+            os << " additional " << in->getName();
+          }
+        }
+        Error(phi, msg);
       }
     }
     for (Inst &inst : block) {

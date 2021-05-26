@@ -200,7 +200,7 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
         case TaggedType::Kind::ANY: return TaggedType::Any();
-        case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_NULL: return TaggedType::PtrInt();
       }
       llvm_unreachable("invalid value kind");
     }

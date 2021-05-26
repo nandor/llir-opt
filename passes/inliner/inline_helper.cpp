@@ -98,6 +98,22 @@ void InlineHelper::Inline()
   // Apply PHI fixups.
   Fixup();
 
+  // Remove the edge from the original invoke to the landing pad.
+  if (throw_) {
+    bool lands = false;
+    for (Block *block : entry_->successors()) {
+      if (block == throw_) {
+        lands = true;
+        break;
+      }
+    }
+    if (!lands) {
+      for (auto &phi : throw_->phis()) {
+        phi.Remove(entry_);
+      }
+    }
+  }
+
   // The call should have been erased at this point.
   assert(!call_ && "call not erased");
 }
@@ -526,7 +542,7 @@ void InlineHelper::DuplicateBlocks()
 void InlineHelper::SplitEntry()
 {
   // If entry address is taken in callee, split entry.
-  if (!callee_->getEntryBlock().use_empty()) {
+  if (callee_->getEntryBlock().HasAddressTaken()) {
     auto *newEntry = entry_->splitBlock(call_->getIterator());
     entry_->AddInst(new JumpInst(newEntry, {}));
     for (auto it = entry_->use_begin(); it != entry_->use_end(); ) {

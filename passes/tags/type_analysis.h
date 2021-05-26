@@ -42,6 +42,8 @@ public:
 
   /// Set the type, typically after rewriting an instruction.
   void Replace(Ref<Inst> oldInst, Ref<Inst> newInst, const TaggedType &type);
+  /// Replace an instruction.
+  void Replace(Inst *oldInst, Inst *newInst);
   /// Erase a type after deleting an instruction.
   void Erase(Ref<Inst> oldInst);
 
