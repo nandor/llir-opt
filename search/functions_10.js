@@ -12,7 +12,7 @@ var searchData=
   ['removestackobject_1928',['RemoveStackObject',['../classFunc.html#a447fc60548118feb40528ccc439453df',1,'Func']]],
   ['removeunreachable_1929',['RemoveUnreachable',['../classFunc.html#a5e0d5c4f374b0c48abdd106716da5592',1,'Func']]],
   ['rend_1930',['rend',['../classBitSet.html#a4d980fb568e7f7aa4db6e9b39f974e1e',1,'BitSet']]],
-  ['replace_1931',['Replace',['../classtags_1_1TypeAnalysis.html#a04555c49db36f16b50c46ce7b16ef3d4',1,'tags::TypeAnalysis']]],
+  ['replace_1931',['Replace',['../classtags_1_1TypeAnalysis.html#a04555c49db36f16b50c46ce7b16ef3d4',1,'tags::TypeAnalysis::Replace(Ref&lt; Inst &gt; oldInst, Ref&lt; Inst &gt; newInst, const TaggedType &amp;type)'],['../classtags_1_1TypeAnalysis.html#aa04f57b4725365d7f4912632b4f8b6a2',1,'tags::TypeAnalysis::Replace(Inst *oldInst, Inst *newInst)']]],
   ['replacealluseswith_1932',['replaceAllUsesWith',['../classInst.html#adc727f118019182b9f51a92626c58a65',1,'Inst::replaceAllUsesWith(Value *v) override'],['../classInst.html#a647500fa1e0f46374665daf679af8d0f',1,'Inst::replaceAllUsesWith(llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; v)'],['../classInst.html#ad603e42b33bdcf9b6e3366f8c83e5e56',1,'Inst::replaceAllUsesWith(llvm::ArrayRef&lt; Ref&lt; T &gt;&gt; insts)'],['../classValue.html#a76c570c3c7e31a0602691f0a33cff85a',1,'Value::replaceAllUsesWith(Value *v)'],['../classValue.html#a405e6543d77de8bc6b4ef3a5b5cf42d1',1,'Value::replaceAllUsesWith(Ref&lt; Value &gt; v)']]],
   ['request_1933',['Request',['../classJobRunner.html#a3749298e5bba8ec21f12d59c71f68a0f',1,'JobRunner']]],
   ['resizeuses_1934',['resizeUses',['../classUser.html#ae0217b182e0085d13df52757ee140616',1,'User']]],
