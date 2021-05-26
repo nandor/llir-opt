@@ -74,11 +74,41 @@ private:
 };
 
 // -----------------------------------------------------------------------------
+static bool PhiEqualTo(PhiInst *phi, Ref<Inst> op)
+{
+  std::unordered_set<PhiInst *> phis;
+  std::queue<PhiInst *> q;
+
+  phis.insert(phi);
+  q.push(phi);
+
+  while (!q.empty()) {
+    auto *phi = q.front();
+    q.pop();
+    for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+      auto value = phi->GetValue(i);
+      if (value != op) {
+        if (auto phiValue = ::cast_or_null<PhiInst>(value)) {
+          auto *phiInst = phiValue.Get();
+          if (phis.insert(phiInst).second) {
+            q.push(phiInst);
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
 bool EliminateTags::NarrowTypes()
 {
   bool changed = false;
   for (Func &func : prog_) {
-    for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
+    // Rewrite instructions and eliminate movs added by splits.
+    for (auto *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
       for (auto it = block->begin(); it != block->end(); ) {
         Inst *inst = &*it++;
 
@@ -126,6 +156,22 @@ bool EliminateTags::NarrowTypes()
         if (rewrite) {
           NumTypesRewritten++;
           changed = true;
+        }
+      }
+    }
+    // Eliminate PHI cycles which were added and are now redundant.
+    for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
+      for (auto it = block->begin(); it != block->end(); ) {
+        if (auto *phi = ::cast_or_null<PhiInst>(&*it++)) {
+          for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+            auto op = phi->GetValue(i);
+            if (PhiEqualTo(phi, op)) {
+              types_.Erase(phi->GetSubValue(0));
+              phi->replaceAllUsesWith(op);
+              phi->eraseFromParent();
+              break;
+            }
+          }
         }
       }
     }
@@ -211,8 +257,8 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   EliminateTags pass(prog, GetTarget());
   bool changed = false;
-  changed = pass.NarrowTypes() || changed;
   changed = pass.Peephole() || changed;
+  changed = pass.NarrowTypes() || changed;
   return changed;
 }
 

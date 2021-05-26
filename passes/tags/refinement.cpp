@@ -63,6 +63,16 @@ void Refinement::Refine(
     bool changed = false;
     #endif
 
+    // Find the post-dominated nodes which are successors of the frontier.
+    llvm::SmallPtrSet<Block *, 8> blocks;
+    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
+      for (auto *succ : front->successors()) {
+        if (pdt_.dominates(parent, succ)) {
+          blocks.insert(succ);
+        }
+      }
+    }
+
     // Find the set of nodes which lead into a use of the references.
     llvm::SmallPtrSet<Block *, 8> live;
     {
@@ -74,41 +84,27 @@ void Refinement::Refine(
         if (auto *phi = ::cast_or_null<PhiInst>(use.getUser())) {
           for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
             if (phi->GetValue(i) == ref) {
-              auto *b = phi->GetBlock(i);
-              if (b != ref->getParent()) {
-                live.insert(b);
-                q.push(b);
-              }
+              q.push(phi->GetBlock(i));
             }
           }
         } else {
-          Block *b = &*::cast<Inst>(use.getUser())->getParent();
-          if (b != ref->getParent()) {
-            live.insert(b);
-            q.push(b);
-          }
+          q.push(&*::cast<Inst>(use.getUser())->getParent());
         }
       }
       while (!q.empty()) {
         Block *b = q.front();
         q.pop();
-        for (Block *pred : b->predecessors()) {
-          if (pred != ref->getParent() && live.insert(pred).second) {
+        if (blocks.count(b)) {
+          continue;
+        }
+        if (live.insert(b).second) {
+          for (Block *pred : b->predecessors()) {
             q.push(pred);
           }
         }
       }
     }
 
-    // Find the post-dominated nodes which are successors of the frontier.
-    llvm::SmallPtrSet<Block *, 8> blocks;
-    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
-      for (auto *succ : front->successors()) {
-        if (pdt_.dominates(parent, succ)) {
-          blocks.insert(succ);
-        }
-      }
-    }
 
     // Place the PHIs for the blocks.
     std::unordered_map<Block *, PhiInst *> phis;
