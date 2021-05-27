@@ -259,10 +259,11 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
               const Type retTy = types_[i];
               if (i < inst->type_size()) {
                 const Type callTy = inst->type(i);
+                auto arg = inst->GetSubValue(i);
                 if (retTy == callTy) {
-                  insts.push_back(inst->GetSubValue(i));
+                  insts.push_back(arg);
                 } else {
-                  auto *extInst = Convert(retTy, callTy, inst, {});
+                  auto *extInst = Convert(retTy, callTy, arg, {});
                   trampoline->AddInst(extInst);
                   insts.push_back(extInst);
                 }
