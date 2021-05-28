@@ -32,10 +32,19 @@ private:
   void Refine(Inst &inst, Block *parent, Ref<Inst> ref, const TaggedType &type);
   /// Refine a reference to an address.
   void RefineAddr(Inst &inst, Ref<Inst> addr);
+  /// Refine a reference to an integer.
+  void RefineInt(Inst &inst, Ref<Inst> addr);
+  /// Specialise a type downstream.
+  void Specialise(
+      Ref<Inst> ref,
+      const Block *from,
+      const std::vector<std::pair<TaggedType, Block *>> &branches
+  );
 
 private:
   void VisitMemoryLoadInst(MemoryLoadInst &i) override;
   void VisitMemoryStoreInst(MemoryStoreInst &i) override;
+  void VisitSelectInst(SelectInst &i) override;
   void VisitSubInst(SubInst &i) override;
   void VisitAddInst(AddInst &i) override;
   void VisitAndInst(AndInst &i) override;
@@ -45,7 +54,31 @@ private:
   void VisitMovInst(MovInst &i) override;
   void VisitPhiInst(PhiInst &phi) override;
   void VisitCallSite(CallSite &site) override;
+  void VisitJumpCondInst(JumpCondInst &site) override;
   void VisitInst(Inst &i) override {}
+
+private:
+  /// Refine equality tests.
+  void RefineEquality(
+      Ref<Inst> lhs,
+      Ref<Inst> rhs,
+      Block *bt,
+      Block *bf
+  );
+  /// Refine bit tests.
+  void RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf);
+
+private:
+  /// Find the set of nodes where a value is live-in.
+  std::set<Block *> Liveness(
+      Ref<Inst> ref,
+      const llvm::SmallPtrSetImpl<const Block *> &defs
+  );
+  /// Define split points.
+  void DefineSplits(
+      Ref<Inst> ref,
+      const std::unordered_map<const Block *, TaggedType> &splits
+  );
 
 private:
   /// Reference to the analysis.

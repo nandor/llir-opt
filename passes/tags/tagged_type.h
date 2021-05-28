@@ -54,10 +54,12 @@ public:
   bool IsPtr() const { return k_ == Kind::PTR; }
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
+  bool IsZeroOne() const { return k_ == Kind::ZERO_ONE; }
 
   bool IsOddLike() const { return IsOdd() || IsOne(); }
   bool IsEvenLike() const { return IsEven() || IsZero(); }
   bool IsIntLike() const;
+  bool IsPtrLike() const { return IsHeap() || IsPtr(); }
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
 
   TaggedType &operator|=(const TaggedType &that);
