@@ -291,6 +291,7 @@ public:
     }
 
     auto abducted = abducted_;
+    abducted_.clear();
     if (auto *node = dt_[&block]) {
       for (auto *child : *node) {
         if (auto *childBlock = child->getBlock()) {
@@ -304,7 +305,6 @@ public:
     for (Ref<Inst> addr : abducted) {
       pointers_.erase(addr);
     }
-    abducted.clear();
     return changed;
   }
 
