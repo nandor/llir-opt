@@ -385,18 +385,14 @@ void Step::VisitSelectInst(SelectInst &select)
 // -----------------------------------------------------------------------------
 void Step::VisitPhiInst(PhiInst &phi)
 {
-  std::optional<TaggedType> type;
+  TaggedType ty = TaggedType::Unknown();
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    auto val = phi.GetValue(i);
-    if (type) {
-      *type |= analysis_.Find(val);
-    } else {
-      type = analysis_.Find(val);
-    }
+    ty |= analysis_.Find(phi.GetValue(i));
   }
-  if (type) {
-    Mark(phi, Clamp(*type, phi.GetType()));
+  if (ty.IsUnknown()) {
+    return;
   }
+  Mark(phi, Clamp(ty, phi.GetType()));
 }
 
 // -----------------------------------------------------------------------------

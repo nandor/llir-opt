@@ -21,7 +21,7 @@ class Step final : public InstVisitor<void> {
 public:
   enum class Kind {
     REFINE,
-    FORWARD
+    FORWARD,
   };
 
 public:

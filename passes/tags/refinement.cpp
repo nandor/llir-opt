@@ -251,12 +251,10 @@ void Refinement::VisitCmpInst(CmpInst &i)
 
   if (!IsEquality(cc) || IsOrdered(cc)) {
     if (vl.IsVal() && vr.IsOdd()) {
-      Refine(i, i.getParent(), i.GetLHS(), TaggedType::Odd());
-      return;
+      return Refine(i, i.getParent(), i.GetLHS(), TaggedType::Odd());
     }
     if (vr.IsVal() && vl.IsOdd()) {
-      Refine(i, i.getParent(), i.GetRHS(), TaggedType::Odd());
-      return;
+      return Refine(i, i.getParent(), i.GetRHS(), TaggedType::Odd());
     }
   }
 }
@@ -473,11 +471,13 @@ void Refinement::DefineSplits(
   for (auto &[block, ty] : splits) {
     blocks.insert(block);
   }
+
+  auto refTy = analysis_.Find(ref);
   auto live = Liveness(ref, blocks);
 
   // Place the PHIs for the blocks.
   std::unordered_map<Block *, PhiInst *> phis;
-  llvm::SmallVector<PhiInst *, 4> newPhis;
+  std::unordered_map<PhiInst *, TaggedType> newPhis;
   {
     std::queue<const Block *> q;
     for (const Block *block : blocks) {
@@ -487,21 +487,30 @@ void Refinement::DefineSplits(
       const Block *block = q.front();
       q.pop();
       for (auto front : df_.calculate(dt_, dt_.getNode(block))) {
-        if (live.count(front)) {
+        if (live.count(front) && !phis.count(front)) {
           auto *phi = new PhiInst(ref.GetType(), {});
+          front->AddPhi(phi);
+          TaggedType ty = TaggedType::Unknown();
           for (Block *pred : front->predecessors()) {
             phi->Add(pred, ref);
+            TaggedType predTy = TaggedType::Unknown();
+            for (auto &[block, ty] : splits) {
+              if (dt_.dominates(block, pred)) {
+                predTy |= ty;
+              }
+            }
+            ty |= predTy.IsUnknown() ? refTy : predTy;
           }
           phis.emplace(front, phi);
-          newPhis.push_back(phi);
-          front->AddPhi(phi);
+          newPhis.emplace(phi, ty);
+          q.push(front);
         }
       }
     }
   }
 
   std::stack<Inst *> defs;
-  llvm::SmallVector<std::pair<MovInst *, TaggedType>, 4> newMovs;
+  std::unordered_map<MovInst *, TaggedType> newMovs;
   std::function<void(Block *)> rewrite = [&](Block *block)
   {
     Block::iterator begin;
@@ -516,10 +525,11 @@ void Refinement::DefineSplits(
       }
       // Register the value, if defined in block.
       if (liveOut) {
-        auto *mov = new MovInst(ref.GetType(), ref, {});
+        auto arg = defs.empty() ? ref : defs.top()->GetSubValue(0);
+        auto *mov = new MovInst(ref.GetType(), arg, {});
         block->insert(mov, block->first_non_phi());
         defs.push(mov);
-        newMovs.emplace_back(mov, it->second);
+        newMovs.emplace(mov, it->second);
         begin = std::next(mov->getIterator());
         defined = true;
       } else {
@@ -565,13 +575,14 @@ void Refinement::DefineSplits(
 
   // Recompute the types of the users of the refined instructions.
   for (auto &[mov, type] : newMovs) {
+    assert(mov->use_size() > 0 && "dead mov");
     analysis_.Define(mov->GetSubValue(0), type);
   }
   // Schedule the PHIs to be recomputed.
-  for (PhiInst *phi : newPhis) {
-    analysis_.BackwardQueue(phi->GetSubValue(0));
+  for (auto &[phi, type] : newPhis) {
+    assert(phi->use_size() > 0 && "dead phi");
+    analysis_.Define(phi->GetSubValue(0), type);
   }
   // Trigger an update of anything relying on the reference.
   analysis_.Refine(ref, analysis_.Find(ref));
-
 }

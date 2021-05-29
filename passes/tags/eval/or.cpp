@@ -189,7 +189,7 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::EVEN: llvm_unreachable("not implemented");
         case TaggedType::Kind::ODD: llvm_unreachable("not implemented");
         case TaggedType::Kind::INT: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::ONE: return TaggedType::PtrInt();

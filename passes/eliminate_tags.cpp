@@ -257,50 +257,68 @@ bool EliminateTags::RewriteConst()
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
 
-        llvm::SmallVector<Ref<Inst>, 4> newValues;
-        unsigned numValues = 0;
-        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
-          auto ref = inst->GetSubValue(i);
-          auto integer = [&, this] (int value)
-          {
-            auto *mov = new MovInst(
-                inst->GetType(i),
-                new ConstantInt(0),
-                inst->GetAnnots()
-            );
-            block.insert(mov, block.first_non_phi());
-            newValues.push_back(mov);
-            numValues++;
-          };
-          switch (types_.Find(ref).GetKind()) {
-            case TaggedType::Kind::ZERO: {
-              integer(0);
-              continue;
-            }
-            case TaggedType::Kind::ONE: {
-              integer(1);
-              continue;
-            }
-            case TaggedType::Kind::UNKNOWN:
-            case TaggedType::Kind::EVEN:
-            case TaggedType::Kind::ODD:
-            case TaggedType::Kind::ZERO_ONE:
-            case TaggedType::Kind::INT:
-            case TaggedType::Kind::YOUNG:
-            case TaggedType::Kind::HEAP:
-            case TaggedType::Kind::VAL:
-            case TaggedType::Kind::PTR:
-            case TaggedType::Kind::PTR_NULL:
-            case TaggedType::Kind::PTR_INT:
-            case TaggedType::Kind::UNDEF:
-            case TaggedType::Kind::ANY: {
-              newValues.push_back(inst->GetSubValue(i));
-              continue;
-            }
-          }
-          llvm_unreachable("invalid type kind");
+        // Args are constant across an invocation, but not constant globally.
+        if (inst->IsConstant() && !inst->Is(Inst::Kind::ARG)) {
+          continue;
         }
 
+        // Replace individual sub-values.
+        llvm::SmallVector<Ref<Inst>, 4> newValues;
+        llvm::SmallVector<bool, 4> used(inst->GetNumRets(), false);
+        for (Use &use : inst->uses()) {
+          used[use.get().Index()] = true;
+        }
+        unsigned numValues = 0;
+        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+          if (used[i]) {
+            auto ref = inst->GetSubValue(i);
+            auto ty = inst->GetType(i);
+
+            auto integer = [&, this] (int value)
+            {
+              auto *mov = new MovInst(ty, new ConstantInt(value), inst->GetAnnots());
+              auto jt = it;
+              while (jt->Is(Inst::Kind::PHI)) ++jt;
+              block.insert(mov, jt);
+              newValues.push_back(mov);
+              numValues++;
+            };
+
+            switch (types_.Find(ref).GetKind()) {
+              case TaggedType::Kind::ZERO: {
+                if (!IsFloatType(ty)) {
+                  integer(0);
+                }
+                continue;
+              }
+              case TaggedType::Kind::ONE: {
+                if (!IsFloatType(ty)) {
+                  integer(1);
+                }
+                continue;
+              }
+              case TaggedType::Kind::UNKNOWN:
+              case TaggedType::Kind::EVEN:
+              case TaggedType::Kind::ODD:
+              case TaggedType::Kind::ZERO_ONE:
+              case TaggedType::Kind::INT:
+              case TaggedType::Kind::YOUNG:
+              case TaggedType::Kind::HEAP:
+              case TaggedType::Kind::VAL:
+              case TaggedType::Kind::PTR:
+              case TaggedType::Kind::PTR_NULL:
+              case TaggedType::Kind::PTR_INT:
+              case TaggedType::Kind::UNDEF:
+              case TaggedType::Kind::ANY: {
+                newValues.push_back(inst->GetSubValue(i));
+                continue;
+              }
+            }
+            llvm_unreachable("invalid type kind");
+          }
+        }
+
+        // If any sub-value changed, replace it.
         if (numValues) {
           ++NumZeroOneFolded;
           inst->replaceAllUsesWith(newValues);
@@ -381,9 +399,9 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   EliminateTags pass(prog, GetTarget());
   bool changed = false;
+  changed = pass.NarrowTypes() || changed;
   changed = pass.RewriteConst() || changed;
   changed = pass.Peephole() || changed;
-  changed = pass.NarrowTypes() || changed;
   return changed;
 }
 
