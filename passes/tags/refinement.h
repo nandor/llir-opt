@@ -29,7 +29,20 @@ public:
 
 private:
   /// Refine a type to a more precise one.
-  void Refine(Inst &inst, Block *parent, Ref<Inst> ref, const TaggedType &type);
+  void Refine(
+      Inst &inst,
+      Block *parent,
+      Ref<Inst> ref,
+      const TaggedType &type
+  );
+  /// Refine a type to a more precise one, post-dominated by an edge.
+  void Refine(
+      PhiInst &inst,
+      Block *start,
+      Block *end,
+      Ref<Inst> ref,
+      const TaggedType &type
+  );
   /// Refine a reference to an address.
   void RefineAddr(Inst &inst, Ref<Inst> addr);
   /// Refine a reference to an integer.
@@ -62,6 +75,7 @@ private:
   void RefineEquality(
       Ref<Inst> lhs,
       Ref<Inst> rhs,
+      Block *b,
       Block *bt,
       Block *bf
   );

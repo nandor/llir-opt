@@ -125,7 +125,7 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::INT:     return TaggedType::PtrInt();
         case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
         case TaggedType::Kind::ODD:
-        case TaggedType::Kind::ONE:     return TaggedType::Odd();
+        case TaggedType::Kind::ONE:     return TaggedType::Val();
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::VAL: return TaggedType::Val();

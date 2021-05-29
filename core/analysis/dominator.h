@@ -25,8 +25,11 @@ public:
 
   bool Dominates(const Block *start, const Block *end, const Block *block)
   {
-    if (!dominates(end, block) || end->pred_size() == 1) {
+    if (!dominates(end, block)) {
       return false;
+    }
+    if (end->pred_size() == 1) {
+      return true;
     }
 
     bool isDuplicateEdge = false;
@@ -55,12 +58,15 @@ public:
 
   bool Dominates(const Block *start, const Block *end, const Block *block)
   {
-    if (!dominates(start, block) || start->succ_size() == 1) {
+    if (!dominates(start, block)) {
       return false;
+    }
+    if (start->succ_size() == 1) {
+      return true;
     }
 
     bool isDuplicateEdge = false;
-    for (const Block *bb : end->successors()) {
+    for (const Block *bb : start->successors()) {
       if (bb == start) {
         if (isDuplicateEdge) {
           return false;

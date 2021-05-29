@@ -49,7 +49,7 @@ TaggedType Step::And(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR: return TaggedType::PtrInt();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::ANY: return TaggedType::Any();

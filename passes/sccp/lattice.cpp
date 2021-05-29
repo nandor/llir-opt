@@ -294,6 +294,9 @@ Lattice Lattice::LUB(const Lattice &that) const
       return Lattice::Overdefined();
     }
   }
+  if (IsFrame() && that.IsFrame()) {
+    return Lattice::Pointer();
+  }
   if (IsGlobal() && that.IsPointerLike()) {
     if (globalVal_.Sym->IsWeak() && !globalVal_.Off) {
       return Lattice::Overdefined();

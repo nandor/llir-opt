@@ -23,6 +23,7 @@ using namespace tags;
 
 STATISTIC(NumTypesRewritten, "Number of v64 replaced with i64");
 STATISTIC(NumAddCmp, "Number of add-cmp pairs rewritten");
+STATISTIC(NumZeroOneFolded, "Number of instructions folded to zero/one");
 
 
 
@@ -62,6 +63,8 @@ public:
   bool NarrowTypes();
   /// Runs peephole transformations until exhaustion.
   bool Peephole();
+  /// Rewrite values which evaluate to constants.
+  bool RewriteConst();
 
   /// Wrapper to try all peepholes.
   Inst *Peephole(Inst &inst);
@@ -246,6 +249,79 @@ bool EliminateTags::Peephole()
 }
 
 // -----------------------------------------------------------------------------
+bool EliminateTags::RewriteConst()
+{
+  bool changed = false;
+  for (Func &func : prog_) {
+    for (auto &block : func) {
+      for (auto it = block.begin(); it != block.end(); ) {
+        Inst *inst = &*it++;
+
+        llvm::SmallVector<Ref<Inst>, 4> newValues;
+        unsigned numValues = 0;
+        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+          auto ref = inst->GetSubValue(i);
+          auto integer = [&, this] (int value)
+          {
+            auto *mov = new MovInst(
+                inst->GetType(i),
+                new ConstantInt(0),
+                inst->GetAnnots()
+            );
+            block.insert(mov, block.first_non_phi());
+            newValues.push_back(mov);
+            numValues++;
+          };
+          switch (types_.Find(ref).GetKind()) {
+            case TaggedType::Kind::ZERO: {
+              integer(0);
+              continue;
+            }
+            case TaggedType::Kind::ONE: {
+              integer(1);
+              continue;
+            }
+            case TaggedType::Kind::UNKNOWN:
+            case TaggedType::Kind::EVEN:
+            case TaggedType::Kind::ODD:
+            case TaggedType::Kind::ZERO_ONE:
+            case TaggedType::Kind::INT:
+            case TaggedType::Kind::YOUNG:
+            case TaggedType::Kind::HEAP:
+            case TaggedType::Kind::VAL:
+            case TaggedType::Kind::PTR:
+            case TaggedType::Kind::PTR_NULL:
+            case TaggedType::Kind::PTR_INT:
+            case TaggedType::Kind::UNDEF:
+            case TaggedType::Kind::ANY: {
+              newValues.push_back(inst->GetSubValue(i));
+              continue;
+            }
+          }
+          llvm_unreachable("invalid type kind");
+        }
+
+        if (numValues) {
+          ++NumZeroOneFolded;
+          inst->replaceAllUsesWith(newValues);
+          for (unsigned i = 0, n = newValues.size(); i < n; ++i) {
+            auto ref = inst->GetSubValue(i);
+            if (newValues[i] != ref) {
+              types_.Replace(ref, newValues[i], types_.Find(ref));
+              changed = true;
+            }
+          }
+          if (!inst->HasSideEffects()) {
+            inst->eraseFromParent();
+          }
+        }
+      }
+    }
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
 Inst *EliminateTags::Peephole(Inst &inst)
 {
   if (auto *newInst = PeepholeAddCmp(inst)) {
@@ -305,6 +381,7 @@ bool EliminateTagsPass::Run(Prog &prog)
 {
   EliminateTags pass(prog, GetTarget());
   bool changed = false;
+  changed = pass.RewriteConst() || changed;
   changed = pass.Peephole() || changed;
   changed = pass.NarrowTypes() || changed;
   return changed;

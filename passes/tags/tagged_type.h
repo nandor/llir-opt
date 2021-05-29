@@ -61,6 +61,7 @@ public:
   bool IsIntLike() const;
   bool IsPtrLike() const { return IsHeap() || IsPtr(); }
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
+  bool IsZeroOrOne() const { return IsZero() || IsOne(); }
 
   TaggedType &operator|=(const TaggedType &that);
 

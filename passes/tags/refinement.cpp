@@ -75,6 +75,37 @@ void Refinement::Refine(
 }
 
 // -----------------------------------------------------------------------------
+void Refinement::Refine(
+    PhiInst &inst,
+    Block *start,
+    Block *end,
+    Ref<Inst> ref,
+    const TaggedType &type)
+{
+  if (pdt_.Dominates(start, end, ref->getParent())) {
+    // If the definition is post-dominated by the edge, change its type.
+    analysis_.Refine(ref, type);
+    auto *source = &*ref;
+    if (inQueue_.insert(source).second) {
+      queue_.push(source);
+    }
+  } else {
+    // Find the post-dominated nodes which are successors of the frontier.
+    std::unordered_map<const Block *, TaggedType> splits;
+    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(start))) {
+      for (auto *succ : front->successors()) {
+        if (pdt_.Dominates(start, end, succ)) {
+          splits.emplace(succ, type);
+        }
+      }
+    }
+
+    // Find the set of nodes which lead into a use of the references.
+    DefineSplits(ref, splits);
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
@@ -185,6 +216,7 @@ void Refinement::VisitSubInst(SubInst &i)
   auto vo = analysis_.Find(i);
   if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsIntLike()) {
     RefineAddr(i, i.GetLHS());
+    return;
   }
 }
 
@@ -264,9 +296,9 @@ void Refinement::VisitPhiInst(PhiInst &phi)
   auto *parent = phi.getParent();
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     auto ref = phi.GetValue(i);
-    auto vin = analysis_.Find(ref);
-    if (vphi < vin) {
-      Refine(phi, phi.GetBlock(i), ref, vphi);
+    auto block = phi.GetBlock(i);
+    if (vphi < analysis_.Find(ref)) {
+      Refine(phi, phi.GetBlock(i), parent, ref, vphi);
     }
   }
 }
@@ -291,10 +323,10 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
     auto r = inst->GetRHS();
     switch (inst->GetCC()) {
       case Cond::EQ: case Cond::UEQ: case Cond::OEQ: {
-        return RefineEquality(l, r, bt, bf);
+        return RefineEquality(l, r, inst->getParent(), bt, bf);
       }
       case Cond::NE: case Cond::UNE: case Cond::ONE: {
-        return RefineEquality(l, r, bt, bf);
+        return RefineEquality(l, r, inst->getParent(), bf, bt);
       }
       default: {
         return;
@@ -317,9 +349,23 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
 }
 
 // -----------------------------------------------------------------------------
-void Refinement::RefineEquality(Ref<Inst> lhs, Ref<Inst> rhs, Block *bt, Block *bf)
+void Refinement::RefineEquality(
+    Ref<Inst> lhs,
+    Ref<Inst> rhs,
+    Block *b,
+    Block *bt,
+    Block *bf)
 {
-  // TODO
+  auto vl = analysis_.Find(lhs);
+  auto vr = analysis_.Find(rhs);
+  if (!vl.IsUnknown() && vl < vr) {
+    Specialise(rhs, b, { { vl, bt } });
+    return;
+  }
+  if (!vr.IsUnknown() && vr < vl) {
+    Specialise(lhs, b, { { vr, bt } });
+    return;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -367,8 +413,6 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
   llvm_unreachable("invalid type kind");
 }
 
-#include <llvm/Support/GraphWriter.h>
-
 // -----------------------------------------------------------------------------
 void Refinement::Specialise(
     Ref<Inst> ref,
@@ -376,44 +420,11 @@ void Refinement::Specialise(
     const std::vector<std::pair<TaggedType, Block *>> &branches)
 {
   std::unordered_map<const Block *, TaggedType> splits;
-
-  // Filter out split points which can be rewritten to constants.
-  {
-    auto rewrite = [&, this] (Block *block, std::function<Value *()> &&f) {
-      for (Use &use : ref->uses()) {
-        if (*use == ref) {
-          if (auto phi = ::cast_or_null<PhiInst>(use.getUser())) {
-            for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-              if (phi->GetValue(i) == ref) {
-                if (dt_.Dominates(from, block, phi->GetBlock(i))) {
-                  llvm_unreachable("not implemented");
-                  break;
-                }
-              }
-            }
-          } else {
-            auto parent = ::cast<Inst>(use.getUser())->getParent();
-            if (dt_.Dominates(from, block, parent)) {
-              llvm_unreachable("not implemented");
-            }
-          }
-        }
-      }
-    };
-    for (auto &[ty, block] : branches) {
-      if (ty.IsOne()) {
-        rewrite(block, [] { return new ConstantInt(1); });
-      } else if (ty.IsZero()) {
-        rewrite(block, [] { return new ConstantInt(0); });
-      } else {
-        if (dt_.Dominates(from, block, block)) {
-          splits.emplace(block, ty);
-        }
-      }
+  for (auto &[ty, block] : branches) {
+    if (dt_.Dominates(from, block, block)) {
+      splits.emplace(block, ty);
     }
   }
-
-  // Find the set of nodes which lead into a use of the references.
   DefineSplits(ref, splits);
 }
 
