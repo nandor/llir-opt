@@ -1,15 +1,15 @@
 var searchData=
 [
-  ['raises_2198',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock::Raises()'],['../structFuncClosure.html#a0fd4301d8db82cb07162cf16db2b53ca',1,'FuncClosure::Raises()']]],
-  ['readoffsets_2199',['ReadOffsets',['../structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda',1,'ReferenceGraph::Node']]],
-  ['readranges_2200',['ReadRanges',['../structReferenceGraph_1_1Node.html#abb88549305d904fdc054dfa90f797bff',1,'ReferenceGraph::Node']]],
-  ['reg_2201',['Reg',['../structCallLowering_1_1ArgPart.html#a7dbacd876dfead144339734495f332ab',1,'CallLowering::ArgPart::Reg()'],['../structCallLowering_1_1RetPart.html#a8ec0e9ac694d34b9f2f0b8d34e5d03cf',1,'CallLowering::RetPart::Reg()']]],
-  ['regs_5f_2202',['regs_',['../classISel.html#a54350ecd79772e262cb0df81d2781cfc',1,'ISel']]],
-  ['retfps_5f_2203',['retFPs_',['../classX86Call.html#a84da5e4ba851cd4431bacf4332886ead',1,'X86Call']]],
-  ['retregs_5f_2204',['retRegs_',['../classX86Call.html#ae80b95b07525a522b02dcb970523b05c',1,'X86Call']]],
-  ['rets_5f_2205',['rets_',['../classCallLowering.html#afb34fb130112045012368fdce020385d',1,'CallLowering']]],
-  ['returns_2206',['Returns',['../structDAGBlock.html#a8605de2f432ac944cbd875f33188bfe6',1,'DAGBlock']]],
-  ['retxmms_5f_2207',['retXMMs_',['../classX86Call.html#aeecb35d0399e3dd25bb04437ae946c5a',1,'X86Call']]],
-  ['rhs_5f_2208',['rhs_',['../classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73',1,'BinaryVisitor']]],
-  ['roots_5f_2209',['roots_',['../classAnnotPrinter.html#a8cfee53e9ce8caded3a5075ec647f75a',1,'AnnotPrinter']]]
+  ['raises_2200',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock::Raises()'],['../structFuncClosure.html#a0fd4301d8db82cb07162cf16db2b53ca',1,'FuncClosure::Raises()']]],
+  ['readoffsets_2201',['ReadOffsets',['../structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda',1,'ReferenceGraph::Node']]],
+  ['readranges_2202',['ReadRanges',['../structReferenceGraph_1_1Node.html#abb88549305d904fdc054dfa90f797bff',1,'ReferenceGraph::Node']]],
+  ['reg_2203',['Reg',['../structCallLowering_1_1ArgPart.html#a7dbacd876dfead144339734495f332ab',1,'CallLowering::ArgPart::Reg()'],['../structCallLowering_1_1RetPart.html#a8ec0e9ac694d34b9f2f0b8d34e5d03cf',1,'CallLowering::RetPart::Reg()']]],
+  ['regs_5f_2204',['regs_',['../classISel.html#a54350ecd79772e262cb0df81d2781cfc',1,'ISel']]],
+  ['retfps_5f_2205',['retFPs_',['../classX86Call.html#a84da5e4ba851cd4431bacf4332886ead',1,'X86Call']]],
+  ['retregs_5f_2206',['retRegs_',['../classX86Call.html#ae80b95b07525a522b02dcb970523b05c',1,'X86Call']]],
+  ['rets_5f_2207',['rets_',['../classCallLowering.html#afb34fb130112045012368fdce020385d',1,'CallLowering']]],
+  ['returns_2208',['Returns',['../structDAGBlock.html#a8605de2f432ac944cbd875f33188bfe6',1,'DAGBlock']]],
+  ['retxmms_5f_2209',['retXMMs_',['../classX86Call.html#aeecb35d0399e3dd25bb04437ae946c5a',1,'X86Call']]],
+  ['rhs_5f_2210',['rhs_',['../classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73',1,'BinaryVisitor']]],
+  ['roots_5f_2211',['roots_',['../classAnnotPrinter.html#a8cfee53e9ce8caded3a5075ec647f75a',1,'AnnotPrinter']]]
 ];
