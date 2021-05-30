@@ -55,13 +55,45 @@ void Step::VisitCallSite(CallSite &call)
         args.push_back(arg);
       }
     }
-    // Propagate values to arguments.
-    for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
-      auto type = args[i];
-      for (auto *inst : analysis_.args_[std::make_pair(f, i)]) {
-        auto ref = inst->GetSubValue(0);
-        auto arg = Clamp(analysis_.Find(ref) | type, inst->GetType());
-        Mark(ref, arg);
+    if (kind_ == Kind::REFINE && !f->IsRoot() && !f->HasAddressTaken()) {
+      for (auto *user : f->users()) {
+        auto mov = ::cast_or_null<MovInst>(user);
+        if (!mov) {
+          continue;
+        }
+
+        for (auto *movUser : mov->users()) {
+          auto otherCall = ::cast_or_null<CallSite>(movUser);
+          if (!otherCall || otherCall == &call) {
+            continue;
+          }
+          for (unsigned i = 0, n = otherCall->arg_size(); i < n; ++i) {
+            if (args.size() <= i) {
+              args.resize(i + 1, TaggedType::Undef());
+            }
+            args[i] |= analysis_.Find(otherCall->arg(i));
+          }
+        }
+      }
+
+      for (unsigned i = 0, n = f->params().size(); i < n; ++i) {
+        for (auto *arg : analysis_.args_[{ f, i }]) {
+          if (i < args.size()) {
+            Mark(arg->GetSubValue(0), Clamp(args[i], arg->GetType()));
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
+    } else {
+      // Propagate values to arguments.
+      for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
+        auto type = args[i];
+        for (auto *inst : analysis_.args_[std::make_pair(f, i)]) {
+          auto ref = inst->GetSubValue(0);
+          auto arg = Clamp(analysis_.Find(ref) | type, inst->GetType());
+          Mark(ref, arg);
+        }
       }
     }
     // If the callee recorded a value already, propagate it.

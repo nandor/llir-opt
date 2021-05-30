@@ -4,6 +4,7 @@
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/Statistic.h>
+#include <llvm/Support/Debug.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -57,6 +58,7 @@ public:
     : prog_(prog)
     , types_(prog, target)
   {
+    LLVM_DEBUG(types_.dump(llvm::dbgs()));
   }
 
   /// Initial transformation, narrows the types of values.

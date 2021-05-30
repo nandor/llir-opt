@@ -202,10 +202,15 @@ void TypeAnalysis::Solve()
     }
   }
   // Propagate types through the queued instructions.
+  std::unordered_map<Func *, std::unique_ptr<Refinement>> cache;
   while (!refineQueue_.empty() || !backwardQueue_.empty()) {
     while (!backwardQueue_.empty()) {
       auto *f = backwardQueue_.front();
-      Refinement(*this, target_, *f).Run();
+      auto it = cache.emplace(f, nullptr);
+      if (it.second) {
+        it.first->second.reset(new Refinement(*this, target_, *f));
+      }
+      it.first->second->Run();
       inBackwardQueue_.erase(f);
       backwardQueue_.pop();
     }
