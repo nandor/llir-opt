@@ -138,7 +138,26 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
       }
       llvm_unreachable("invalid value kind");
     }
-    case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
+    case TaggedType::Kind::HEAP: {
+      switch (vr.GetKind()) {
+        case TaggedType::Kind::UNKNOWN:  return TaggedType::Unknown();
+        case TaggedType::Kind::EVEN:     return TaggedType::Heap();
+        case TaggedType::Kind::INT:      return TaggedType::Ptr();
+        case TaggedType::Kind::PTR_INT:  return TaggedType::Ptr();
+        case TaggedType::Kind::ODD:      return TaggedType::Ptr();
+        case TaggedType::Kind::ONE:      return TaggedType::Ptr();
+        case TaggedType::Kind::ZERO:     return TaggedType::Heap();
+        case TaggedType::Kind::ZERO_ONE: return TaggedType::Ptr();
+        case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ANY: return TaggedType::Any();
+        case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
+      }
+      llvm_unreachable("invalid value kind");
+    }
     case TaggedType::Kind::PTR: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();

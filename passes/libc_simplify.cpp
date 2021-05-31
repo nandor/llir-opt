@@ -69,7 +69,7 @@ void LibCSimplifyPass::Simplify(
           case Inst::Kind::INVOKE: {
             auto *cont = static_cast<InvokeInst *>(call)->GetCont();
             parent->AddInst(new JumpInst(cont, {}), call);
-	    simplify.insert(call->getParent()->getParent());
+            simplify.insert(call->getParent()->getParent());
             break;
           }
         }

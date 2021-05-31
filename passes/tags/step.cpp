@@ -61,10 +61,10 @@ void Step::VisitCallSite(CallSite &call)
         if (!mov) {
           continue;
         }
-
+        auto movRef = mov->GetSubValue(0);
         for (auto *movUser : mov->users()) {
           auto otherCall = ::cast_or_null<CallSite>(movUser);
-          if (!otherCall || otherCall == &call) {
+          if (!otherCall || otherCall == &call || otherCall->GetCallee() != movRef) {
             continue;
           }
           for (unsigned i = 0, n = otherCall->arg_size(); i < n; ++i) {

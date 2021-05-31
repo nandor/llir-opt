@@ -279,9 +279,11 @@ bool EliminateTags::RewriteConst()
             auto integer = [&, this] (int value)
             {
               auto *mov = new MovInst(ty, new ConstantInt(value), inst->GetAnnots());
-              auto jt = it;
-              while (jt->Is(Inst::Kind::PHI)) ++jt;
-              block.insert(mov, jt);
+              auto insert = inst->getIterator();
+              while (insert->Is(Inst::Kind::PHI)) {
+                ++insert;
+              }
+              block.insert(mov, insert);
               newValues.push_back(mov);
               numValues++;
             };

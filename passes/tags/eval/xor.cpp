@@ -41,11 +41,11 @@ TaggedType Step::Xor(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ZERO:    return TaggedType::Odd();
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: return TaggedType::PtrInt();
-        case TaggedType::Kind::ODD: return TaggedType::Even();
+        case TaggedType::Kind::ODD:  return TaggedType::Even();
         case TaggedType::Kind::EVEN: return TaggedType::Odd();
-        case TaggedType::Kind::INT: return TaggedType::Int();
-        case TaggedType::Kind::ONE: llvm_unreachable("not implemented");
-        case TaggedType::Kind::VAL: return TaggedType::PtrInt();
+        case TaggedType::Kind::INT:  return TaggedType::Int();
+        case TaggedType::Kind::ONE:  return TaggedType::Even();
+        case TaggedType::Kind::VAL:  return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
@@ -102,13 +102,13 @@ TaggedType Step::Xor(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::EVEN:
         case TaggedType::Kind::INT:
         case TaggedType::Kind::ONE:
-        case TaggedType::Kind::ODD: return TaggedType::Int();
-        case TaggedType::Kind::ZERO: return vl;
+        case TaggedType::Kind::ODD:      return TaggedType::Int();
+        case TaggedType::Kind::ZERO:     return vl;
         case TaggedType::Kind::ZERO_ONE: return TaggedType::Int();
         case TaggedType::Kind::PTR_INT:  return TaggedType::PtrInt();
         case TaggedType::Kind::VAL:      return Clamp(TaggedType::PtrInt(), ty);
-        case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR:     return TaggedType::PtrInt();
+        case TaggedType::Kind::HEAP:     return Clamp(TaggedType::PtrInt(), ty);
+        case TaggedType::Kind::PTR:      return TaggedType::PtrInt();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::ANY: return TaggedType::Any();

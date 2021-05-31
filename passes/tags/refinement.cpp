@@ -46,7 +46,6 @@ void Refinement::Run()
 
 // -----------------------------------------------------------------------------
 void Refinement::Refine(
-    Inst &inst,
     Block *parent,
     Ref<Inst> ref,
     const TaggedType &type)
@@ -76,7 +75,6 @@ void Refinement::Refine(
 
 // -----------------------------------------------------------------------------
 void Refinement::Refine(
-    PhiInst &inst,
     Block *start,
     Block *end,
     Ref<Inst> ref,
@@ -128,14 +126,14 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     }
     case TaggedType::Kind::VAL: {
       // Refine to HEAP.
-      Refine(inst, inst.getParent(), addr, TaggedType::Heap());
+      Refine(inst.getParent(), addr, TaggedType::Heap());
       return;
     }
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::ANY: {
       // Refine to PTR.
-      Refine(inst, inst.getParent(), addr, TaggedType::Ptr());
+      Refine(inst.getParent(), addr, TaggedType::Ptr());
       return;
     }
   }
@@ -164,184 +162,20 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
     }
     case TaggedType::Kind::VAL: {
       // Refine to ODD.
-      Refine(inst, inst.getParent(), addr, TaggedType::Odd());
+      Refine(inst.getParent(), addr, TaggedType::Odd());
       return;
     }
     case TaggedType::Kind::PTR_NULL: {
       // Refine to ZERO.
-      Refine(inst, inst.getParent(), addr, TaggedType::Zero());
+      Refine(inst.getParent(), addr, TaggedType::Zero());
       return;
 
     }
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::ANY: {
       // Refine to INT.
-      Refine(inst, inst.getParent(), addr, TaggedType::Int());
+      Refine(inst.getParent(), addr, TaggedType::Int());
       return;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitMemoryLoadInst(MemoryLoadInst &i)
-{
-  RefineAddr(i, i.GetAddr());
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitMemoryStoreInst(MemoryStoreInst &i)
-{
-  RefineAddr(i, i.GetAddr());
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitSelectInst(SelectInst &i)
-{
-  auto vo = analysis_.Find(i);
-  auto vt = analysis_.Find(i.GetTrue());
-  auto vf = analysis_.Find(i.GetFalse());
-  if (!(vt <= vo)) {
-    Refine(i, i.getParent(), i.GetTrue(), vo);
-  }
-  if (!(vf <= vo)) {
-    Refine(i, i.getParent(), i.GetFalse(), vo);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitSubInst(SubInst &i)
-{
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-  auto vo = analysis_.Find(i);
-  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsIntLike()) {
-    RefineAddr(i, i.GetLHS());
-    return;
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitAddInst(AddInst &i)
-{
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-  auto vo = analysis_.Find(i);
-  if (vo.IsPtr()) {
-    if (vl.IsIntLike() && vr.IsPtrUnion()) {
-      RefineAddr(i, i.GetRHS());
-    }
-    if (vr.IsIntLike() && vl.IsPtrUnion()) {
-      RefineAddr(i, i.GetLHS());
-    }
-    if (vl.IsPtrLike() && vr.IsPtrUnion()) {
-      RefineInt(i, i.GetRHS());
-    }
-    if (vr.IsPtrLike() && vl.IsPtrUnion()) {
-      RefineInt(i, i.GetLHS());
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitCmpInst(CmpInst &i)
-{
-  auto cc = i.GetCC();
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-
-  if (!IsEquality(cc) || IsOrdered(cc)) {
-    if (vl.IsVal() && vr.IsOdd()) {
-      return Refine(i, i.getParent(), i.GetLHS(), TaggedType::Odd());
-    }
-    if (vr.IsVal() && vl.IsOdd()) {
-      return Refine(i, i.getParent(), i.GetRHS(), TaggedType::Odd());
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitAndInst(AndInst &i)
-{
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitOrInst(OrInst &i)
-{
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitXorInst(XorInst &i)
-{
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitMovInst(MovInst &i)
-{
-  if (auto arg = ::cast_or_null<Inst>(i.GetArg())) {
-    auto va = analysis_.Find(arg);
-    auto vo = analysis_.Find(i);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitPhiInst(PhiInst &phi)
-{
-  auto vphi = analysis_.Find(phi);
-  if (vphi.IsUnknown()) {
-    return;
-  }
-
-  auto *parent = phi.getParent();
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    auto ref = phi.GetValue(i);
-    auto block = phi.GetBlock(i);
-    if (vphi < analysis_.Find(ref)) {
-      Refine(phi, phi.GetBlock(i), parent, ref, vphi);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitCallSite(CallSite &site)
-{
-  auto callee = analysis_.Find(site.GetCallee());
-  if (callee.IsUnknown()) {
-    return;
-  }
-  RefineAddr(site, site.GetCallee());
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
-{
-  auto *bt = jcc.GetTrueTarget();
-  auto *bf = jcc.GetFalseTarget();
-  if (auto inst = ::cast_or_null<CmpInst>(jcc.GetCond())) {
-    auto l = inst->GetLHS();
-    auto r = inst->GetRHS();
-    switch (inst->GetCC()) {
-      case Cond::EQ: case Cond::UEQ: case Cond::OEQ: {
-        return RefineEquality(l, r, inst->getParent(), bt, bf);
-      }
-      case Cond::NE: case Cond::UNE: case Cond::ONE: {
-        return RefineEquality(l, r, inst->getParent(), bf, bt);
-      }
-      default: {
-        return;
-      }
-    }
-    llvm_unreachable("invalid condition code");
-  }
-  if (auto inst = ::cast_or_null<AndInst>(jcc.GetCond())) {
-    if (analysis_.Find(jcc.GetCond()).IsZeroOne()) {
-      auto l = inst->GetLHS();
-      auto r = inst->GetRHS();
-      if (analysis_.Find(l).IsOne()) {
-        return RefineAndOne(r, jcc.getParent(), bt, bf);
-      }
-      if (analysis_.Find(r).IsOne()) {
-        return RefineAndOne(l, jcc.getParent(), bt, bf);
-      }
     }
   }
 }
@@ -585,4 +419,197 @@ void Refinement::DefineSplits(
   }
   // Trigger an update of anything relying on the reference.
   analysis_.Refine(ref, analysis_.Find(ref));
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMemoryLoadInst(MemoryLoadInst &i)
+{
+  RefineAddr(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMemoryStoreInst(MemoryStoreInst &i)
+{
+  RefineAddr(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitSelectInst(SelectInst &i)
+{
+  auto vo = analysis_.Find(i);
+  auto vt = analysis_.Find(i.GetTrue());
+  auto vf = analysis_.Find(i.GetFalse());
+  if (!(vt <= vo)) {
+    Refine(i.getParent(), i.GetTrue(), vo);
+  }
+  if (!(vf <= vo)) {
+    Refine(i.getParent(), i.GetFalse(), vo);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitSubInst(SubInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto vo = analysis_.Find(i);
+  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsIntLike()) {
+    RefineAddr(i, i.GetLHS());
+    return;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitAddInst(AddInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto vo = analysis_.Find(i);
+  if (vo.IsPtr()) {
+    if (vl.IsIntLike() && vr.IsPtrUnion()) {
+      RefineAddr(i, i.GetRHS());
+    }
+    if (vr.IsIntLike() && vl.IsPtrUnion()) {
+      RefineAddr(i, i.GetLHS());
+    }
+    if (vl.IsPtrLike() && vr.IsPtrUnion()) {
+      RefineInt(i, i.GetRHS());
+    }
+    if (vr.IsPtrLike() && vl.IsPtrUnion()) {
+      RefineInt(i, i.GetLHS());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitCmpInst(CmpInst &i)
+{
+  auto cc = i.GetCC();
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+
+  if (!IsEquality(cc) || IsOrdered(cc)) {
+    if (vl.IsVal() && vr.IsOdd()) {
+      return Refine(i.getParent(), i.GetLHS(), TaggedType::Odd());
+    }
+    if (vr.IsVal() && vl.IsOdd()) {
+      return Refine(i.getParent(), i.GetRHS(), TaggedType::Odd());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitAndInst(AndInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitOrInst(OrInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitXorInst(XorInst &i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitMovInst(MovInst &i)
+{
+  if (auto arg = ::cast_or_null<Inst>(i.GetArg())) {
+    auto va = analysis_.Find(arg);
+    auto vo = analysis_.Find(i);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitPhiInst(PhiInst &phi)
+{
+  auto vphi = analysis_.Find(phi);
+  if (vphi.IsUnknown()) {
+    return;
+  }
+
+  auto *parent = phi.getParent();
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    auto ref = phi.GetValue(i);
+    auto block = phi.GetBlock(i);
+    if (vphi < analysis_.Find(ref)) {
+      Refine(phi.GetBlock(i), parent, ref, vphi);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitArgInst(ArgInst &arg)
+{
+  auto ty = analysis_.Find(arg);
+  if (ty.IsUnknown()) {
+    return;
+  }
+  Func *f = arg.getParent()->getParent();
+  for (auto *user : f->users()) {
+    auto mov = ::cast_or_null<MovInst>(user);
+    if (!mov) {
+      continue;
+    }
+    for (auto *movUser : mov->users()) {
+      auto call = ::cast_or_null<CallSite>(movUser);
+      if (!call || call->GetCallee() != mov->GetSubValue(0)) {
+        continue;
+      }
+      if (call->arg_size() > arg.GetIndex()) {
+        auto argRef = call->arg(arg.GetIndex());
+        auto argTy = analysis_.Find(argRef);
+        if (ty < argTy) {
+          Refine(call->getParent(), argRef, ty);
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitCallSite(CallSite &site)
+{
+  auto callee = analysis_.Find(site.GetCallee());
+  if (callee.IsUnknown()) {
+    return;
+  }
+  RefineAddr(site, site.GetCallee());
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
+{
+  auto *bt = jcc.GetTrueTarget();
+  auto *bf = jcc.GetFalseTarget();
+  if (auto inst = ::cast_or_null<CmpInst>(jcc.GetCond())) {
+    auto l = inst->GetLHS();
+    auto r = inst->GetRHS();
+    switch (inst->GetCC()) {
+      case Cond::EQ: case Cond::UEQ: case Cond::OEQ: {
+        return RefineEquality(l, r, inst->getParent(), bt, bf);
+      }
+      case Cond::NE: case Cond::UNE: case Cond::ONE: {
+        return RefineEquality(l, r, inst->getParent(), bf, bt);
+      }
+      default: {
+        return;
+      }
+    }
+    llvm_unreachable("invalid condition code");
+  }
+  if (auto inst = ::cast_or_null<AndInst>(jcc.GetCond())) {
+    if (analysis_.Find(jcc.GetCond()).IsZeroOne()) {
+      auto l = inst->GetLHS();
+      auto r = inst->GetRHS();
+      if (analysis_.Find(l).IsOne()) {
+        return RefineAndOne(r, jcc.getParent(), bt, bf);
+      }
+      if (analysis_.Find(r).IsOne()) {
+        return RefineAndOne(l, jcc.getParent(), bt, bf);
+      }
+    }
+  }
 }

@@ -139,7 +139,7 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
             while (insert->Is(Inst::Kind::PHI)) {
               ++insert;
             }
-            block.AddInst(newInst, &*insert);
+            block.insert(newInst, insert);
             newValues.push_back(newInst);
             numValues++;
             changed = true;
