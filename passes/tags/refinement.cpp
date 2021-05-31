@@ -576,7 +576,84 @@ void Refinement::VisitCallSite(CallSite &site)
   if (callee.IsUnknown()) {
     return;
   }
+
+  // Refine the callee to a pointer.
   RefineAddr(site, site.GetCallee());
+
+  // Refine return values of calles.
+  std::vector<TaggedType> rets;
+  for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
+    auto val = analysis_.Find(site.GetSubValue(i));
+    if (val.IsUnknown()) {
+      return;
+    }
+    rets.push_back(val);
+  }
+
+  auto less = [&rets, this] (Func *f)
+  {
+    auto it = analysis_.rets_.find(f);
+    assert(it != analysis_.rets_.end() && "missing returns");
+    auto &otherRets = it->second;
+    for (unsigned i = 0, n = rets.size(); i < n; ++i) {
+      if (i < otherRets.size()) {
+        if (!(rets[i] < otherRets[i])) {
+          return false;
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+    return true;
+  };
+
+  if (auto *f = site.GetDirectCallee(); f && !rets.empty()) {
+    std::queue<Func *> q;
+    q.push(f);
+
+    while (!q.empty()) {
+      auto *f = q.front();
+      q.pop();
+
+      if (less(f)) {
+        // Update cached return values.
+        auto &otherRets = analysis_.rets_[f];
+        for (unsigned i = 0, n = otherRets.size(); i < n; ++i) {
+          if (i < rets.size()) {
+            otherRets[i] = rets[i];
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
+
+        // Propagate in function.
+        for (Block &block : *f) {
+          auto *term = block.GetTerminator();
+          if (!term->IsReturn()) {
+            continue;
+          }
+          if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+            for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
+              auto argRef = ret->arg(i);
+              if (i < rets.size()) {
+                auto val = analysis_.Find(argRef);
+                if (rets[i] < val) {
+                  Refine(&block, argRef, rets[i]);
+                }
+              } else {
+                llvm_unreachable("not implemented");
+              }
+            }
+          }
+          if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+            if (auto *callee = tcall->GetDirectCallee()) {
+              q.push(callee);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

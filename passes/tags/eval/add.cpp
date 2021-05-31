@@ -153,7 +153,7 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: return TaggedType::Ptr();
-        case TaggedType::Kind::ANY: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ANY:     return TaggedType::Ptr();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
