@@ -130,8 +130,7 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
       return;
     }
     case TaggedType::Kind::PTR_NULL:
-    case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::ANY: {
+    case TaggedType::Kind::PTR_INT: {
       // Refine to PTR.
       Refine(inst.getParent(), addr, TaggedType::Ptr());
       return;
@@ -171,8 +170,7 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
       return;
 
     }
-    case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::ANY: {
+    case TaggedType::Kind::PTR_INT: {
       // Refine to INT.
       Refine(inst.getParent(), addr, TaggedType::Int());
       return;
@@ -205,8 +203,7 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
 {
   switch (analysis_.Find(arg).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::UNDEF:
-    case TaggedType::Kind::ANY: {
+    case TaggedType::Kind::UNDEF: {
       return;
     }
     case TaggedType::Kind::ZERO:

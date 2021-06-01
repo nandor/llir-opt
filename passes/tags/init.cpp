@@ -25,7 +25,7 @@ void Init::VisitArgInst(ArgInst &i)
     case CallingConv::MULTIBOOT:
     case CallingConv::WIN64: {
       if (func.IsRoot() || func.HasAddressTaken()) {
-        analysis_.Mark(i, TaggedType::Any());
+        analysis_.Mark(i, TaggedType::PtrInt());
       }
       return;
     }

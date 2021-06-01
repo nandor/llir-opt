@@ -35,7 +35,6 @@ public:
     PTR_INT,
     // Undefined/imprecise.
     UNDEF,
-    ANY,
   };
 
   Kind GetKind() const { return k_; }
@@ -45,7 +44,6 @@ public:
   bool IsEven() const { return k_ == Kind::EVEN; }
   bool IsOne() const { return k_ == Kind::ONE; }
   bool IsOdd() const { return k_ == Kind::ODD; }
-  bool IsAny() const { return k_ == Kind::ANY; }
   bool IsVal() const { return k_ == Kind::VAL; }
   bool IsHeap() const { return k_ == Kind::HEAP; }
   bool IsInt() const { return k_ == Kind::INT; }
@@ -97,7 +95,6 @@ public:
   static TaggedType PtrNull() { return TaggedType(Kind::PTR_NULL); }
   static TaggedType PtrInt() { return TaggedType(Kind::PTR_INT); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
-  static TaggedType Any() { return TaggedType(Kind::ANY); }
 
   void dump(llvm::raw_ostream &os) const;
 

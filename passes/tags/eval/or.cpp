@@ -30,7 +30,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -50,7 +49,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -70,7 +68,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -93,7 +90,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: return TaggedType::Ptr();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: return TaggedType::Undef();
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -113,7 +109,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: return TaggedType::PtrInt();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -133,7 +128,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -153,7 +147,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -170,10 +163,9 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ZERO_ONE: return TaggedType::Ptr();
         case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR:      return TaggedType::PtrInt();
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -197,7 +189,6 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR:  return Clamp(TaggedType::PtrInt(), ty);
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: return TaggedType::Any();
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
@@ -217,13 +208,9 @@ TaggedType Step::Or(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-        case TaggedType::Kind::ANY: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
-    }
-    case TaggedType::Kind::ANY: {
-      return TaggedType::Any();
     }
   }
   llvm_unreachable("invalid value kind");

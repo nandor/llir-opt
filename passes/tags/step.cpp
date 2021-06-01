@@ -245,8 +245,7 @@ void Step::VisitMultiplyInst(MultiplyInst &i)
       case TaggedType::Kind::VAL:
       case TaggedType::Kind::PTR:
       case TaggedType::Kind::PTR_INT:
-      case TaggedType::Kind::PTR_NULL:
-      case TaggedType::Kind::ANY: {
+      case TaggedType::Kind::PTR_NULL: {
         Mark(i, TaggedType::Int());
         return;
       }

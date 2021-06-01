@@ -35,8 +35,7 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
     case TaggedType::Kind::PTR_NULL: {
       return TaggedType::Int();
     }
-    case TaggedType::Kind::UNDEF:
-    case TaggedType::Kind::ANY: {
+    case TaggedType::Kind::UNDEF: {
       return arg;
     }
   }
@@ -82,13 +81,6 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
       }
     }
     case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
-    case TaggedType::Kind::ANY: {
-      if (fitsPointer) {
-        return TaggedType::Any();
-      } else {
-        return TaggedType::Int();
-      }
-    }
   }
   llvm_unreachable("invalid value kind");
 }

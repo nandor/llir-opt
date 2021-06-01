@@ -27,8 +27,7 @@ bool TaggedType::IsIntLike() const
     case Kind::PTR:
     case Kind::PTR_NULL:
     case Kind::PTR_INT:
-    case Kind::UNDEF:
-    case Kind::ANY: {
+    case Kind::UNDEF: {
       return false;
     }
   }
@@ -73,8 +72,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           llvm_unreachable("not implemented");
         }
         case Kind::PTR_INT:
-        case Kind::INT:
-        case Kind::ANY: {
+        case Kind::INT: {
           k_ = that.k_;
           return *this;
         }
@@ -108,8 +106,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           return *this;
         }
         case Kind::PTR_INT:
-        case Kind::VAL:
-        case Kind::ANY: {
+        case Kind::VAL: {
           k_ = that.k_;
           return *this;
         }
@@ -149,8 +146,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           return *this;
         }
         case Kind::PTR_INT:
-        case Kind::ODD:
-        case Kind::ANY: {
+        case Kind::ODD: {
           k_ = that.k_;
           return *this;
         }
@@ -182,7 +178,6 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
         case Kind::INT:
         case Kind::PTR_INT:
         case Kind::YOUNG:
-        case Kind::ANY:
         case Kind::VAL: {
           k_ = that.k_;
           return *this;
@@ -223,8 +218,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           llvm_unreachable("not implemented");
         }
         case Kind::INT:
-        case Kind::PTR_INT:
-        case Kind::ANY: {
+        case Kind::PTR_INT: {
           k_ = that.k_;
           return *this;
         }
@@ -262,11 +256,6 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           k_ = Kind::PTR_INT;
           return *this;
         }
-        case Kind::ANY: {
-          k_ = that.k_;
-          return *this;
-        }
-
       }
       llvm_unreachable("invalid kind");
     }
@@ -292,15 +281,11 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
         }
         case Kind::PTR:
         case Kind::PTR_INT: {
-          k_ = Kind::ANY;
+          k_ = Kind::PTR_INT;
           return *this;
         }
         case Kind::PTR_NULL: {
           llvm_unreachable("not implemented");
-        }
-        case Kind::ANY: {
-          k_ = that.k_;
-          return *this;
         }
       }
       llvm_unreachable("invalid kind");
@@ -333,8 +318,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
         }
         case Kind::PTR:
         case Kind::VAL:
-        case Kind::PTR_INT:
-        case Kind::ANY: {
+        case Kind::PTR_INT: {
           k_ = that.k_;
           return *this;
         }
@@ -367,8 +351,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           k_ = Kind::PTR_INT;
           return *this;
         }
-        case Kind::PTR_INT:
-        case Kind::ANY: {
+        case Kind::PTR_INT: {
           k_ = that.k_;
           return *this;
         }
@@ -411,12 +394,8 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           llvm_unreachable("not implemented");
         case Kind::EVEN:
           llvm_unreachable("not implemented");
-        case Kind::ANY: {
-          k_ = that.k_;
-          return *this;
-        }
-
-        case Kind::PTR_NULL: llvm_unreachable("not implemented");
+        case Kind::PTR_NULL:
+          llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");
     }
@@ -437,8 +416,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
         case Kind::VAL:
         case Kind::HEAP:
         case Kind::UNDEF:
-        case Kind::YOUNG:
-        case Kind::ANY: {
+        case Kind::YOUNG: {
           k_ = that.k_;
           return *this;
         }
@@ -446,36 +424,6 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
       llvm_unreachable("invalid kind");
     }
     case Kind::PTR_INT: {
-      switch (that.k_) {
-        case Kind::UNKNOWN:
-        case Kind::EVEN:
-        case Kind::ODD:
-        case Kind::ONE:
-        case Kind::INT:
-        case Kind::ZERO:
-        case Kind::ZERO_ONE:
-        case Kind::PTR_INT:
-        case Kind::PTR:
-        case Kind::PTR_NULL: {
-          return *this;
-        }
-        case Kind::VAL:
-        case Kind::HEAP: {
-          k_ = Kind::PTR_INT;
-          return *this;
-        }
-        case Kind::UNDEF: {
-          return *this;
-        }
-        case Kind::YOUNG:
-        case Kind::ANY: {
-          k_ = that.k_;
-          return *this;
-        }
-      }
-      llvm_unreachable("invalid kind");
-    }
-    case Kind::ANY: {
       return *this;
     }
     case Kind::PTR_NULL:{
@@ -494,8 +442,7 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
           k_ = Kind::PTR_INT;
           return *this;
         }
-        case Kind::PTR_INT:
-        case Kind::ANY:  {
+        case Kind::PTR_INT: {
           k_ = that.k_;
           return *this;
         }
@@ -533,65 +480,54 @@ bool TaggedType::operator<(const TaggedType &that) const
              that.k_ == Kind::VAL ||
              that.k_ == Kind::ZERO_ONE ||
              that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::PTR_NULL ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::PTR_NULL;
     }
     case Kind::EVEN: {
       return that.k_ == Kind::INT ||
              that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::VAL ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::VAL;
     }
     case Kind::ONE: {
       return that.k_ == Kind::ODD ||
              that.k_ == Kind::ZERO_ONE ||
              that.k_ == Kind::INT ||
              that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::VAL ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::VAL;
     }
     case Kind::ODD: {
       return that.k_ == Kind::INT ||
              that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::VAL ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::VAL;
     }
     case Kind::ZERO_ONE: {
       return that.k_ == Kind::INT ||
-             that.k_ == Kind::ANY ||
              that.k_ == Kind::PTR_INT;
     }
     case Kind::INT: {
-      return that.k_ == Kind::ANY ||
-             that.k_ == Kind::VAL ||
+      return that.k_ == Kind::VAL ||
              that.k_ == Kind::PTR_INT;
     }
     case Kind::VAL: {
       return that.k_ == Kind::PTR ||
-             that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::PTR_INT;
     }
     case Kind::HEAP: {
       return that.k_ == Kind::VAL ||
              that.k_ == Kind::PTR ||
-             that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::PTR_INT;
     }
     case Kind::YOUNG: {
       return that.k_ == Kind::HEAP ||
              that.k_ == Kind::VAL ||
              that.k_ == Kind::PTR ||
-             that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::PTR_INT;
     }
     case Kind::PTR: {
       return that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::PTR_NULL ||
-             that.k_ == Kind::ANY;
+             that.k_ == Kind::PTR_NULL;
     }
     case Kind::PTR_INT: {
-      return that.k_ == Kind::YOUNG ||
-             that.k_ == Kind::ANY;
+      return that.k_ == Kind::YOUNG;
     }
     case Kind::UNDEF: {
       return that.k_ == Kind::EVEN ||
@@ -602,15 +538,10 @@ bool TaggedType::operator<(const TaggedType &that) const
              that.k_ == Kind::ZERO ||
              that.k_ == Kind::ONE ||
              that.k_ == Kind::ZERO_ONE ||
-             that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ANY;
-    }
-    case Kind::ANY: {
-      return false;
+             that.k_ == Kind::PTR_INT;
     }
     case Kind::PTR_NULL: {
-      return that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ANY;
+      return that.k_ == Kind::PTR_INT;
     }
   }
   llvm_unreachable("invalid kind");
@@ -634,7 +565,6 @@ void TaggedType::dump(llvm::raw_ostream &os) const
     case Kind::PTR:      os << "ptr";       return;
     case Kind::PTR_INT:  os << "ptr|int";   return;
     case Kind::PTR_NULL: os << "ptr|null";  return;
-    case Kind::ANY:      os << "any";       return;
   }
   llvm_unreachable("invalid kind");
 }

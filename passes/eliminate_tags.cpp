@@ -312,8 +312,7 @@ bool EliminateTags::RewriteConst()
               case TaggedType::Kind::PTR:
               case TaggedType::Kind::PTR_NULL:
               case TaggedType::Kind::PTR_INT:
-              case TaggedType::Kind::UNDEF:
-              case TaggedType::Kind::ANY: {
+              case TaggedType::Kind::UNDEF: {
                 newValues.push_back(inst->GetSubValue(i));
                 continue;
               }
