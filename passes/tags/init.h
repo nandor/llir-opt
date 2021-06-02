@@ -11,14 +11,14 @@
 
 namespace tags {
 
-class TypeAnalysis;
+class RegisterAnalysis;
 
 /**
  * Helper to produce the initial types for known values.
  */
 class Init : public InstVisitor<void> {
 public:
-  Init(TypeAnalysis &analysis, const Target *target)
+  Init(RegisterAnalysis &analysis, const Target *target)
     : analysis_(analysis)
     , target_(target)
   {
@@ -65,7 +65,7 @@ private:
 
 private:
   /// Reference to the analysis.
-  TypeAnalysis &analysis_;
+  RegisterAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
 };

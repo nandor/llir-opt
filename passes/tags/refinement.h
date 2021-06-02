@@ -16,14 +16,14 @@
 
 namespace tags {
 
-class TypeAnalysis;
+class RegisterAnalysis;
 
 /**
  * Helper to produce the initial types for known values.
  */
 class Refinement : public InstVisitor<void> {
 public:
-  Refinement(TypeAnalysis &analysis, const Target *target, Func &func);
+  Refinement(RegisterAnalysis &analysis, const Target *target, Func &func);
 
   void Run();
 
@@ -83,7 +83,8 @@ private:
 
 private:
   /// Find the set of nodes where a value is live-in.
-  std::set<Block *> Liveness(
+  std::pair<std::set<Block *>, std::set<Block *>>
+  Liveness(
       Ref<Inst> ref,
       const llvm::SmallPtrSetImpl<const Block *> &defs
   );
@@ -95,7 +96,7 @@ private:
 
 private:
   /// Reference to the analysis.
-  TypeAnalysis &analysis_;
+  RegisterAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
   /// Function to optimise.

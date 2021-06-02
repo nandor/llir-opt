@@ -7,7 +7,7 @@
 #include "core/data.h"
 #include "passes/tags/init.h"
 #include "passes/tags/tagged_type.h"
-#include "passes/tags/type_analysis.h"
+#include "passes/tags/register_analysis.h"
 
 using namespace tags;
 

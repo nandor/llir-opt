@@ -19,9 +19,9 @@ namespace tags {
 class Init;
 class Step;
 
-class TypeAnalysis {
+class RegisterAnalysis {
 public:
-  TypeAnalysis(Prog &prog, const Target *target)
+  RegisterAnalysis(Prog &prog, const Target *target)
     : prog_(prog)
     , target_(target)
   {

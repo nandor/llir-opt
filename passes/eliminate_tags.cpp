@@ -15,7 +15,7 @@
 #include "core/prog.h"
 #include "core/target.h"
 #include "passes/eliminate_tags.h"
-#include "passes/tags/type_analysis.h"
+#include "passes/tags/register_analysis.h"
 #include "passes/tags/tagged_type.h"
 
 using namespace tags;
@@ -75,7 +75,7 @@ public:
 
 private:
   Prog &prog_;
-  TypeAnalysis types_;
+  RegisterAnalysis types_;
 };
 
 // -----------------------------------------------------------------------------

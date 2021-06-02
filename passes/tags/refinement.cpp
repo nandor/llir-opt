@@ -9,14 +9,14 @@
 #include "core/data.h"
 #include "passes/tags/refinement.h"
 #include "passes/tags/tagged_type.h"
-#include "passes/tags/type_analysis.h"
+#include "passes/tags/register_analysis.h"
 
 using namespace tags;
 
 
 
 // -----------------------------------------------------------------------------
-Refinement::Refinement(TypeAnalysis &analysis, const Target *target, Func &func)
+Refinement::Refinement(RegisterAnalysis &analysis, const Target *target, Func &func)
   : analysis_(analysis)
   , target_(target)
   , func_(func)
@@ -258,7 +258,8 @@ void Refinement::Specialise(
 }
 
 // -----------------------------------------------------------------------------
-std::set<Block *> Refinement::Liveness(
+std::pair<std::set<Block *>, std::set<Block *>>
+Refinement::Liveness(
     Ref<Inst> ref,
     const llvm::SmallPtrSetImpl<const Block *> &defs)
 {
@@ -277,20 +278,55 @@ std::set<Block *> Refinement::Liveness(
       q.push(::cast<Inst>(use.getUser())->getParent());
     }
   }
-  std::set<Block *> live;
+  std::set<Block *> livePhi, liveMov;
   while (!q.empty()) {
     Block *b = q.front();
     q.pop();
-    if (defs.count(b) || b == ref->getParent()) {
+    if (b == ref->getParent()) {
       continue;
     }
-    if (live.insert(b).second) {
+    if (defs.count(b)) {
+      liveMov.insert(b);
+      continue;
+    }
+    if (livePhi.insert(b).second) {
+      liveMov.insert(b);
       for (Block *pred : b->predecessors()) {
         q.push(pred);
       }
     }
   }
-  return live;
+  return std::make_pair(livePhi, liveMov);
+}
+
+// -----------------------------------------------------------------------------
+static Type ToType(Type ty, TaggedType kind)
+{
+  if (ty == Type::V64) {
+    switch (kind.GetKind()) {
+      case TaggedType::Kind::UNKNOWN:
+      case TaggedType::Kind::ZERO:
+      case TaggedType::Kind::EVEN:
+      case TaggedType::Kind::ONE:
+      case TaggedType::Kind::ODD:
+      case TaggedType::Kind::ZERO_ONE:
+      case TaggedType::Kind::INT:
+      case TaggedType::Kind::YOUNG: {
+        return Type::I64;
+      }
+      case TaggedType::Kind::HEAP:
+      case TaggedType::Kind::VAL:
+      case TaggedType::Kind::PTR:
+      case TaggedType::Kind::PTR_NULL:
+      case TaggedType::Kind::PTR_INT:
+      case TaggedType::Kind::UNDEF: {
+        return ty;
+      }
+    }
+    llvm_unreachable("invalid type kind");
+  } else {
+    return ty;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -304,7 +340,7 @@ void Refinement::DefineSplits(
   }
 
   auto refTy = analysis_.Find(ref);
-  auto live = Liveness(ref, blocks);
+  const auto &[livePhi, liveMov] = Liveness(ref, blocks);
 
   // Place the PHIs for the blocks.
   std::unordered_map<Block *, PhiInst *> phis;
@@ -318,7 +354,7 @@ void Refinement::DefineSplits(
       const Block *block = q.front();
       q.pop();
       for (auto front : df_.calculate(dt_, dt_.getNode(block))) {
-        if (live.count(front) && !phis.count(front)) {
+        if (livePhi.count(front) && !phis.count(front)) {
           auto *phi = new PhiInst(ref.GetType(), {});
           front->AddPhi(phi);
           TaggedType ty = TaggedType::Unknown();
@@ -342,86 +378,61 @@ void Refinement::DefineSplits(
 
   std::stack<Inst *> defs;
   std::unordered_map<MovInst *, TaggedType> newMovs;
-  std::function<void(Block *)> rewrite = [&](Block *block)
-  {
-    Block::iterator begin;
-    bool defined = false;
-    if (auto it = splits.find(block); it != splits.end()) {
-      // Find out if the value is live-out of the placement point.
-      // It is live if it
-      bool liveOut = false;
-      if (block != ref->getParent()) {
-        for (Block *b : block->successors()) {
-          if (live.count(b)) {
-            liveOut = true;
-            break;
+  std::function<void(Block *)> rewrite =
+    [&, &liveMov = liveMov](Block *block)
+    {
+      Block::iterator begin;
+      bool defined = false;
+      if (auto it = splits.find(block); it != splits.end()) {
+        // Find out if the value is live-out of the placement point.
+        // Register the value, if defined in block.
+        if (liveMov.count(block)) {
+          auto arg = defs.empty() ? ref : defs.top()->GetSubValue(0);
+          auto *mov = new MovInst(ToType(ref.GetType(), it->second), arg, {});
+          block->insert(mov, block->first_non_phi());
+          defs.push(mov);
+          newMovs.emplace(mov, it->second);
+          begin = std::next(mov->getIterator());
+          defined = true;
+        } else {
+          begin = block->first_non_phi();
+        }
+      } else {
+        if (auto it = phis.find(block); it != phis.end()) {
+          // Register value, if defined in PHI.
+          defs.push(it->second);
+          defined = true;
+        }
+        begin = block->first_non_phi();
+      }
+      // Rewrite, if there are uses to be rewritten.
+      if (!defs.empty()) {
+        auto mov = defs.top()->GetSubValue(0);
+        for (auto it = begin; it != block->end(); ++it) {
+          for (Use &use : it->operands()) {
+            if (::cast_or_null<Inst>(*use) == ref) {
+              use = mov;
+            }
           }
         }
-        for (Use &use : ref->uses()) {
-          if ((*use).Index() != ref.Index()) {
-            continue;
-          }
-          if (auto *inst = ::cast_or_null<Inst>(use.getUser())) {
-            if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
-              if (phi->HasValue(block) && phi->GetValue(block) == ref) {
-                liveOut = true;
-              }
-            } else {
-              if (inst->getParent() == block) {
-                liveOut = true;
-              }
+        for (Block *succ : block->successors()) {
+          for (PhiInst &phi : succ->phis()) {
+            if (phi.GetValue(block) == ref) {
+              phi.Remove(block);
+              phi.Add(block, mov);
             }
           }
         }
       }
-      // Register the value, if defined in block.
-      if (liveOut) {
-        auto arg = defs.empty() ? ref : defs.top()->GetSubValue(0);
-        auto *mov = new MovInst(ref.GetType(), arg, {});
-        block->insert(mov, block->first_non_phi());
-        defs.push(mov);
-        newMovs.emplace(mov, it->second);
-        begin = std::next(mov->getIterator());
-        defined = true;
-      } else {
-        begin = block->first_non_phi();
+      // Rewrite dominated nodes.
+      for (auto *child : *dt_[block]) {
+        rewrite(child->getBlock());
       }
-    } else {
-      if (auto it = phis.find(block); it != phis.end()) {
-        // Register value, if defined in PHI.
-        defs.push(it->second);
-        defined = true;
+      // Remove the definition.
+      if (defined) {
+        defs.pop();
       }
-      begin = block->first_non_phi();
-    }
-    // Rewrite, if there are uses to be rewritten.
-    if (!defs.empty()) {
-      auto mov = defs.top()->GetSubValue(0);
-      for (auto it = begin; it != block->end(); ++it) {
-        for (Use &use : it->operands()) {
-          if (::cast_or_null<Inst>(*use) == ref) {
-            use = mov;
-          }
-        }
-      }
-      for (Block *succ : block->successors()) {
-        for (PhiInst &phi : succ->phis()) {
-          if (phi.GetValue(block) == ref) {
-            phi.Remove(block);
-            phi.Add(block, mov);
-          }
-        }
-      }
-    }
-    // Rewrite dominated nodes.
-    for (auto *child : *dt_[block]) {
-      rewrite(child->getBlock());
-    }
-    // Remove the definition.
-    if (defined) {
-      defs.pop();
-    }
-  };
+    };
   rewrite(dt_.getRoot());
 
   // Recompute the types of the users of the refined instructions.

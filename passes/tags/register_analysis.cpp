@@ -9,7 +9,7 @@
 #include "passes/tags/init.h"
 #include "passes/tags/step.h"
 #include "passes/tags/refinement.h"
-#include "passes/tags/type_analysis.h"
+#include "passes/tags/register_analysis.h"
 
 using namespace tags;
 
@@ -22,7 +22,7 @@ static bool Converges(Type ty, TaggedType told, TaggedType tnew)
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::Erase(Ref<Inst> oldInst)
+void RegisterAnalysis::Erase(Ref<Inst> oldInst)
 {
 #ifdef NDEBUG
   types_.erase(oldInst);
@@ -32,7 +32,7 @@ void TypeAnalysis::Erase(Ref<Inst> oldInst)
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::Replace(
+void RegisterAnalysis::Replace(
     Ref<Inst> oldInst,
     Ref<Inst> newInst,
     const TaggedType &type)
@@ -46,7 +46,7 @@ void TypeAnalysis::Replace(
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::Replace(Inst *oldInst, Inst *newInst)
+void RegisterAnalysis::Replace(Inst *oldInst, Inst *newInst)
 {
   unsigned n = oldInst->GetNumRets();
   assert(n == newInst->GetNumRets() && "mismatched instructions");
@@ -60,7 +60,7 @@ void TypeAnalysis::Replace(Inst *oldInst, Inst *newInst)
 }
 
 // -----------------------------------------------------------------------------
-bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
+bool RegisterAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
 {
   auto it = types_.emplace(inst, tnew);
   if (it.second) {
@@ -90,7 +90,7 @@ bool TypeAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
 }
 
 // -----------------------------------------------------------------------------
-bool TypeAnalysis::Define(Ref<Inst> inst, const TaggedType &tnew)
+bool RegisterAnalysis::Define(Ref<Inst> inst, const TaggedType &tnew)
 {
 #ifdef NDEBUG
   types_.emplace(inst, tnew);
@@ -102,7 +102,7 @@ bool TypeAnalysis::Define(Ref<Inst> inst, const TaggedType &tnew)
 }
 
 // -----------------------------------------------------------------------------
-bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
+bool RegisterAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
 {
   auto it = types_.emplace(inst, tnew);
   if (!it.second) {
@@ -120,13 +120,13 @@ bool TypeAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
 }
 
 // -----------------------------------------------------------------------------
-bool TypeAnalysis::Refine(ArgInst &arg, const TaggedType &type)
+bool RegisterAnalysis::Refine(ArgInst &arg, const TaggedType &type)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::ForwardQueue(Ref<Inst> inst)
+void RegisterAnalysis::ForwardQueue(Ref<Inst> inst)
 {
   Func *f = const_cast<Func *>(inst->getParent()->getParent());
   if (inBackwardQueue_.insert(f).second) {
@@ -148,7 +148,7 @@ void TypeAnalysis::ForwardQueue(Ref<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::BackwardQueue(Ref<Inst> inst)
+void RegisterAnalysis::BackwardQueue(Ref<Inst> inst)
 {
   for (Use &use : inst->uses()) {
     if (use.get() == inst) {
@@ -165,7 +165,7 @@ void TypeAnalysis::BackwardQueue(Ref<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::Solve()
+void RegisterAnalysis::Solve()
 {
   // Record all argument instructions for later lookup.
   for (auto &func : prog_) {
@@ -224,11 +224,11 @@ void TypeAnalysis::Solve()
 }
 
 // -----------------------------------------------------------------------------
-void TypeAnalysis::dump(llvm::raw_ostream &os)
+void RegisterAnalysis::dump(llvm::raw_ostream &os)
 {
   class AnalysisPrinter : public Printer {
   public:
-    AnalysisPrinter(llvm::raw_ostream &os, TypeAnalysis &that)
+    AnalysisPrinter(llvm::raw_ostream &os, RegisterAnalysis &that)
       : Printer(os)
       , that_(that)
     {
@@ -282,7 +282,7 @@ void TypeAnalysis::dump(llvm::raw_ostream &os)
 
   private:
     /// Reference to the analysis.
-    TypeAnalysis &that_;
+    RegisterAnalysis &that_;
   };
 
   AnalysisPrinter(os, *this).Print(prog_);

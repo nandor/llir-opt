@@ -12,7 +12,7 @@
 
 namespace tags {
 
-class TypeAnalysis;
+class RegisterAnalysis;
 
 /**
  * Helper class to evaluate instructions and propagate values.
@@ -25,7 +25,7 @@ public:
   };
 
 public:
-  Step(TypeAnalysis &analysis, const Target *target, Kind kind)
+  Step(RegisterAnalysis &analysis, const Target *target, Kind kind)
     : analysis_(analysis)
     , target_(target)
     , kind_(kind)
@@ -109,7 +109,7 @@ private:
   );
 private:
   /// Reference to the analysis.
-  TypeAnalysis &analysis_;
+  RegisterAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
   /// Operation mode.
