@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>llir-opt: passes/tags/type_analysis.h Source File</title>
+<title>llir-opt: passes/tags/register_analysis.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">type_analysis.h</div>  </div>
+<div class="title">register_analysis.h</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">// This file if part of the llir-opt project.</span></div>
@@ -92,9 +92,9 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">class </span>Init;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">class </span>Step;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classtags_1_1TypeAnalysis.html">   22</a></span>&#160;<span class="keyword">class </span><a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a> {</div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classtags_1_1RegisterAnalysis.html">   22</a></span>&#160;<span class="keyword">class </span><a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  <a class="code" href="classtags_1_1TypeAnalysis.html">TypeAnalysis</a>(<a class="code" href="classProg.html">Prog</a> &amp;prog, <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target)</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a>(<a class="code" href="classProg.html">Prog</a> &amp;prog, <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target)</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    : prog_(prog)</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    , target_(target)</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  {</div>
@@ -103,17 +103,17 @@ $(function() {
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">void</span> Solve();</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1TypeAnalysis.html#a55505ac04ec3d8df0503bc2e701f50aa">dump</a>(llvm::raw_ostream &amp;os = llvm::errs());</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1RegisterAnalysis.html#ab0c4892dc12cfa275916ccea360b0ea4">dump</a>(llvm::raw_ostream &amp;os = llvm::errs());</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classtags_1_1TypeAnalysis.html#ae17b497e72bc93dc90afeefcb9266baa">   37</a></span>&#160;  <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> <a class="code" href="classtags_1_1TypeAnalysis.html#ae17b497e72bc93dc90afeefcb9266baa">Find</a>(<a class="code" href="classConstRef.html">ConstRef&lt;Inst&gt;</a> ref)</div>
+<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classtags_1_1RegisterAnalysis.html#a89643ed8c5b5bf0d9d5e9cf96ed8db69">   37</a></span>&#160;  <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> <a class="code" href="classtags_1_1RegisterAnalysis.html#a89643ed8c5b5bf0d9d5e9cf96ed8db69">Find</a>(<a class="code" href="classConstRef.html">ConstRef&lt;Inst&gt;</a> ref)</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">auto</span> it = types_.find(ref);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordflow">return</span> it == types_.end() ? TaggedType::Unknown() : it-&gt;second;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  }</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1TypeAnalysis.html#a04555c49db36f16b50c46ce7b16ef3d4">Replace</a>(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> oldInst, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> newInst, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1TypeAnalysis.html#a04555c49db36f16b50c46ce7b16ef3d4">Replace</a>(<a class="code" href="classInst.html">Inst</a> *oldInst, <a class="code" href="classInst.html">Inst</a> *newInst);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1TypeAnalysis.html#aee2effbd2a5198edfefcbae23701e769">Erase</a>(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> oldInst);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1RegisterAnalysis.html#a18980e041614a035ccc60a5ebbeed4ee">Replace</a>(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> oldInst, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> newInst, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1RegisterAnalysis.html#a18980e041614a035ccc60a5ebbeed4ee">Replace</a>(<a class="code" href="classInst.html">Inst</a> *oldInst, <a class="code" href="classInst.html">Inst</a> *newInst);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classtags_1_1RegisterAnalysis.html#a27b0e862caf845af5cf5dc77183bc6d1">Erase</a>(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> oldInst);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classtags_1_1Init.html">Init</a>;</div>
@@ -158,18 +158,18 @@ $(function() {
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_aee2effbd2a5198edfefcbae23701e769"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#aee2effbd2a5198edfefcbae23701e769">tags::TypeAnalysis::Erase</a></div><div class="ttdeci">void Erase(Ref&lt; Inst &gt; oldInst)</div><div class="ttdoc">Erase a type after deleting an instruction.</div><div class="ttdef"><b>Definition:</b> type_analysis.cpp:25</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html_a27b0e862caf845af5cf5dc77183bc6d1"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html#a27b0e862caf845af5cf5dc77183bc6d1">tags::RegisterAnalysis::Erase</a></div><div class="ttdeci">void Erase(Ref&lt; Inst &gt; oldInst)</div><div class="ttdoc">Erase a type after deleting an instruction.</div><div class="ttdef"><b>Definition:</b> register_analysis.cpp:25</div></div>
 <div class="ttc" id="aclassConstRef_html"><div class="ttname"><a href="classConstRef.html">ConstRef&lt; Inst &gt;</a></div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_ae17b497e72bc93dc90afeefcb9266baa"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#ae17b497e72bc93dc90afeefcb9266baa">tags::TypeAnalysis::Find</a></div><div class="ttdeci">TaggedType Find(ConstRef&lt; Inst &gt; ref)</div><div class="ttdoc">Find the type assigned to a vreg.</div><div class="ttdef"><b>Definition:</b> type_analysis.h:37</div></div>
 <div class="ttc" id="aclassTarget_html"><div class="ttname"><a href="classTarget.html">Target</a></div><div class="ttdef"><b>Definition:</b> target.h:24</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html_ab0c4892dc12cfa275916ccea360b0ea4"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html#ab0c4892dc12cfa275916ccea360b0ea4">tags::RegisterAnalysis::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdoc">Dump the results of the analysis.</div><div class="ttdef"><b>Definition:</b> register_analysis.cpp:227</div></div>
 <div class="ttc" id="aclassInst_html_ab76fe495a1a231b2190a8e3c6eb7e5c2"><div class="ttname"><a href="classInst.html#ab76fe495a1a231b2190a8e3c6eb7e5c2">Inst::GetSubValue</a></div><div class="ttdeci">Ref&lt; Inst &gt; GetSubValue(unsigned i)</div><div class="ttdoc">Returns the ith sub-value.</div><div class="ttdef"><b>Definition:</b> inst.h:136</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html">tags::TypeAnalysis</a></div><div class="ttdef"><b>Definition:</b> type_analysis.h:22</div></div>
 <div class="ttc" id="aclasstags_1_1Step_html"><div class="ttname"><a href="classtags_1_1Step.html">tags::Step</a></div><div class="ttdef"><b>Definition:</b> step.h:20</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html_a18980e041614a035ccc60a5ebbeed4ee"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html#a18980e041614a035ccc60a5ebbeed4ee">tags::RegisterAnalysis::Replace</a></div><div class="ttdeci">void Replace(Ref&lt; Inst &gt; oldInst, Ref&lt; Inst &gt; newInst, const TaggedType &amp;type)</div><div class="ttdoc">Set the type, typically after rewriting an instruction.</div><div class="ttdef"><b>Definition:</b> register_analysis.cpp:35</div></div>
 <div class="ttc" id="aclasstags_1_1Init_html"><div class="ttname"><a href="classtags_1_1Init.html">tags::Init</a></div><div class="ttdef"><b>Definition:</b> init.h:19</div></div>
 <div class="ttc" id="aclasstags_1_1Refinement_html"><div class="ttname"><a href="classtags_1_1Refinement.html">tags::Refinement</a></div><div class="ttdef"><b>Definition:</b> refinement.h:24</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_a55505ac04ec3d8df0503bc2e701f50aa"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#a55505ac04ec3d8df0503bc2e701f50aa">tags::TypeAnalysis::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdoc">Dump the results of the analysis.</div><div class="ttdef"><b>Definition:</b> type_analysis.cpp:227</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html_a89643ed8c5b5bf0d9d5e9cf96ed8db69"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html#a89643ed8c5b5bf0d9d5e9cf96ed8db69">tags::RegisterAnalysis::Find</a></div><div class="ttdeci">TaggedType Find(ConstRef&lt; Inst &gt; ref)</div><div class="ttdoc">Find the type assigned to a vreg.</div><div class="ttdef"><b>Definition:</b> register_analysis.h:37</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html">tags::RegisterAnalysis</a></div><div class="ttdef"><b>Definition:</b> register_analysis.h:22</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
-<div class="ttc" id="aclasstags_1_1TypeAnalysis_html_a04555c49db36f16b50c46ce7b16ef3d4"><div class="ttname"><a href="classtags_1_1TypeAnalysis.html#a04555c49db36f16b50c46ce7b16ef3d4">tags::TypeAnalysis::Replace</a></div><div class="ttdeci">void Replace(Ref&lt; Inst &gt; oldInst, Ref&lt; Inst &gt; newInst, const TaggedType &amp;type)</div><div class="ttdoc">Set the type, typically after rewriting an instruction.</div><div class="ttdef"><b>Definition:</b> type_analysis.cpp:35</div></div>
 <div class="ttc" id="aclassRef_html"><div class="ttname"><a href="classRef.html">Ref</a></div><div class="ttdef"><b>Definition:</b> ref.h:63</div></div>
 <div class="ttc" id="aclasstags_1_1TaggedType_html"><div class="ttname"><a href="classtags_1_1TaggedType.html">tags::TaggedType</a></div><div class="ttdef"><b>Definition:</b> tagged_type.h:16</div></div>
 <!-- start footer part -->
