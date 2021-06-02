@@ -347,11 +347,31 @@ void Refinement::DefineSplits(
     Block::iterator begin;
     bool defined = false;
     if (auto it = splits.find(block); it != splits.end()) {
+      // Find out if the value is live-out of the placement point.
+      // It is live if it
       bool liveOut = false;
-      for (Block *b : block->successors()) {
-        if (live.count(b)) {
-          liveOut = true;
-          break;
+      if (block != ref->getParent()) {
+        for (Block *b : block->successors()) {
+          if (live.count(b)) {
+            liveOut = true;
+            break;
+          }
+        }
+        for (Use &use : ref->uses()) {
+          if ((*use).Index() != ref.Index()) {
+            continue;
+          }
+          if (auto *inst = ::cast_or_null<Inst>(use.getUser())) {
+            if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
+              if (phi->HasValue(block) && phi->GetValue(block) == ref) {
+                liveOut = true;
+              }
+            } else {
+              if (inst->getParent() == block) {
+                liveOut = true;
+              }
+            }
+          }
         }
       }
       // Register the value, if defined in block.
