@@ -17,8 +17,8 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
     case TaggedType::Kind::UNKNOWN: {
       return TaggedType::Unknown();
     }
-    case TaggedType::Kind::EVEN:
-    case TaggedType::Kind::ODD:
+    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::ZERO:
     case TaggedType::Kind::ONE:
@@ -26,13 +26,15 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
       return arg;
     }
     case TaggedType::Kind::YOUNG:
-    case TaggedType::Kind::HEAP: {
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::TAG_PTR: {
       return TaggedType::Even();
     }
     case TaggedType::Kind::VAL:
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::PTR_NULL: {
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::ADDR: {
       return TaggedType::Int();
     }
     case TaggedType::Kind::UNDEF: {
@@ -56,12 +58,12 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
     case TaggedType::Kind::UNKNOWN: {
       return TaggedType::Unknown();
     }
+    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::CONST:
+    case TaggedType::Kind::INT:
     case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::EVEN:
-    case TaggedType::Kind::ODD:
     case TaggedType::Kind::ONE:
-    case TaggedType::Kind::ZERO_ONE:
-    case TaggedType::Kind::INT: {
+    case TaggedType::Kind::ZERO_ONE: {
       return arg;
     }
     case TaggedType::Kind::VAL: {
@@ -73,7 +75,9 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::PTR_NULL: {
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::TAG_PTR:
+    case TaggedType::Kind::ADDR: {
       if (fitsPointer) {
         return arg;
       } else {

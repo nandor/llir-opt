@@ -208,9 +208,20 @@ void Step::VisitSubInst(SubInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Sub(i.GetType(), vl, vr);
+  auto r = Sub(vl, vr);
   if (!r.IsUnknown()) {
-    Mark(i, r);
+    Mark(i, Clamp(r, i.GetType()));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Step::VisitMulInst(MulInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto r = Mul(vl, vr);
+  if (!r.IsUnknown()) {
+    Mark(i, Clamp(r, i.GetType()));
   }
 }
 
@@ -222,48 +233,6 @@ void Step::VisitMultiplyInst(MultiplyInst &i)
   if (vl.IsUnknown() || vr.IsUnknown()) {
     return;
   }
-  
-  if (vl.IsZero() || vr.IsZero()) {
-    Mark(i, TaggedType::Zero());
-    return;
-  }
-  if (vl.IsOne() || vr.IsOne()) {
-    auto other = vl.IsOne() ? vr : vl;
-    switch (other.GetKind()) {
-      case TaggedType::Kind::UNKNOWN:
-      case TaggedType::Kind::EVEN:
-      case TaggedType::Kind::ODD:
-      case TaggedType::Kind::INT:
-      case TaggedType::Kind::ZERO:
-      case TaggedType::Kind::ONE:
-      case TaggedType::Kind::ZERO_ONE: {
-        Mark(i, other);
-        return;
-      }
-      case TaggedType::Kind::YOUNG:
-      case TaggedType::Kind::HEAP:
-      case TaggedType::Kind::VAL:
-      case TaggedType::Kind::PTR:
-      case TaggedType::Kind::PTR_INT:
-      case TaggedType::Kind::PTR_NULL: {
-        Mark(i, TaggedType::Int());
-        return;
-      }
-      case TaggedType::Kind::UNDEF: {
-        Mark(i, TaggedType::Undef());
-        return;
-      }
-    }
-    llvm_unreachable("invalid kind");
-  } 
-  if (vl.IsEven() || vr.IsEven()) {
-    Mark(i, TaggedType::Even());
-    return;
-  }
-  if (vl.IsOdd() && vr.IsOdd()) {
-    Mark(i, TaggedType::Odd());
-    return;
-  } 
   Mark(i, TaggedType::Int());
 }
 
@@ -294,9 +263,9 @@ void Step::VisitXorInst(XorInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Xor(i.GetType(), vl, vr);
+  auto r = Xor(vl, vr);
   if (!r.IsUnknown()) {
-    Mark(i, r);
+    Mark(i, Clamp(r, i.GetType()));
   }
 }
 
@@ -305,9 +274,9 @@ void Step::VisitOrInst(OrInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Or(i.GetType(), vl, vr);
+  auto r = Or(vl, vr);
   if (!r.IsUnknown()) {
-    Mark(i, r);
+    Mark(i, Clamp(r, i.GetType()));
   }
 }
 
@@ -410,7 +379,7 @@ void Step::VisitSelectInst(SelectInst &select)
   if (vt.IsUnknown() || vf.IsUnknown()) {
     return;
   }
-  Mark(select, vt | vf);
+  Mark(select, Clamp(vt | vf, select.GetType()));
 }
 
 // -----------------------------------------------------------------------------

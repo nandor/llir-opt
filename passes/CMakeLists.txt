@@ -51,6 +51,7 @@ add_library(passes
     tags/register_analysis.cpp
     tags/eval/add.cpp
     tags/eval/sub.cpp
+    tags/eval/mul.cpp
     tags/eval/and.cpp
     tags/eval/xor.cpp
     tags/eval/or.cpp

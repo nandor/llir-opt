@@ -302,9 +302,9 @@ bool EliminateTags::RewriteConst()
                 continue;
               }
               case TaggedType::Kind::UNKNOWN:
-              case TaggedType::Kind::EVEN:
-              case TaggedType::Kind::ODD:
+              case TaggedType::Kind::MOD:
               case TaggedType::Kind::ZERO_ONE:
+              case TaggedType::Kind::CONST:
               case TaggedType::Kind::INT:
               case TaggedType::Kind::YOUNG:
               case TaggedType::Kind::HEAP:
@@ -312,6 +312,8 @@ bool EliminateTags::RewriteConst()
               case TaggedType::Kind::PTR:
               case TaggedType::Kind::PTR_NULL:
               case TaggedType::Kind::PTR_INT:
+              case TaggedType::Kind::TAG_PTR:
+              case TaggedType::Kind::ADDR:
               case TaggedType::Kind::UNDEF: {
                 newValues.push_back(inst->GetSubValue(i));
                 continue;

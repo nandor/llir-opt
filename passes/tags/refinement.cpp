@@ -109,10 +109,10 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
     case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::EVEN:
     case TaggedType::Kind::ONE:
-    case TaggedType::Kind::ODD:
     case TaggedType::Kind::ZERO_ONE:
+    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
       // This is a trap, handled elsewhere.
@@ -120,7 +120,9 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     }
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
-    case TaggedType::Kind::PTR: {
+    case TaggedType::Kind::PTR:
+    case TaggedType::Kind::TAG_PTR:
+    case TaggedType::Kind::ADDR: {
       // Already a pointer, nothing to refine.
       return;
     }
@@ -144,19 +146,21 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
     case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::EVEN:
     case TaggedType::Kind::ONE:
-    case TaggedType::Kind::ODD:
     case TaggedType::Kind::ZERO_ONE:
+    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
-      // This is a trap, handled elsewhere.
+      // Already an integer, nothing to refine.
       return;
     }
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
-    case TaggedType::Kind::PTR: {
-      // Already a pointer, nothing to refine.
+    case TaggedType::Kind::PTR:
+    case TaggedType::Kind::TAG_PTR:
+    case TaggedType::Kind::ADDR:  {
+      // Should trap, handled elsewhere.
       return;
     }
     case TaggedType::Kind::VAL: {
@@ -208,13 +212,15 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
     }
     case TaggedType::Kind::ZERO:
     case TaggedType::Kind::ONE:
-    case TaggedType::Kind::EVEN:
-    case TaggedType::Kind::ODD: {
+    case TaggedType::Kind::CONST: {
       // Can simplify condition here, always 0 or 1.
       return;
     }
     case TaggedType::Kind::YOUNG:
-    case TaggedType::Kind::HEAP: {
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::TAG_PTR:
+    case TaggedType::Kind::PTR: {
       // Can simplify condition here, always 0.
       return;
     }
@@ -222,6 +228,7 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       Specialise(arg, b, { { TaggedType::One(), bt }, { TaggedType::Zero(), bf } });
       return;
     }
+    case TaggedType::Kind::MOD:
     case TaggedType::Kind::INT: {
       Specialise(arg, b, { { TaggedType::Odd(), bt }, { TaggedType::Even(), bf } });
       return;
@@ -230,12 +237,9 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       Specialise(arg, b, { { TaggedType::Odd(), bt }, { TaggedType::Heap(), bf } });
       return;
     }
-    case TaggedType::Kind::PTR:
-    case TaggedType::Kind::PTR_NULL: {
-      Specialise(arg, b, { { TaggedType::Ptr(), bt }, { TaggedType::Heap(), bf } });
-      return;
-    }
+    case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT: {
+      // Cannot refine.
       return;
     }
   }
@@ -302,28 +306,8 @@ Refinement::Liveness(
 // -----------------------------------------------------------------------------
 static Type ToType(Type ty, TaggedType kind)
 {
-  if (ty == Type::V64) {
-    switch (kind.GetKind()) {
-      case TaggedType::Kind::UNKNOWN:
-      case TaggedType::Kind::ZERO:
-      case TaggedType::Kind::EVEN:
-      case TaggedType::Kind::ONE:
-      case TaggedType::Kind::ODD:
-      case TaggedType::Kind::ZERO_ONE:
-      case TaggedType::Kind::INT:
-      case TaggedType::Kind::YOUNG: {
-        return Type::I64;
-      }
-      case TaggedType::Kind::HEAP:
-      case TaggedType::Kind::VAL:
-      case TaggedType::Kind::PTR:
-      case TaggedType::Kind::PTR_NULL:
-      case TaggedType::Kind::PTR_INT:
-      case TaggedType::Kind::UNDEF: {
-        return ty;
-      }
-    }
-    llvm_unreachable("invalid type kind");
+  if (ty == Type::V64 && kind.IsOddLike()) {
+    return Type::I64;
   } else {
     return ty;
   }

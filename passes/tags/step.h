@@ -36,6 +36,7 @@ private:
   void VisitMovInst(MovInst &i) override;
   void VisitAddInst(AddInst &i) override;
   void VisitSubInst(SubInst &i) override;
+  void VisitMulInst(MulInst &i) override;
   void VisitMultiplyInst(MultiplyInst &i) override;
   void VisitDivisionRemainderInst(DivisionRemainderInst &i) override;
   void VisitAndInst(AndInst &i) override;
@@ -89,10 +90,11 @@ private:
   TaggedType Infer(Type ty);
   TaggedType Clamp(TaggedType type, Type ty);
   TaggedType Add(TaggedType vl, TaggedType vr);
-  TaggedType Sub(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Mul(TaggedType vl, TaggedType vr);
+  TaggedType Sub(TaggedType vl, TaggedType vr);
   TaggedType And(Type ty, TaggedType vl, TaggedType vr);
-  TaggedType Xor(Type ty, TaggedType vl, TaggedType vr);
-  TaggedType Or(Type ty, TaggedType vl, TaggedType vr);
+  TaggedType Xor(TaggedType vl, TaggedType vr);
+  TaggedType Or(TaggedType vl, TaggedType vr);
   TaggedType Shr(Type ty, TaggedType vl, TaggedType vr);
   TaggedType Shl(Type ty, TaggedType vl, TaggedType vr);
   TaggedType Ext(Type ty, TaggedType arg);

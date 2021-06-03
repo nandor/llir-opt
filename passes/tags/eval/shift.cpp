@@ -17,8 +17,7 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::UNKNOWN: {
       return TaggedType::Unknown();
     }
-    case TaggedType::Kind::EVEN:
-    case TaggedType::Kind::ODD: {
+    case TaggedType::Kind::MOD: {
       return TaggedType::Int();
     }
     case TaggedType::Kind::ONE: {
@@ -27,17 +26,23 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
           return TaggedType::Unknown();
         }
         case TaggedType::Kind::ZERO_ONE:
-        case TaggedType::Kind::INT:
-        case TaggedType::Kind::EVEN: {
+        case TaggedType::Kind::INT: {
           return TaggedType::ZeroOne();
         }
-        case TaggedType::Kind::ODD:
+        case TaggedType::Kind::MOD: {
+          return TaggedType::Int();
+        }
+        case TaggedType::Kind::CONST: {
+          llvm_unreachable("not implemented");
+        }
         case TaggedType::Kind::ONE: {
           return TaggedType::Zero();
         }
         case TaggedType::Kind::ZERO: {
           return TaggedType::One();
         }
+        case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
         case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
@@ -51,6 +56,9 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::ZERO: {
       return vr.IsUnknown() ? vr : TaggedType::Zero();
     }
+    case TaggedType::Kind::CONST: {
+      llvm_unreachable("not implemented");
+    }
     case TaggedType::Kind::ZERO_ONE:
     case TaggedType::Kind::INT: {
       return vr.IsUnknown() ? vr : TaggedType::Int();
@@ -60,15 +68,21 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNKNOWN: {
           return TaggedType::Unknown();
         }
-        case TaggedType::Kind::EVEN:
         case TaggedType::Kind::INT: {
           // TODO: distinguish even from constant.
           return TaggedType::Int();
         }
-        case TaggedType::Kind::ODD:
         case TaggedType::Kind::ONE: {
           return TaggedType::Int();
         }
+        case TaggedType::Kind::MOD: {
+          return TaggedType::Int();
+        }
+        case TaggedType::Kind::CONST: {
+          llvm_unreachable("not implemented");
+        }
+        case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
@@ -83,17 +97,13 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
     }
     case TaggedType::Kind::HEAP: {
       switch (vr.GetKind()) {
-        case TaggedType::Kind::UNKNOWN: {
-          return TaggedType::Unknown();
-        }
-        case TaggedType::Kind::INT:
-        case TaggedType::Kind::EVEN: {
-          return TaggedType::PtrInt();
-        }
-        case TaggedType::Kind::ODD:
-        case TaggedType::Kind::ONE: {
-          return TaggedType::Int();
-        }
+        case TaggedType::Kind::UNKNOWN: return TaggedType::Unknown();
+        case TaggedType::Kind::INT:     return TaggedType::PtrInt();
+        case TaggedType::Kind::ONE:     return TaggedType::Int();
+        case TaggedType::Kind::MOD:     return TaggedType::Int();
+        case TaggedType::Kind::CONST: llvm_unreachable("not implemented");
+        case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_INT: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO: llvm_unreachable("not implemented");
         case TaggedType::Kind::ZERO_ONE: llvm_unreachable("not implemented");
@@ -106,6 +116,8 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
       }
       llvm_unreachable("invalid value kind");
     }
+    case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
+    case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
     case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
     case TaggedType::Kind::UNDEF: return TaggedType::Undef();
     case TaggedType::Kind::PTR:
@@ -123,20 +135,18 @@ TaggedType Step::Shl(Type ty, TaggedType vl, TaggedType vr)
   }
 
   switch (vr.GetKind()) {
-    case TaggedType::Kind::UNKNOWN: {
-      return TaggedType::Unknown();
+    case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+    case TaggedType::Kind::ONE:       return TaggedType::Even();
+    case TaggedType::Kind::INT:       return TaggedType::Int();
+    case TaggedType::Kind::PTR_INT:   return TaggedType::Int();
+    case TaggedType::Kind::ZERO:      return TaggedType::Int();
+    case TaggedType::Kind::ZERO_ONE:  return TaggedType::Int();
+    case TaggedType::Kind::MOD: {
+      return vr.GetMod().Rem == 0 ? TaggedType::Int() : TaggedType::Even();
     }
-    case TaggedType::Kind::ONE:
-    case TaggedType::Kind::ODD: {
-      return TaggedType::Even();
-    }
-    case TaggedType::Kind::INT:
-    case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::EVEN:
-    case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::ZERO_ONE: {
-      return TaggedType::Int();
-    }
+    case TaggedType::Kind::CONST: llvm_unreachable("not implemented");
+    case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
+    case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
     case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
     case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
     case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
