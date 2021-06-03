@@ -366,12 +366,15 @@ TaggedType &TaggedType::operator|=(const TaggedType &that)
     case Kind::YOUNG: {
       switch (that.k_) {
         case Kind::UNKNOWN:
-        case Kind::YOUNG:
-        case Kind::PTR_INT: {
+        case Kind::YOUNG: {
           return *this;
         }
-        case Kind::PTR:{
+        case Kind::PTR: {
           k_ = Kind::PTR;
+          return *this;
+        }
+        case Kind::PTR_INT: {
+          k_ = Kind::PTR_INT;
           return *this;
         }
         case Kind::ZERO:
@@ -527,7 +530,7 @@ bool TaggedType::operator<(const TaggedType &that) const
              that.k_ == Kind::PTR_NULL;
     }
     case Kind::PTR_INT: {
-      return that.k_ == Kind::YOUNG;
+      return false;
     }
     case Kind::UNDEF: {
       return that.k_ == Kind::EVEN ||
