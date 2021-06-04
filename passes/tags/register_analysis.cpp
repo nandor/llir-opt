@@ -275,7 +275,7 @@ void RegisterAnalysis::dump(llvm::raw_ostream &os)
         os << that_.Find(inst.GetSubValue(i));
       }
       os_ << str;
-      for (unsigned i = str.size(); i < 30; ++i) {
+      for (unsigned i = str.size(); i < 80; ++i) {
         os_ << ' ';
       }
     }

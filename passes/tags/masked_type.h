@@ -37,6 +37,15 @@ public:
   uint64_t GetValue() const { return value_; }
   uint64_t GetKnown() const { return known_; }
 
+  std::optional<int64_t> AsConst() const
+  {
+    if (known_ == static_cast<uint64_t>(-1)) {
+      return value_;
+    } else {
+      return std::nullopt;
+    }
+  }
+
 private:
   uint64_t value_;
   uint64_t known_;

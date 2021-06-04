@@ -277,19 +277,25 @@ bool EliminateTags::RewriteConst()
             auto ty = inst->GetType(i);
             auto type = types_.Find(ref);
 
-            if (type.IsConst() && IsIntegerType(ty)) {
-              auto *value = new ConstantInt(type.GetConst());
-              auto *mov = new MovInst(ty, value, inst->GetAnnots());
-              auto insert = inst->getIterator();
-              while (insert->Is(Inst::Kind::PHI)) {
-                ++insert;
+            if (type.IsInt() && IsIntegerType(ty)) {
+              if (auto v = type.GetInt().AsConst()) {
+                auto *value = new ConstantInt(*v);
+                auto *mov = new MovInst(ty, value, inst->GetAnnots());
+                auto insert = inst->getIterator();
+                while (insert->Is(Inst::Kind::PHI)) {
+                  ++insert;
+                }
+                block.insert(mov, insert);
+                newValues.push_back(mov);
+                numValues++;
+              } else {
+                newValues.push_back(inst->GetSubValue(i));
               }
-              block.insert(mov, insert);
-              newValues.push_back(mov);
-              numValues++;
             } else {
               newValues.push_back(inst->GetSubValue(i));
             }
+          } else {
+            newValues.push_back(inst->GetSubValue(i));
           }
         }
 

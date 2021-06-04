@@ -22,11 +22,10 @@ TaggedType Step::Mul(TaggedType vl, TaggedType vr)
   if (vl.IsOne() || vr.IsOne()) {
     auto other = vl.IsOne() ? vr : vl;
     switch (other.GetKind()) {
-      case TaggedType::Kind::UNKNOWN:
-      case TaggedType::Kind::MASK:
-      case TaggedType::Kind::CONST:
-      case TaggedType::Kind::INT:
-      case TaggedType::Kind::ZERO_ONE: {
+      case TaggedType::Kind::UNKNOWN: {
+        return TaggedType::Unknown();
+      }
+      case TaggedType::Kind::INT: {
         return other;
       }
       case TaggedType::Kind::YOUNG:

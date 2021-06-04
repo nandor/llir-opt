@@ -108,9 +108,6 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::ZERO_ONE:
-    case TaggedType::Kind::MASK:
-    case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
       // This is a trap, handled elsewhere.
@@ -143,9 +140,6 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::ZERO_ONE:
-    case TaggedType::Kind::MASK:
-    case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
       // Already an integer, nothing to refine.
@@ -201,13 +195,10 @@ void Refinement::RefineEquality(
 // -----------------------------------------------------------------------------
 void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
 {
-  switch (analysis_.Find(arg).GetKind()) {
+  auto ty = analysis_.Find(arg);
+  switch (ty.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
     case TaggedType::Kind::UNDEF: {
-      return;
-    }
-    case TaggedType::Kind::CONST: {
-      // Can simplify condition here, always 0 or 1.
       return;
     }
     case TaggedType::Kind::YOUNG:
@@ -218,13 +209,13 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       // Can simplify condition here, always 0.
       return;
     }
-    case TaggedType::Kind::ZERO_ONE: {
-      Specialise(arg, b, { { TaggedType::One(), bt }, { TaggedType::Zero(), bf } });
-      return;
-    }
-    case TaggedType::Kind::MASK:
     case TaggedType::Kind::INT: {
-      Specialise(arg, b, { { TaggedType::Odd(), bt }, { TaggedType::Even(), bf } });
+      auto i = ty.GetInt();
+      auto v = i.GetValue();
+      auto k = i.GetKnown();
+      auto lhs = TaggedType::Mask({ v & ~1, k | 1});
+      auto rhs = TaggedType::Mask({ v | 1, k | 1});
+      Specialise(arg, b, { { rhs, bt }, { lhs, bf } });
       return;
     }
     case TaggedType::Kind::VAL: {
@@ -618,7 +609,7 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
     llvm_unreachable("invalid condition code");
   }
   if (auto inst = ::cast_or_null<AndInst>(jcc.GetCond())) {
-    if (analysis_.Find(jcc.GetCond()).IsZeroOne()) {
+    if (analysis_.Find(jcc.GetCond()).IsZeroOrOne()) {
       auto l = inst->GetLHS();
       auto r = inst->GetRHS();
       if (analysis_.Find(l).IsOne()) {

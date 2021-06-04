@@ -16,9 +16,7 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
   if (ty == Type::V64) {
     switch (type.GetKind()) {
       case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-      case TaggedType::Kind::INT:       return TaggedType::Odd();
       case TaggedType::Kind::PTR_INT:   return TaggedType::Val();
-      case TaggedType::Kind::ZERO_ONE:  return TaggedType::One();
       case TaggedType::Kind::VAL:       return TaggedType::Val();
       case TaggedType::Kind::PTR:       return TaggedType::Heap();
       case TaggedType::Kind::HEAP:      return TaggedType::Heap();
@@ -27,9 +25,8 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
       case TaggedType::Kind::PTR_NULL:  return TaggedType::Heap();
       case TaggedType::Kind::TAG_PTR:   return TaggedType::Undef();
       case TaggedType::Kind::ADDR:      return TaggedType::Undef();
-      case TaggedType::Kind::CONST:     return type;
-      case TaggedType::Kind::MASK: {
-        const auto &m = type.GetMask();
+      case TaggedType::Kind::INT: {
+        const auto &m = type.GetInt();
         return TaggedType::Mask(MaskedType(m.GetValue() | 1, m.GetKnown() | 1));
       }
     }
@@ -212,9 +209,13 @@ void Step::VisitAddInst(AddInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Add(vl, vr);
-  if (!r.IsUnknown()) {
-    Mark(i, Clamp(r, i.GetType()));
+  if (IsIntegerType(i.GetType())) {
+    auto r = Add(vl, vr);
+    if (!r.IsUnknown()) {
+      Mark(i, Clamp(r, i.GetType()));
+    }
+  } else {
+    Mark(i, TaggedType::Int());
   }
 }
 
@@ -223,9 +224,13 @@ void Step::VisitSubInst(SubInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Sub(vl, vr);
-  if (!r.IsUnknown()) {
-    Mark(i, Clamp(r, i.GetType()));
+  if (IsIntegerType(i.GetType())) {
+    auto r = Sub(vl, vr);
+    if (!r.IsUnknown()) {
+      Mark(i, Clamp(r, i.GetType()));
+    }
+  } else {
+    Mark(i, TaggedType::Int());
   }
 }
 
@@ -234,9 +239,13 @@ void Step::VisitMulInst(MulInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
-  auto r = Mul(vl, vr);
-  if (!r.IsUnknown()) {
-    Mark(i, Clamp(r, i.GetType()));
+  if (IsIntegerType(i.GetType())) {
+    auto r = Mul(vl, vr);
+    if (!r.IsUnknown()) {
+      Mark(i, Clamp(r, i.GetType()));
+    }
+  } else {
+    Mark(i, TaggedType::Int());
   }
 }
 

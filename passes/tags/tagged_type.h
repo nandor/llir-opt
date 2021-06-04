@@ -19,9 +19,6 @@ public:
   enum class Kind {
     UNKNOWN,
     // Integrals.
-    ZERO_ONE,
-    CONST,
-    MASK,
     INT,
     // Caml pointers.
     YOUNG,
@@ -45,17 +42,14 @@ public:
 
 public:
   bool IsUnknown() const { return k_ == Kind::UNKNOWN; }
-  bool IsMask() const { return k_ == Kind::MASK; }
-  bool IsVal() const { return k_ == Kind::VAL; }
-  bool IsHeap() const { return k_ == Kind::HEAP; }
   bool IsInt() const { return k_ == Kind::INT; }
+  bool IsYoung() const { return k_ == Kind::YOUNG; }
+  bool IsHeap() const { return k_ == Kind::HEAP; }
   bool IsPtrNull() const { return k_ == Kind::PTR_NULL; }
   bool IsPtrInt() const { return k_ == Kind::PTR_INT; }
   bool IsPtr() const { return k_ == Kind::PTR; }
-  bool IsYoung() const { return k_ == Kind::YOUNG; }
+  bool IsVal() const { return k_ == Kind::VAL; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
-  bool IsZeroOne() const { return k_ == Kind::ZERO_ONE; }
-  bool IsConst() const { return k_ == Kind::CONST; }
 
   bool IsEven() const;
   bool IsOdd() const;
@@ -66,11 +60,10 @@ public:
   bool IsIntLike() const;
   bool IsPtrLike() const { return IsHeap() || IsPtr(); }
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
-  bool IsZeroOrOne() const { return IsZero() || IsOne(); }
+  bool IsZeroOrOne() const;
   bool IsNonZero() const;
 
-  MaskedType GetMask() const { assert(IsMask()); return u_.MaskVal; }
-  int64_t GetConst() const { assert(IsConst()); return u_.IntVal; }
+  MaskedType GetInt() const { assert(IsInt()); return u_.MaskVal; }
 
 public:
   TaggedType &operator|=(const TaggedType &that)
@@ -98,14 +91,6 @@ public:
 
 public:
   static TaggedType Unknown() { return TaggedType(Kind::UNKNOWN); }
-  static TaggedType Zero() { return Const(0); }
-  static TaggedType One() { return Const(1); }
-  static TaggedType Even() { return Mask({ 0, 1 }); }
-  static TaggedType Odd() { return Mask({ 1, 1 }); }
-  static TaggedType Mask(const MaskedType &mod);
-  static TaggedType Const(int64_t value);
-  static TaggedType ZeroOne() { return TaggedType(Kind::ZERO_ONE); }
-  static TaggedType Int() { return TaggedType(Kind::INT); }
   static TaggedType Young() { return TaggedType(Kind::YOUNG); }
   static TaggedType Heap() { return TaggedType(Kind::HEAP); }
   static TaggedType Val() { return TaggedType(Kind::VAL); }
@@ -116,6 +101,23 @@ public:
   static TaggedType Addr() { return TaggedType(Kind::ADDR); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
 
+  static TaggedType Mask(const MaskedType &mod);
+  static TaggedType Zero() { return Const(0); }
+  static TaggedType One() { return Const(1); }
+  static TaggedType Even() { return Mask({ 0, 1 }); }
+  static TaggedType Odd() { return Mask({ 1, 1 }); }
+  static TaggedType Int() { return Mask({ 0, 0 }); }
+
+  static TaggedType Const(int64_t value)
+  {
+    return Mask({ static_cast<uint64_t>(value) });
+  }
+
+  static TaggedType ZeroOne()
+  {
+    return Mask({ 0ull, static_cast<uint64_t>(-1 & ~1) });
+  }
+
 private:
   TaggedType(Kind k) : k_(k) {}
 
@@ -125,8 +127,6 @@ private:
 
   union U {
     MaskedType  MaskVal;
-    int64_t     IntVal;
-
     U() {}
     ~U() {}
   } u_;

@@ -17,10 +17,7 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
     case TaggedType::Kind::UNKNOWN: {
       return TaggedType::Unknown();
     }
-    case TaggedType::Kind::CONST:
-    case TaggedType::Kind::MASK:
-    case TaggedType::Kind::INT:
-    case TaggedType::Kind::ZERO_ONE: {
+    case TaggedType::Kind::INT: {
       return arg;
     }
     case TaggedType::Kind::YOUNG:
@@ -56,16 +53,8 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
     case TaggedType::Kind::UNKNOWN: {
       return TaggedType::Unknown();
     }
-    case TaggedType::Kind::INT:
-    case TaggedType::Kind::ZERO_ONE: {
-      return arg;
-    }
-    case TaggedType::Kind::CONST: {
+    case TaggedType::Kind::INT: {
       // TODO: convert to a constant.
-      return TaggedType::Int();
-    }
-    case TaggedType::Kind::MASK: {
-      // TODO: truncate mask
       return TaggedType::Int();
     }
     case TaggedType::Kind::VAL: {
