@@ -19,32 +19,34 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
     case TaggedType::Kind::VAL: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-        case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
+        case TaggedType::Kind::VAL:       return TaggedType::AddrInt();
         case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT:       return TaggedType::PtrInt();
-        case TaggedType::Kind::TAG_PTR:   llvm_unreachable("not implemented");
+        case TaggedType::Kind::INT:       return TaggedType::AddrInt();
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  return TaggedType::AddrInt();
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::HEAP: {
       switch (vr.GetKind()) {
-        case TaggedType::Kind::UNKNOWN:  return TaggedType::Unknown();
-        case TaggedType::Kind::VAL:      return TaggedType::Ptr();
-        case TaggedType::Kind::HEAP:     llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR:      llvm_unreachable("not implemented");
-        case TaggedType::Kind::YOUNG:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::UNDEF:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT:  return TaggedType::Ptr();
-        case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT:      return TaggedType::PtrInt();
-        case TaggedType::Kind::TAG_PTR:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::ADDR:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::VAL:       return TaggedType::Ptr();
+        case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::Ptr();
+        case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::INT:       return TaggedType::Addr();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -59,8 +61,9 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR_INT:   return TaggedType::Ptr();
         case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrInt();
         case TaggedType::Kind::INT:       return TaggedType::Ptr();
-        case TaggedType::Kind::TAG_PTR:   llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -72,54 +75,90 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
     }
     case TaggedType::Kind::PTR_INT: {
       switch (vr.GetKind()) {
-        case TaggedType::Kind::UNKNOWN:  return TaggedType::Unknown();
-        case TaggedType::Kind::PTR:      return TaggedType::PtrInt();
-        case TaggedType::Kind::VAL:      return TaggedType::PtrInt();
-        case TaggedType::Kind::HEAP:     return TaggedType::Ptr();
-        case TaggedType::Kind::YOUNG:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::UNDEF:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT:  return TaggedType::PtrInt();
-        case TaggedType::Kind::PTR_NULL: return TaggedType::PtrInt();
-        case TaggedType::Kind::INT:      return TaggedType::PtrInt();
-        case TaggedType::Kind::TAG_PTR:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::ADDR:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::PTR:       return TaggedType::PtrInt();
+        case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
+        case TaggedType::Kind::HEAP:      return TaggedType::Ptr();
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrInt();
+        case TaggedType::Kind::INT:       return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::PTR_NULL:  {
       switch (vr.GetKind()) {
-        case TaggedType::Kind::UNKNOWN:  return TaggedType::Unknown();
-        case TaggedType::Kind::PTR:      llvm_unreachable("not implemented");
-        case TaggedType::Kind::VAL:      llvm_unreachable("not implemented");
-        case TaggedType::Kind::HEAP:     llvm_unreachable("not implemented");
-        case TaggedType::Kind::YOUNG:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::UNDEF:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT:  return TaggedType::PtrInt();
-        case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT:      return TaggedType::PtrInt();
-        case TaggedType::Kind::TAG_PTR:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::ADDR:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::INT:       return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::INT: {
       switch (vr.GetKind()) {
-        case TaggedType::Kind::UNKNOWN:  return TaggedType::Unknown();
-        case TaggedType::Kind::PTR:      return TaggedType::Ptr();
-        case TaggedType::Kind::VAL:      return TaggedType::PtrInt();
-        case TaggedType::Kind::HEAP:     return TaggedType::Ptr();
-        case TaggedType::Kind::YOUNG:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::UNDEF:    llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_INT:  return TaggedType::PtrInt();
-        case TaggedType::Kind::PTR_NULL: return TaggedType::PtrInt();
-        case TaggedType::Kind::TAG_PTR:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::ADDR:     llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT:      return TaggedType::Mask(vl.GetInt() + vr.GetInt());
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::INT:       return TaggedType::Mask(vl.GetInt() + vr.GetInt());
+        case TaggedType::Kind::PTR:       return TaggedType::Ptr();
+        case TaggedType::Kind::VAL:       return TaggedType::AddrInt();
+        case TaggedType::Kind::HEAP:      return TaggedType::Ptr();
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  return TaggedType::AddrInt();
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
-    case TaggedType::Kind::TAG_PTR: llvm_unreachable("not implemented");
-    case TaggedType::Kind::ADDR: llvm_unreachable("not implemented");
+    case TaggedType::Kind::ADDR: {
+      switch (vr.GetKind()) {
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::INT:       return TaggedType::AddrInt();
+        case TaggedType::Kind::PTR:       return TaggedType::PtrInt();
+        case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
+        case TaggedType::Kind::HEAP:      return TaggedType::PtrInt();
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case TaggedType::Kind::ADDR_INT: {
+      switch (vr.GetKind()) {
+        case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+        case TaggedType::Kind::INT:       return TaggedType::AddrInt();
+        case TaggedType::Kind::PTR:       return TaggedType::PtrInt();
+        case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
+        case TaggedType::Kind::HEAP:      return TaggedType::PtrInt();
+        case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
+        case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrInt();
+        case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid value kind");
 }

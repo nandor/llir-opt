@@ -23,8 +23,9 @@ public:
     // Caml pointers.
     YOUNG,
     HEAP,
-    TAG_PTR,
     ADDR,
+    ADDR_NULL,
+    ADDR_INT,
     // Caml values.
     VAL,
     // Arbitrary pointers.
@@ -50,6 +51,9 @@ public:
   bool IsPtr() const { return k_ == Kind::PTR; }
   bool IsVal() const { return k_ == Kind::VAL; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
+  bool IsAddr() const { return k_ == Kind::ADDR; }
+  bool IsAddrInt() const { return k_ == Kind::ADDR_INT; }
+  bool IsAddrNull() const { return k_ == Kind::ADDR_NULL; }
 
   bool IsEven() const;
   bool IsOdd() const;
@@ -58,10 +62,9 @@ public:
   bool IsOddLike() const { return IsOdd() || IsOne(); }
   bool IsEvenLike() const { return IsEven() || IsZero(); }
   bool IsIntLike() const;
-  bool IsPtrLike() const { return IsHeap() || IsPtr(); }
+  bool IsPtrLike() const { return IsHeap() || IsPtr() || IsAddr(); }
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
   bool IsZeroOrOne() const;
-  bool IsNonZero() const;
 
   MaskedType GetInt() const { assert(IsInt()); return u_.MaskVal; }
 
@@ -97,8 +100,10 @@ public:
   static TaggedType Ptr() { return TaggedType(Kind::PTR); }
   static TaggedType PtrNull() { return TaggedType(Kind::PTR_NULL); }
   static TaggedType PtrInt() { return TaggedType(Kind::PTR_INT); }
-  static TaggedType TagPtr() { return TaggedType(Kind::TAG_PTR); }
+  static TaggedType TagPtr() { return TaggedType(Kind::ADDR_INT); }
   static TaggedType Addr() { return TaggedType(Kind::ADDR); }
+  static TaggedType AddrNull() { return TaggedType(Kind::ADDR_NULL); }
+  static TaggedType AddrInt() { return TaggedType(Kind::ADDR_INT); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
 
   static TaggedType Mask(const MaskedType &mod);

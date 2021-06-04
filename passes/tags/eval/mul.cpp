@@ -35,7 +35,8 @@ TaggedType Step::Mul(TaggedType vl, TaggedType vr)
       case TaggedType::Kind::PTR_INT:
       case TaggedType::Kind::PTR_NULL:
       case TaggedType::Kind::ADDR:
-      case TaggedType::Kind::TAG_PTR: {
+      case TaggedType::Kind::ADDR_INT:
+      case TaggedType::Kind::ADDR_NULL: {
         return TaggedType::Int();
       }
       case TaggedType::Kind::UNDEF: {

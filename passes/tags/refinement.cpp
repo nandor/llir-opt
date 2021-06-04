@@ -116,7 +116,6 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::TAG_PTR:
     case TaggedType::Kind::ADDR: {
       // Already a pointer, nothing to refine.
       return;
@@ -124,6 +123,12 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::VAL: {
       // Refine to HEAP.
       Refine(inst.getParent(), addr, TaggedType::Heap());
+      return;
+    }
+    case TaggedType::Kind::ADDR_NULL:
+    case TaggedType::Kind::ADDR_INT: {
+      // Refine to ADDR.
+      Refine(inst.getParent(), addr, TaggedType::Addr());
       return;
     }
     case TaggedType::Kind::PTR_NULL:
@@ -148,7 +153,6 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::TAG_PTR:
     case TaggedType::Kind::ADDR:  {
       // Should trap, handled elsewhere.
       return;
@@ -158,13 +162,14 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
       Refine(inst.getParent(), addr, TaggedType::Odd());
       return;
     }
-    case TaggedType::Kind::PTR_NULL: {
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::ADDR_NULL: {
       // Refine to ZERO.
       Refine(inst.getParent(), addr, TaggedType::Zero());
       return;
-
     }
-    case TaggedType::Kind::PTR_INT: {
+    case TaggedType::Kind::PTR_INT:
+    case TaggedType::Kind::ADDR_INT: {
       // Refine to INT.
       Refine(inst.getParent(), addr, TaggedType::Int());
       return;
@@ -204,7 +209,6 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::ADDR:
-    case TaggedType::Kind::TAG_PTR:
     case TaggedType::Kind::PTR: {
       // Can simplify condition here, always 0.
       return;
@@ -223,7 +227,9 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       return;
     }
     case TaggedType::Kind::PTR_NULL:
-    case TaggedType::Kind::PTR_INT: {
+    case TaggedType::Kind::PTR_INT:
+    case TaggedType::Kind::ADDR_NULL:
+    case TaggedType::Kind::ADDR_INT: {
       // Cannot refine.
       return;
     }

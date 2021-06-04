@@ -23,7 +23,8 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
       case TaggedType::Kind::YOUNG:     return TaggedType::Young();
       case TaggedType::Kind::UNDEF:     return TaggedType::Undef();
       case TaggedType::Kind::PTR_NULL:  return TaggedType::Heap();
-      case TaggedType::Kind::TAG_PTR:   return TaggedType::Undef();
+      case TaggedType::Kind::ADDR_INT:  return TaggedType::Val();
+      case TaggedType::Kind::ADDR_NULL: return TaggedType::Undef();
       case TaggedType::Kind::ADDR:      return TaggedType::Undef();
       case TaggedType::Kind::INT: {
         const auto &m = type.GetInt();

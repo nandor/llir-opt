@@ -66,6 +66,7 @@ private:
   void VisitX86_FPUControlInst(X86_FPUControlInst &i) override {}
 
   // Values do not change since init.
+  void VisitLoadInst(LoadInst &i) override {}
   void VisitBitCountInst(BitCountInst &i) override {}
   void VisitVaStartInst(VaStartInst &i) override {}
   void VisitFrameInst(FrameInst &i) override {}
@@ -77,7 +78,6 @@ private:
   void VisitX86_RdTscInst(X86_RdTscInst &i) override {}
   void VisitCmpInst(CmpInst &i) override {}
   void VisitStoreInst(StoreInst &i) override {}
-  void VisitLoadInst(LoadInst &i) override {}
   void VisitNegInst(NegInst &i) override {}
   void VisitRotateInst(RotateInst &i) override {}
   void VisitSyscallInst(SyscallInst &i) override {}
