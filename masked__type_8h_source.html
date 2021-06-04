@@ -107,21 +107,30 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  uint64_t GetValue()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> value_; }</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  uint64_t GetKnown()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> known_; }</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  uint64_t value_;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  uint64_t known_;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;};</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;}</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">inline</span> llvm::raw_ostream &amp;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;operator&lt;&lt;(llvm::raw_ostream &amp;os, <span class="keyword">const</span> <a class="code" href="classtags_1_1MaskedType.html">tags::MaskedType</a> &amp;m)</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  m.dump(os);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordflow">return</span> os;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  std::optional&lt;int64_t&gt; AsConst()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">  </span>{</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">if</span> (known_ == <span class="keyword">static_cast&lt;</span>uint64_t<span class="keyword">&gt;</span>(-1)) {</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      <span class="keywordflow">return</span> value_;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;      <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    }</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  }</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  uint64_t value_;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  uint64_t known_;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;};</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">inline</span> llvm::raw_ostream &amp;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;operator&lt;&lt;(llvm::raw_ostream &amp;os, <span class="keyword">const</span> <a class="code" href="classtags_1_1MaskedType.html">tags::MaskedType</a> &amp;m)</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;{</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  m.dump(os);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;}</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclasstags_1_1MaskedType_html"><div class="ttname"><a href="classtags_1_1MaskedType.html">tags::MaskedType</a></div><div class="ttdef"><b>Definition:</b> masked_type.h:18</div></div>
 <!-- start footer part -->

@@ -84,21 +84,17 @@ $(function() {
 Public Types</h2></td></tr>
 <tr class="memitem:a36a687cebc8bba0f38e76a7f11bc7720"><td class="memItemLeft" align="right" valign="top"><a id="a36a687cebc8bba0f38e76a7f11bc7720"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>Kind</b> { <br />
 &#160;&#160;<b>UNKNOWN</b>, 
-<b>ZERO_ONE</b>, 
-<b>CONST</b>, 
-<b>MASK</b>, 
-<br />
-&#160;&#160;<b>INT</b>, 
+<b>INT</b>, 
 <b>YOUNG</b>, 
 <b>HEAP</b>, 
-<b>TAG_PTR</b>, 
 <br />
-&#160;&#160;<b>ADDR</b>, 
+&#160;&#160;<b>TAG_PTR</b>, 
+<b>ADDR</b>, 
 <b>VAL</b>, 
 <b>PTR</b>, 
-<b>PTR_NULL</b>, 
 <br />
-&#160;&#160;<b>PTR_INT</b>, 
+&#160;&#160;<b>PTR_NULL</b>, 
+<b>PTR_INT</b>, 
 <b>UNDEF</b>
 <br />
  }</td></tr>
@@ -115,18 +111,15 @@ Kind&#160;</td><td class="memItemRight" valign="bottom"><b>GetKind</b> () const<
 <tr class="memitem:a705f53d615ca44ac4f6bf08c9340a296"><td class="memItemLeft" align="right" valign="top"><a id="a705f53d615ca44ac4f6bf08c9340a296"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnknown</b> () const</td></tr>
 <tr class="separator:a705f53d615ca44ac4f6bf08c9340a296"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a707d356f41541ce968b353e0ca7fd31a"><td class="memItemLeft" align="right" valign="top"><a id="a707d356f41541ce968b353e0ca7fd31a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMask</b> () const</td></tr>
-<tr class="separator:a707d356f41541ce968b353e0ca7fd31a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1019acac5b5a30489dcf277c63bda86b"><td class="memItemLeft" align="right" valign="top"><a id="a1019acac5b5a30489dcf277c63bda86b"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsVal</b> () const</td></tr>
-<tr class="separator:a1019acac5b5a30489dcf277c63bda86b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfd4210d5423e294cc4d661e5233b308"><td class="memItemLeft" align="right" valign="top"><a id="adfd4210d5423e294cc4d661e5233b308"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHeap</b> () const</td></tr>
-<tr class="separator:adfd4210d5423e294cc4d661e5233b308"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaee5541c7e956316498627a84e0d049c"><td class="memItemLeft" align="right" valign="top"><a id="aaee5541c7e956316498627a84e0d049c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsInt</b> () const</td></tr>
 <tr class="separator:aaee5541c7e956316498627a84e0d049c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a331c57b3c5ffdc3606531509b7de8a16"><td class="memItemLeft" align="right" valign="top"><a id="a331c57b3c5ffdc3606531509b7de8a16"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsYoung</b> () const</td></tr>
+<tr class="separator:a331c57b3c5ffdc3606531509b7de8a16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfd4210d5423e294cc4d661e5233b308"><td class="memItemLeft" align="right" valign="top"><a id="adfd4210d5423e294cc4d661e5233b308"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHeap</b> () const</td></tr>
+<tr class="separator:adfd4210d5423e294cc4d661e5233b308"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61d1624e4c9654dc64978c9d998057b2"><td class="memItemLeft" align="right" valign="top"><a id="a61d1624e4c9654dc64978c9d998057b2"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtrNull</b> () const</td></tr>
 <tr class="separator:a61d1624e4c9654dc64978c9d998057b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -136,18 +129,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtrInt</b> () const
 <tr class="memitem:a543a73a879b0fd5dbecdff6208d5913e"><td class="memItemLeft" align="right" valign="top"><a id="a543a73a879b0fd5dbecdff6208d5913e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtr</b> () const</td></tr>
 <tr class="separator:a543a73a879b0fd5dbecdff6208d5913e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a331c57b3c5ffdc3606531509b7de8a16"><td class="memItemLeft" align="right" valign="top"><a id="a331c57b3c5ffdc3606531509b7de8a16"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsYoung</b> () const</td></tr>
-<tr class="separator:a331c57b3c5ffdc3606531509b7de8a16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1019acac5b5a30489dcf277c63bda86b"><td class="memItemLeft" align="right" valign="top"><a id="a1019acac5b5a30489dcf277c63bda86b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsVal</b> () const</td></tr>
+<tr class="separator:a1019acac5b5a30489dcf277c63bda86b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad851cebca45ee8db1f653e42dadf51f3"><td class="memItemLeft" align="right" valign="top"><a id="ad851cebca45ee8db1f653e42dadf51f3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUndef</b> () const</td></tr>
 <tr class="separator:ad851cebca45ee8db1f653e42dadf51f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1f4b08ba8381b18248a92036365789d"><td class="memItemLeft" align="right" valign="top"><a id="aa1f4b08ba8381b18248a92036365789d"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsZeroOne</b> () const</td></tr>
-<tr class="separator:aa1f4b08ba8381b18248a92036365789d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60f847af56bc138a24d3ffd6c122a8e5"><td class="memItemLeft" align="right" valign="top"><a id="a60f847af56bc138a24d3ffd6c122a8e5"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsConst</b> () const</td></tr>
-<tr class="separator:a60f847af56bc138a24d3ffd6c122a8e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9c898b10149deeb3bec8fbbe5fcd50c"><td class="memItemLeft" align="right" valign="top"><a id="af9c898b10149deeb3bec8fbbe5fcd50c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEven</b> () const</td></tr>
 <tr class="separator:af9c898b10149deeb3bec8fbbe5fcd50c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,18 +162,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtrLike</b> () cons
 <tr class="memitem:ae35d608caf5b04f868cec877a2fbaee5"><td class="memItemLeft" align="right" valign="top"><a id="ae35d608caf5b04f868cec877a2fbaee5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtrUnion</b> () const</td></tr>
 <tr class="separator:ae35d608caf5b04f868cec877a2fbaee5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5af6363ce80509be12cd3710e5187c2"><td class="memItemLeft" align="right" valign="top"><a id="ad5af6363ce80509be12cd3710e5187c2"></a>
+<tr class="memitem:a34b01587218fa270ff3c72f3e5b41102"><td class="memItemLeft" align="right" valign="top"><a id="a34b01587218fa270ff3c72f3e5b41102"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsZeroOrOne</b> () const</td></tr>
-<tr class="separator:ad5af6363ce80509be12cd3710e5187c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a34b01587218fa270ff3c72f3e5b41102"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a541f79016b69d35da1aacc1edd950305"><td class="memItemLeft" align="right" valign="top"><a id="a541f79016b69d35da1aacc1edd950305"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNonZero</b> () const</td></tr>
 <tr class="separator:a541f79016b69d35da1aacc1edd950305"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bc2f164ccddc0d4e91378ba5954464f"><td class="memItemLeft" align="right" valign="top"><a id="a8bc2f164ccddc0d4e91378ba5954464f"></a>
-<a class="el" href="classtags_1_1MaskedType.html">MaskedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetMask</b> () const</td></tr>
-<tr class="separator:a8bc2f164ccddc0d4e91378ba5954464f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c5cec1e82b76176d2a7628b17f11f9a"><td class="memItemLeft" align="right" valign="top"><a id="a1c5cec1e82b76176d2a7628b17f11f9a"></a>
-int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>GetConst</b> () const</td></tr>
-<tr class="separator:a1c5cec1e82b76176d2a7628b17f11f9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3f9101f159ee2907debdf3806a91420"><td class="memItemLeft" align="right" valign="top"><a id="ad3f9101f159ee2907debdf3806a91420"></a>
+<a class="el" href="classtags_1_1MaskedType.html">MaskedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetInt</b> () const</td></tr>
+<tr class="separator:ad3f9101f159ee2907debdf3806a91420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae41c6e66ce32847a42aa10d603a3eaec"><td class="memItemLeft" align="right" valign="top"><a id="ae41c6e66ce32847a42aa10d603a3eaec"></a>
 <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator|=</b> (const <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;that)</td></tr>
 <tr class="separator:ae41c6e66ce32847a42aa10d603a3eaec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -217,30 +201,6 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a1f5dc81fcac290274d765176d4b593bf"><td class="memItemLeft" align="right" valign="top"><a id="a1f5dc81fcac290274d765176d4b593bf"></a>
 static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Unknown</b> ()</td></tr>
 <tr class="separator:a1f5dc81fcac290274d765176d4b593bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40c724cc5bf841fba275a08646409d6b"><td class="memItemLeft" align="right" valign="top"><a id="a40c724cc5bf841fba275a08646409d6b"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Zero</b> ()</td></tr>
-<tr class="separator:a40c724cc5bf841fba275a08646409d6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ec020771b1395d8a45ad4b8611a03a7"><td class="memItemLeft" align="right" valign="top"><a id="a9ec020771b1395d8a45ad4b8611a03a7"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>One</b> ()</td></tr>
-<tr class="separator:a9ec020771b1395d8a45ad4b8611a03a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a789d2aca27f1b67e9a98267f2fbeab8b"><td class="memItemLeft" align="right" valign="top"><a id="a789d2aca27f1b67e9a98267f2fbeab8b"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Even</b> ()</td></tr>
-<tr class="separator:a789d2aca27f1b67e9a98267f2fbeab8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a37211cb69fdb6a3790e59fb4ad999e9b"><td class="memItemLeft" align="right" valign="top"><a id="a37211cb69fdb6a3790e59fb4ad999e9b"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Odd</b> ()</td></tr>
-<tr class="separator:a37211cb69fdb6a3790e59fb4ad999e9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3a547a2de9625924b1457eaee70aeee"><td class="memItemLeft" align="right" valign="top"><a id="ae3a547a2de9625924b1457eaee70aeee"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Mask</b> (const <a class="el" href="classtags_1_1MaskedType.html">MaskedType</a> &amp;mod)</td></tr>
-<tr class="separator:ae3a547a2de9625924b1457eaee70aeee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef660057f66b53ab037d76d2f99cd811"><td class="memItemLeft" align="right" valign="top"><a id="aef660057f66b53ab037d76d2f99cd811"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Const</b> (int64_t value)</td></tr>
-<tr class="separator:aef660057f66b53ab037d76d2f99cd811"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc4f103b97c5a851faa197440ac26c90"><td class="memItemLeft" align="right" valign="top"><a id="afc4f103b97c5a851faa197440ac26c90"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ZeroOne</b> ()</td></tr>
-<tr class="separator:afc4f103b97c5a851faa197440ac26c90"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa30d78a649135c8d9c9a08046c76fe74"><td class="memItemLeft" align="right" valign="top"><a id="aa30d78a649135c8d9c9a08046c76fe74"></a>
-static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Int</b> ()</td></tr>
-<tr class="separator:aa30d78a649135c8d9c9a08046c76fe74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af34f8582885ef093e6121975997d9457"><td class="memItemLeft" align="right" valign="top"><a id="af34f8582885ef093e6121975997d9457"></a>
 static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Young</b> ()</td></tr>
 <tr class="separator:af34f8582885ef093e6121975997d9457"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -268,6 +228,30 @@ static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</t
 <tr class="memitem:a08e6744934723d6fb2818fa7ac7d2a8a"><td class="memItemLeft" align="right" valign="top"><a id="a08e6744934723d6fb2818fa7ac7d2a8a"></a>
 static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Undef</b> ()</td></tr>
 <tr class="separator:a08e6744934723d6fb2818fa7ac7d2a8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3a547a2de9625924b1457eaee70aeee"><td class="memItemLeft" align="right" valign="top"><a id="ae3a547a2de9625924b1457eaee70aeee"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Mask</b> (const <a class="el" href="classtags_1_1MaskedType.html">MaskedType</a> &amp;mod)</td></tr>
+<tr class="separator:ae3a547a2de9625924b1457eaee70aeee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40c724cc5bf841fba275a08646409d6b"><td class="memItemLeft" align="right" valign="top"><a id="a40c724cc5bf841fba275a08646409d6b"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Zero</b> ()</td></tr>
+<tr class="separator:a40c724cc5bf841fba275a08646409d6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ec020771b1395d8a45ad4b8611a03a7"><td class="memItemLeft" align="right" valign="top"><a id="a9ec020771b1395d8a45ad4b8611a03a7"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>One</b> ()</td></tr>
+<tr class="separator:a9ec020771b1395d8a45ad4b8611a03a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a789d2aca27f1b67e9a98267f2fbeab8b"><td class="memItemLeft" align="right" valign="top"><a id="a789d2aca27f1b67e9a98267f2fbeab8b"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Even</b> ()</td></tr>
+<tr class="separator:a789d2aca27f1b67e9a98267f2fbeab8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37211cb69fdb6a3790e59fb4ad999e9b"><td class="memItemLeft" align="right" valign="top"><a id="a37211cb69fdb6a3790e59fb4ad999e9b"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Odd</b> ()</td></tr>
+<tr class="separator:a37211cb69fdb6a3790e59fb4ad999e9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa30d78a649135c8d9c9a08046c76fe74"><td class="memItemLeft" align="right" valign="top"><a id="aa30d78a649135c8d9c9a08046c76fe74"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Int</b> ()</td></tr>
+<tr class="separator:aa30d78a649135c8d9c9a08046c76fe74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98d8ae5a2d94c6fa864980cdba27768a"><td class="memItemLeft" align="right" valign="top"><a id="a98d8ae5a2d94c6fa864980cdba27768a"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Const</b> (int64_t value)</td></tr>
+<tr class="separator:a98d8ae5a2d94c6fa864980cdba27768a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc4f103b97c5a851faa197440ac26c90"><td class="memItemLeft" align="right" valign="top"><a id="afc4f103b97c5a851faa197440ac26c90"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ZeroOne</b> ()</td></tr>
+<tr class="separator:afc4f103b97c5a851faa197440ac26c90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classLattice.html">Lattice</a> of types, following a partial order. </p>
