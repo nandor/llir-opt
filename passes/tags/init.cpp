@@ -181,14 +181,10 @@ void Init::VisitMovInst(MovInst &i)
       switch (::cast<Constant>(arg)->GetKind()) {
         case Constant::Kind::INT: {
           const auto &v = ::cast<ConstantInt>(arg)->GetValue();
-          if (v.isNullValue()) {
-            analysis_.Mark(i, TaggedType::Zero());
-          } else if (v.isOneValue()) {
-            analysis_.Mark(i, TaggedType::One());
-          } else if (v[0]) {
-            analysis_.Mark(i, TaggedType::Odd());
+          if (v.getBitWidth() <= sizeof(int64_t) * CHAR_BIT) {
+            analysis_.Mark(i, TaggedType::Const(v.getSExtValue()));
           } else {
-            analysis_.Mark(i, TaggedType::Even());
+            analysis_.Mark(i, TaggedType::Int());
           }
           return;
         }

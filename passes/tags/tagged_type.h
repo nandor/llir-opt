@@ -7,7 +7,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/Support/raw_ostream.h>
 
-
+#include "passes/tags/masked_type.h"
 
 namespace tags {
 
@@ -19,11 +19,9 @@ public:
   enum class Kind {
     UNKNOWN,
     // Integrals.
-    ZERO,
-    ONE,
     ZERO_ONE,
     CONST,
-    MOD,
+    MASK,
     INT,
     // Caml pointers.
     YOUNG,
@@ -39,12 +37,6 @@ public:
     // Undefined/imprecise.
     UNDEF,
   };
-
-  struct Mod {
-    unsigned Div;
-    unsigned Rem;
-  };
-
 public:
   TaggedType(const TaggedType &that);
   ~TaggedType();
@@ -53,9 +45,7 @@ public:
 
 public:
   bool IsUnknown() const { return k_ == Kind::UNKNOWN; }
-  bool IsZero() const { return k_ == Kind::ZERO; }
-  bool IsOne() const { return k_ == Kind::ONE; }
-  bool IsMod() const { return k_ == Kind::MOD; }
+  bool IsMask() const { return k_ == Kind::MASK; }
   bool IsVal() const { return k_ == Kind::VAL; }
   bool IsHeap() const { return k_ == Kind::HEAP; }
   bool IsInt() const { return k_ == Kind::INT; }
@@ -65,17 +55,22 @@ public:
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsUndef() const { return k_ == Kind::UNDEF; }
   bool IsZeroOne() const { return k_ == Kind::ZERO_ONE; }
+  bool IsConst() const { return k_ == Kind::CONST; }
 
   bool IsEven() const;
   bool IsOdd() const;
+  bool IsZero() const;
+  bool IsOne() const;
   bool IsOddLike() const { return IsOdd() || IsOne(); }
   bool IsEvenLike() const { return IsEven() || IsZero(); }
   bool IsIntLike() const;
   bool IsPtrLike() const { return IsHeap() || IsPtr(); }
   bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
   bool IsZeroOrOne() const { return IsZero() || IsOne(); }
+  bool IsNonZero() const;
 
-  Mod GetMod() const { assert(IsMod()); return u_.ModVal; }
+  MaskedType GetMask() const { assert(IsMask()); return u_.MaskVal; }
+  int64_t GetConst() const { assert(IsConst()); return u_.IntVal; }
 
 public:
   TaggedType &operator|=(const TaggedType &that)
@@ -103,11 +98,12 @@ public:
 
 public:
   static TaggedType Unknown() { return TaggedType(Kind::UNKNOWN); }
-  static TaggedType Zero() { return TaggedType(Kind::ZERO); }
-  static TaggedType One() { return TaggedType(Kind::ONE); }
-  static TaggedType Even() { return Modulo({ 2, 0 }); }
-  static TaggedType Odd() { return Modulo({ 2, 1 }); }
-  static TaggedType Modulo(const Mod &mod);
+  static TaggedType Zero() { return Const(0); }
+  static TaggedType One() { return Const(1); }
+  static TaggedType Even() { return Mask({ 0, 1 }); }
+  static TaggedType Odd() { return Mask({ 1, 1 }); }
+  static TaggedType Mask(const MaskedType &mod);
+  static TaggedType Const(int64_t value);
   static TaggedType ZeroOne() { return TaggedType(Kind::ZERO_ONE); }
   static TaggedType Int() { return TaggedType(Kind::INT); }
   static TaggedType Young() { return TaggedType(Kind::YOUNG); }
@@ -128,8 +124,8 @@ private:
   Kind k_;
 
   union U {
-    Mod         ModVal;
-    llvm::APInt IntVal;
+    MaskedType  MaskVal;
+    int64_t     IntVal;
 
     U() {}
     ~U() {}
@@ -144,21 +140,4 @@ operator<<(llvm::raw_ostream &os, const tags::TaggedType &t)
 {
   t.dump(os);
   return os;
-}
-
-// -----------------------------------------------------------------------------
-inline unsigned GCD(unsigned a, unsigned b)
-{
-  while (b) {
-    unsigned r = a % b;
-    a = b;
-    b = r;
-  };
-  return a;
-}
-
-// -----------------------------------------------------------------------------
-inline unsigned LCM(unsigned a, unsigned b)
-{
-  return static_cast<unsigned long long>(a) * b / GCD(a, b);
 }

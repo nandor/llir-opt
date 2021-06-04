@@ -23,11 +23,9 @@ TaggedType Step::Mul(TaggedType vl, TaggedType vr)
     auto other = vl.IsOne() ? vr : vl;
     switch (other.GetKind()) {
       case TaggedType::Kind::UNKNOWN:
-      case TaggedType::Kind::MOD:
+      case TaggedType::Kind::MASK:
       case TaggedType::Kind::CONST:
       case TaggedType::Kind::INT:
-      case TaggedType::Kind::ZERO:
-      case TaggedType::Kind::ONE:
       case TaggedType::Kind::ZERO_ONE: {
         return other;
       }
@@ -46,12 +44,6 @@ TaggedType Step::Mul(TaggedType vl, TaggedType vr)
       }
     }
     llvm_unreachable("invalid kind");
-  }
-  if (vl.IsMod() && vr.IsMod()) {
-    auto ml = vl.GetMod();
-    auto mr = vr.GetMod();
-    auto g = GCD(ml.Div, mr.Div);
-    return TaggedType::Modulo({g, (ml.Rem % g) * (mr.Rem % g) % g});
   }
   if (vl.IsEven() || vr.IsEven()) {
     return TaggedType::Even();

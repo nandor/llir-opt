@@ -44,19 +44,20 @@ add_library(passes
     sccp/solver.cpp
     sccp/x86.cpp
 
+    tags/eval/add.cpp
+    tags/eval/and.cpp
+    tags/eval/conv.cpp
+    tags/eval/mul.cpp
+    tags/eval/or.cpp
+    tags/eval/shift.cpp
+    tags/eval/sub.cpp
+    tags/eval/xor.cpp
     tags/init.cpp
+    tags/masked_type.cpp
     tags/refinement.cpp
+    tags/register_analysis.cpp
     tags/step.cpp
     tags/tagged_type.cpp
-    tags/register_analysis.cpp
-    tags/eval/add.cpp
-    tags/eval/sub.cpp
-    tags/eval/mul.cpp
-    tags/eval/and.cpp
-    tags/eval/xor.cpp
-    tags/eval/or.cpp
-    tags/eval/conv.cpp
-    tags/eval/shift.cpp
 
     atom_simplify.cpp
     bypass_phi.cpp

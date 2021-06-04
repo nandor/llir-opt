@@ -14,11 +14,26 @@ using namespace tags;
 TaggedType Step::Clamp(TaggedType type, Type ty)
 {
   if (ty == Type::V64) {
-    if (type <= TaggedType::Val()) {
-      return type;
-    } else {
-      return TaggedType::Val();
+    switch (type.GetKind()) {
+      case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
+      case TaggedType::Kind::INT:       return TaggedType::Odd();
+      case TaggedType::Kind::PTR_INT:   return TaggedType::Val();
+      case TaggedType::Kind::ZERO_ONE:  return TaggedType::One();
+      case TaggedType::Kind::VAL:       return TaggedType::Val();
+      case TaggedType::Kind::PTR:       return TaggedType::Heap();
+      case TaggedType::Kind::HEAP:      return TaggedType::Heap();
+      case TaggedType::Kind::YOUNG:     return TaggedType::Young();
+      case TaggedType::Kind::UNDEF:     return TaggedType::Undef();
+      case TaggedType::Kind::PTR_NULL:  return TaggedType::Heap();
+      case TaggedType::Kind::TAG_PTR:   return TaggedType::Undef();
+      case TaggedType::Kind::ADDR:      return TaggedType::Undef();
+      case TaggedType::Kind::CONST:     return type;
+      case TaggedType::Kind::MASK: {
+        const auto &m = type.GetMask();
+        return TaggedType::Mask(MaskedType(m.GetValue() | 1, m.GetKnown() | 1));
+      }
     }
+    llvm_unreachable("invalid value kind");
   } else {
     return type;
   }

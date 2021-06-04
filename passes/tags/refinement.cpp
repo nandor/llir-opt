@@ -108,10 +108,8 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::ONE:
     case TaggedType::Kind::ZERO_ONE:
-    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::MASK:
     case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
@@ -145,10 +143,8 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::ONE:
     case TaggedType::Kind::ZERO_ONE:
-    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::MASK:
     case TaggedType::Kind::CONST:
     case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
@@ -210,8 +206,6 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
     case TaggedType::Kind::UNDEF: {
       return;
     }
-    case TaggedType::Kind::ZERO:
-    case TaggedType::Kind::ONE:
     case TaggedType::Kind::CONST: {
       // Can simplify condition here, always 0 or 1.
       return;
@@ -228,7 +222,7 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       Specialise(arg, b, { { TaggedType::One(), bt }, { TaggedType::Zero(), bf } });
       return;
     }
-    case TaggedType::Kind::MOD:
+    case TaggedType::Kind::MASK:
     case TaggedType::Kind::INT: {
       Specialise(arg, b, { { TaggedType::Odd(), bt }, { TaggedType::Even(), bf } });
       return;
@@ -254,7 +248,19 @@ void Refinement::Specialise(
 {
   std::unordered_map<const Block *, TaggedType> splits;
   for (auto &[ty, block] : branches) {
-    if (dt_.Dominates(from, block, block)) {
+    if (!dt_.Dominates(from, block, block)) {
+      continue;
+    }
+    bool split = false;
+    for (auto it = block->first_non_phi(); it != block->end(); ++it) {
+      if (auto *mov = ::cast_or_null<MovInst>(&*it)) {
+        if (analysis_.Find(mov->GetSubValue(0)) == ty) {
+          split = true;
+          break;
+        }
+      }
+    }
+    if (!split) {
       splits.emplace(block, ty);
     }
   }
@@ -272,7 +278,8 @@ Refinement::Liveness(
     if ((*use).Index() != ref.Index()) {
       continue;
     }
-    if (auto *phi = ::cast_or_null<PhiInst>(use.getUser())) {
+    auto *user = use.getUser();
+    if (auto *phi = ::cast_or_null<PhiInst>(user)) {
       for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
         if (phi->GetValue(i) == ref) {
           q.push(phi->GetBlock(i));
@@ -528,10 +535,6 @@ void Refinement::VisitXorInst(XorInst &i)
 // -----------------------------------------------------------------------------
 void Refinement::VisitMovInst(MovInst &i)
 {
-  if (auto arg = ::cast_or_null<Inst>(i.GetArg())) {
-    auto va = analysis_.Find(arg);
-    auto vo = analysis_.Find(i);
-  }
 }
 
 // -----------------------------------------------------------------------------

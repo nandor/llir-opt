@@ -275,10 +275,11 @@ bool EliminateTags::RewriteConst()
           if (used[i]) {
             auto ref = inst->GetSubValue(i);
             auto ty = inst->GetType(i);
+            auto type = types_.Find(ref);
 
-            auto integer = [&, this] (int value)
-            {
-              auto *mov = new MovInst(ty, new ConstantInt(value), inst->GetAnnots());
+            if (type.IsConst() && IsIntegerType(ty)) {
+              auto *value = new ConstantInt(type.GetConst());
+              auto *mov = new MovInst(ty, value, inst->GetAnnots());
               auto insert = inst->getIterator();
               while (insert->Is(Inst::Kind::PHI)) {
                 ++insert;
@@ -286,40 +287,9 @@ bool EliminateTags::RewriteConst()
               block.insert(mov, insert);
               newValues.push_back(mov);
               numValues++;
-            };
-
-            switch (types_.Find(ref).GetKind()) {
-              case TaggedType::Kind::ZERO: {
-                if (!IsFloatType(ty)) {
-                  integer(0);
-                }
-                continue;
-              }
-              case TaggedType::Kind::ONE: {
-                if (!IsFloatType(ty)) {
-                  integer(1);
-                }
-                continue;
-              }
-              case TaggedType::Kind::UNKNOWN:
-              case TaggedType::Kind::MOD:
-              case TaggedType::Kind::ZERO_ONE:
-              case TaggedType::Kind::CONST:
-              case TaggedType::Kind::INT:
-              case TaggedType::Kind::YOUNG:
-              case TaggedType::Kind::HEAP:
-              case TaggedType::Kind::VAL:
-              case TaggedType::Kind::PTR:
-              case TaggedType::Kind::PTR_NULL:
-              case TaggedType::Kind::PTR_INT:
-              case TaggedType::Kind::TAG_PTR:
-              case TaggedType::Kind::ADDR:
-              case TaggedType::Kind::UNDEF: {
-                newValues.push_back(inst->GetSubValue(i));
-                continue;
-              }
+            } else {
+              newValues.push_back(inst->GetSubValue(i));
             }
-            llvm_unreachable("invalid type kind");
           }
         }
 
