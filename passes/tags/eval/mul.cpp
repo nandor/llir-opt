@@ -30,6 +30,7 @@ TaggedType Step::Mul(TaggedType vl, TaggedType vr)
       }
       case TaggedType::Kind::YOUNG:
       case TaggedType::Kind::HEAP:
+      case TaggedType::Kind::HEAP_OFF:
       case TaggedType::Kind::VAL:
       case TaggedType::Kind::PTR:
       case TaggedType::Kind::PTR_INT:

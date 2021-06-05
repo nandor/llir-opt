@@ -75,7 +75,8 @@ bool RegisterAnalysis::Mark(Ref<Inst> inst, const TaggedType &tnew)
       if (!Converges(inst.GetType(), told, tnew)) {
         std::string msg;
         llvm::raw_string_ostream os(msg);
-        os << "no convergence at " << inst.Index() << ":\n";
+        os << "no convergence at " << inst.Index();
+        os << " in " << inst->getParent()->getParent()->getName() << ":\n";
         os << told << " " << tnew << "\n";
         os << inst->getParent()->getName() << "\n";
         os << *inst << "\n";

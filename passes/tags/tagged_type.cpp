@@ -18,6 +18,7 @@ TaggedType::TaggedType(const TaggedType &that)
     }
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::VAL:
     case Kind::PTR:
@@ -49,6 +50,7 @@ void TaggedType::Destroy()
     }
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::VAL:
     case Kind::PTR:
@@ -78,6 +80,7 @@ TaggedType &TaggedType::operator=(const TaggedType &that)
     }
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::VAL:
     case Kind::PTR:
@@ -98,7 +101,8 @@ TaggedType &TaggedType::operator=(const TaggedType &that)
 bool TaggedType::IsEven() const
 {
   switch (k_) {
-    case Kind::YOUNG: {
+    case Kind::YOUNG:
+    case Kind::HEAP_OFF: {
       return true;
     }
     case Kind::INT: {
@@ -124,7 +128,8 @@ bool TaggedType::IsEven() const
 bool TaggedType::IsOdd() const
 {
   switch (k_) {
-    case Kind::YOUNG:{
+    case Kind::YOUNG:
+    case Kind::HEAP_OFF: {
       return false;
     }
     case Kind::INT: {
@@ -156,6 +161,7 @@ bool TaggedType::IsZero() const
       return k == static_cast<uint64_t>(-1) && v == 0;
     }
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::ADDR:
     case Kind::ADDR_NULL:
@@ -182,6 +188,7 @@ bool TaggedType::IsOne() const
       return k == static_cast<uint64_t>(-1) && v == 1;
     }
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::PTR:
     case Kind::ADDR:
@@ -207,6 +214,7 @@ bool TaggedType::IsIntLike() const
     }
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::VAL:
     case Kind::PTR:
@@ -234,6 +242,7 @@ bool TaggedType::IsZeroOrOne() const
     }
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::HEAP:
     case Kind::VAL:
     case Kind::PTR:
@@ -259,14 +268,15 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
       switch (that.k_) {
         case Kind::UNDEF:     return *this;
         case Kind::UNKNOWN:   return *this;
-        case Kind::VAL:
-        case Kind::HEAP:
+        case Kind::VAL:       return IsOdd() ? TaggedType::Val() : TaggedType::PtrInt();
+        case Kind::HEAP:      return IsOdd() ? TaggedType::Val() : TaggedType::PtrInt();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::PTR:       return IsZero() ? TaggedType::PtrNull() : TaggedType::PtrInt();
         case Kind::PTR_NULL:  return IsZero() ? TaggedType::PtrNull() : TaggedType::PtrInt();
         case Kind::ADDR_INT:  return TaggedType::AddrInt();
         case Kind::ADDR:      return IsZero() ? TaggedType::AddrNull() : TaggedType::AddrInt();
         case Kind::ADDR_NULL: return IsZero() ? TaggedType::AddrNull() : TaggedType::AddrInt();
+        case Kind::HEAP_OFF: llvm_unreachable("not implemented");
         case Kind::YOUNG: {
           return IsOdd() ? TaggedType::Val() : TaggedType::PtrInt();
         }
@@ -286,6 +296,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::UNKNOWN:   return *this;
         case Kind::VAL:       return TaggedType::Val();
         case Kind::HEAP:      return TaggedType::Val();
+        case Kind::HEAP_OFF:  return TaggedType::Val();
         case Kind::YOUNG:     return TaggedType::Val();
         case Kind::PTR:       return TaggedType::PtrInt();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
@@ -305,6 +316,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::UNKNOWN:   return *this;
         case Kind::HEAP:      return TaggedType::Heap();
         case Kind::YOUNG:     return TaggedType::Heap();
+        case Kind::HEAP_OFF:  return TaggedType::HeapOff();
         case Kind::PTR:       return TaggedType::PtrInt();
         case Kind::VAL:       return TaggedType::Val();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
@@ -325,6 +337,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::HEAP:      return TaggedType::Ptr();
         case Kind::PTR:       return TaggedType::Ptr();
         case Kind::YOUNG:     return TaggedType::Ptr();
+        case Kind::HEAP_OFF:  return TaggedType::Ptr();
         case Kind::INT:       return TaggedType::PtrInt();
         case Kind::VAL:       return TaggedType::PtrInt();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
@@ -348,6 +361,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::HEAP:      llvm_unreachable("not implemented");
         case Kind::UNDEF:     llvm_unreachable("not implemented");
         case Kind::YOUNG:     llvm_unreachable("not implemented");
+        case Kind::HEAP_OFF: llvm_unreachable("not implemented");
         case Kind::INT:       return TaggedType::PtrInt();
         case Kind::ADDR:      return TaggedType::PtrNull();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();
@@ -365,6 +379,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::HEAP:      return TaggedType::Addr();
         case Kind::UNDEF:     llvm_unreachable("not implemented");
         case Kind::YOUNG:     llvm_unreachable("not implemented");
+        case Kind::HEAP_OFF:  return TaggedType::Addr();
         case Kind::INT:       llvm_unreachable("not implemented");
         case Kind::ADDR:      return TaggedType::Addr();
         case Kind::ADDR_INT:  return TaggedType::AddrInt();
@@ -382,6 +397,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::VAL:       return TaggedType::AddrInt();
         case Kind::HEAP:      return TaggedType::AddrInt();
         case Kind::YOUNG:     llvm_unreachable("not implemented");
+        case Kind::HEAP_OFF:  return TaggedType::AddrInt();
         case Kind::INT:       return TaggedType::AddrInt();
         case Kind::ADDR:      return TaggedType::AddrInt();
         case Kind::ADDR_INT:  return TaggedType::AddrInt();
@@ -396,6 +412,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
       switch (that.k_) {
         case Kind::UNKNOWN:   return TaggedType::Young();
         case Kind::YOUNG:     return TaggedType::Young();
+        case Kind::HEAP_OFF: llvm_unreachable("not implemented");
         case Kind::PTR:       return TaggedType::Ptr();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::HEAP:      return TaggedType::Heap();
@@ -406,6 +423,24 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::ADDR:      return TaggedType::Ptr();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();
         case Kind::ADDR_NULL: return TaggedType::PtrNull();
+      }
+      llvm_unreachable("invalid kind");
+    }
+    case Kind::HEAP_OFF: {
+      switch (that.k_) {
+        case Kind::UNKNOWN:   return TaggedType::HeapOff();
+        case Kind::YOUNG:     return TaggedType::HeapOff();
+        case Kind::HEAP_OFF:  return TaggedType::HeapOff();
+        case Kind::PTR:       return TaggedType::Ptr();
+        case Kind::PTR_INT:   return TaggedType::PtrInt();
+        case Kind::HEAP:      return TaggedType::HeapOff();
+        case Kind::VAL:       return TaggedType::Val();
+        case Kind::INT:       llvm_unreachable("not implemented");
+        case Kind::UNDEF:     llvm_unreachable("not implemented");
+        case Kind::PTR_NULL:  llvm_unreachable("not implemented");
+        case Kind::ADDR:      return TaggedType::Addr();
+        case Kind::ADDR_INT:  return TaggedType::AddrInt();
+        case Kind::ADDR_NULL: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");
     }
@@ -426,6 +461,7 @@ bool TaggedType::operator==(const TaggedType &that) const
     case Kind::VAL:
     case Kind::UNKNOWN:
     case Kind::YOUNG:
+    case Kind::HEAP_OFF:
     case Kind::PTR:
     case Kind::PTR_INT:
     case Kind::HEAP:
@@ -472,6 +508,7 @@ bool TaggedType::operator<(const TaggedType &that) const
           return (kl & 1) == 1 && (vl & 1) == 1;
         }
 				case Kind::YOUNG:
+        case Kind::HEAP_OFF:
 				case Kind::HEAP:
 				case Kind::PTR:
 				case Kind::ADDR: {
@@ -493,14 +530,29 @@ bool TaggedType::operator<(const TaggedType &that) const
     }
     case Kind::HEAP: {
       return that.k_ == Kind::VAL ||
+             that.k_ == Kind::HEAP_OFF ||
              that.k_ == Kind::PTR ||
-             that.k_ == Kind::PTR_INT;
+             that.k_ == Kind::PTR_NULL ||
+             that.k_ == Kind::PTR_INT ||
+             that.k_ == Kind::ADDR ||
+             that.k_ == Kind::ADDR_NULL ||
+             that.k_ == Kind::ADDR_INT;
     }
     case Kind::YOUNG: {
       return that.k_ == Kind::HEAP ||
              that.k_ == Kind::VAL ||
              that.k_ == Kind::PTR ||
              that.k_ == Kind::PTR_INT;
+    }
+    case Kind::HEAP_OFF: {
+      return that.k_ == Kind::HEAP ||
+             that.k_ == Kind::VAL ||
+             that.k_ == Kind::PTR ||
+             that.k_ == Kind::PTR_NULL ||
+             that.k_ == Kind::PTR_INT ||
+             that.k_ == Kind::ADDR ||
+             that.k_ == Kind::ADDR_NULL ||
+             that.k_ == Kind::ADDR_INT;
     }
     case Kind::PTR: {
       return that.k_ == Kind::PTR_INT ||
@@ -539,14 +591,15 @@ void TaggedType::dump(llvm::raw_ostream &os) const
   switch (k_) {
     case Kind::UNKNOWN:      os << "unknown";      return;
     case Kind::HEAP:         os << "heap";         return;
+    case Kind::HEAP_OFF:     os << "heap_off";     return;
     case Kind::YOUNG:        os << "young";        return;
     case Kind::UNDEF:        os << "undef";        return;
     case Kind::VAL:          os << "val";          return;
     case Kind::PTR:          os << "ptr";          return;
     case Kind::PTR_INT:      os << "ptr|int";      return;
     case Kind::PTR_NULL:     os << "ptr|null";     return;
-    case Kind::ADDR_INT:     os << "addr|int";      return;
-    case Kind::ADDR_NULL:    os << "addr|null";      return;
+    case Kind::ADDR_INT:     os << "addr|int";     return;
+    case Kind::ADDR_NULL:    os << "addr|null";    return;
     case Kind::ADDR:         os << "addr";         return;
     case Kind::INT:          os << u_.MaskVal;     return;
   }

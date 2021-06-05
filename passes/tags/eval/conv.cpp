@@ -21,7 +21,8 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
       return arg;
     }
     case TaggedType::Kind::YOUNG:
-    case TaggedType::Kind::HEAP: {
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF: {
       return TaggedType::Even();
     }
     case TaggedType::Kind::VAL:
@@ -65,6 +66,7 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
       return TaggedType::Undef();
     }
     case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::PTR_NULL:

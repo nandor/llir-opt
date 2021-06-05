@@ -22,6 +22,7 @@ public:
     INT,
     // Caml pointers.
     YOUNG,
+    HEAP_OFF,
     HEAP,
     ADDR,
     ADDR_NULL,
@@ -46,6 +47,7 @@ public:
   bool IsInt() const { return k_ == Kind::INT; }
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsHeap() const { return k_ == Kind::HEAP; }
+  bool IsYoungOff() const { return k_ == Kind::HEAP_OFF; }
   bool IsPtrNull() const { return k_ == Kind::PTR_NULL; }
   bool IsPtrInt() const { return k_ == Kind::PTR_INT; }
   bool IsPtr() const { return k_ == Kind::PTR; }
@@ -95,6 +97,7 @@ public:
 public:
   static TaggedType Unknown() { return TaggedType(Kind::UNKNOWN); }
   static TaggedType Young() { return TaggedType(Kind::YOUNG); }
+  static TaggedType HeapOff() { return TaggedType(Kind::HEAP_OFF); }
   static TaggedType Heap() { return TaggedType(Kind::HEAP); }
   static TaggedType Val() { return TaggedType(Kind::VAL); }
   static TaggedType Ptr() { return TaggedType(Kind::PTR); }

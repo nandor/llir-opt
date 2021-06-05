@@ -46,6 +46,11 @@ public:
     }
   }
 
+  bool IsAligned() const
+  {
+    return (known_ & 7) == 7 && (value_ & 7) == 0;
+  }
+
 private:
   uint64_t value_;
   uint64_t known_;

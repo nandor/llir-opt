@@ -22,13 +22,14 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::PTR:       return TaggedType::Int();
     case TaggedType::Kind::PTR_INT:   return TaggedType::Int();
     case TaggedType::Kind::PTR_NULL:  return TaggedType::Int();
-    case TaggedType::Kind::YOUNG:     return TaggedType::Int();
     case TaggedType::Kind::INT: {
       return TaggedType::Int();
     }
     case TaggedType::Kind::VAL: {
       return vr.IsUnknown() ? vr : TaggedType::Int();
     }
+    case TaggedType::Kind::HEAP_OFF:
+    case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP: {
       return vr.IsUnknown() ? vr : TaggedType::Int();
     }
@@ -50,12 +51,13 @@ TaggedType Step::Shl(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
     case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
     case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
-    case TaggedType::Kind::VAL: llvm_unreachable("not implemented");
-    case TaggedType::Kind::HEAP: llvm_unreachable("not implemented");
-    case TaggedType::Kind::PTR: llvm_unreachable("not implemented");
-    case TaggedType::Kind::YOUNG: llvm_unreachable("not implemented");
-    case TaggedType::Kind::UNDEF: llvm_unreachable("not implemented");
-    case TaggedType::Kind::PTR_NULL: llvm_unreachable("not implemented");
+    case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
+    case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
+    case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
+    case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
+    case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
+    case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
+    case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid value kind");
 }

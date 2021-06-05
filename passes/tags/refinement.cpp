@@ -115,6 +115,7 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     }
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::ADDR: {
       // Already a pointer, nothing to refine.
@@ -152,8 +153,9 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
     }
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::ADDR:  {
+    case TaggedType::Kind::ADDR: {
       // Should trap, handled elsewhere.
       return;
     }
@@ -208,6 +210,7 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
     }
     case TaggedType::Kind::YOUNG:
     case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::ADDR:
     case TaggedType::Kind::PTR: {
       // Can simplify condition here, always 0.

@@ -288,15 +288,11 @@ bool EliminateTags::RewriteConst()
                 block.insert(mov, insert);
                 newValues.push_back(mov);
                 numValues++;
-              } else {
-                newValues.push_back(inst->GetSubValue(i));
+                continue;
               }
-            } else {
-              newValues.push_back(inst->GetSubValue(i));
             }
-          } else {
-            newValues.push_back(inst->GetSubValue(i));
           }
+          newValues.push_back(inst->GetSubValue(i));
         }
 
         // If any sub-value changed, replace it.

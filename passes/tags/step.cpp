@@ -20,6 +20,7 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
       case TaggedType::Kind::VAL:       return TaggedType::Val();
       case TaggedType::Kind::PTR:       return TaggedType::Heap();
       case TaggedType::Kind::HEAP:      return TaggedType::Heap();
+      case TaggedType::Kind::HEAP_OFF:  return TaggedType::Heap();
       case TaggedType::Kind::YOUNG:     return TaggedType::Young();
       case TaggedType::Kind::UNDEF:     return TaggedType::Undef();
       case TaggedType::Kind::PTR_NULL:  return TaggedType::Heap();
