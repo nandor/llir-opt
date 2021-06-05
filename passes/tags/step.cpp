@@ -342,31 +342,43 @@ void Step::VisitRotlInst(RotlInst &i)
 // -----------------------------------------------------------------------------
 void Step::VisitExtensionInst(ExtensionInst &i)
 {
-  auto arg = analysis_.Find(i.GetArg());
-  auto ret = Ext(i.GetType(), arg);
-  if (!ret.IsUnknown()) {
-    Mark(i, ret);
+  if (IsFloatType(i.GetType()) || IsFloatType(i.GetArg().GetType())) {
+    Mark(i, TaggedType::Int());
+  } else {
+    auto arg = analysis_.Find(i.GetArg());
+    auto ret = Ext(i.GetType(), arg);
+    if (!ret.IsUnknown()) {
+      Mark(i, ret);
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 void Step::VisitTruncInst(TruncInst &i)
 {
-  auto arg = analysis_.Find(i.GetArg());
-  auto ret = Trunc(i.GetType(), arg);
-  if (!ret.IsUnknown()) {
-    Mark(i, ret);
+  if (IsFloatType(i.GetType()) || IsFloatType(i.GetArg().GetType())) {
+    Mark(i, TaggedType::Int());
+  } else {
+    auto arg = analysis_.Find(i.GetArg());
+    auto ret = Trunc(i.GetType(), arg);
+    if (!ret.IsUnknown()) {
+      Mark(i, ret);
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 void Step::VisitBitCastInst(BitCastInst &i)
 {
-  auto arg = analysis_.Find(i.GetArg());
-  if (arg.IsUnknown()) {
-    return;
+  if (IsFloatType(i.GetType()) || IsFloatType(i.GetArg().GetType())) {
+    Mark(i, TaggedType::Int());
+  } else {
+    auto arg = analysis_.Find(i.GetArg());
+    if (arg.IsUnknown()) {
+      return;
+    }
+    Mark(i, arg);
   }
-  Mark(i, arg);
 }
 
 // -----------------------------------------------------------------------------
