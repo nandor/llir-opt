@@ -86,17 +86,19 @@ Public Types</h2></td></tr>
 &#160;&#160;<b>UNKNOWN</b>, 
 <b>INT</b>, 
 <b>YOUNG</b>, 
-<b>HEAP</b>, 
+<b>HEAP_OFF</b>, 
 <br />
-&#160;&#160;<b>ADDR</b>, 
+&#160;&#160;<b>HEAP</b>, 
+<b>ADDR</b>, 
 <b>ADDR_NULL</b>, 
 <b>ADDR_INT</b>, 
-<b>VAL</b>, 
 <br />
-&#160;&#160;<b>PTR</b>, 
+&#160;&#160;<b>VAL</b>, 
+<b>PTR</b>, 
 <b>PTR_NULL</b>, 
 <b>PTR_INT</b>, 
-<b>UNDEF</b>
+<br />
+&#160;&#160;<b>UNDEF</b>
 <br />
  }</td></tr>
 <tr class="separator:a36a687cebc8bba0f38e76a7f11bc7720"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,6 +123,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsYoung</b> () const<
 <tr class="memitem:adfd4210d5423e294cc4d661e5233b308"><td class="memItemLeft" align="right" valign="top"><a id="adfd4210d5423e294cc4d661e5233b308"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHeap</b> () const</td></tr>
 <tr class="separator:adfd4210d5423e294cc4d661e5233b308"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46d9953bf5b70eacffe0206681efc747"><td class="memItemLeft" align="right" valign="top"><a id="a46d9953bf5b70eacffe0206681efc747"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsYoungOff</b> () const</td></tr>
+<tr class="separator:a46d9953bf5b70eacffe0206681efc747"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61d1624e4c9654dc64978c9d998057b2"><td class="memItemLeft" align="right" valign="top"><a id="a61d1624e4c9654dc64978c9d998057b2"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPtrNull</b> () const</td></tr>
 <tr class="separator:a61d1624e4c9654dc64978c9d998057b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -211,6 +216,9 @@ static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</t
 <tr class="memitem:af34f8582885ef093e6121975997d9457"><td class="memItemLeft" align="right" valign="top"><a id="af34f8582885ef093e6121975997d9457"></a>
 static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Young</b> ()</td></tr>
 <tr class="separator:af34f8582885ef093e6121975997d9457"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa80a441c30713e7f0b1726b25e876552"><td class="memItemLeft" align="right" valign="top"><a id="aa80a441c30713e7f0b1726b25e876552"></a>
+static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>HeapOff</b> ()</td></tr>
+<tr class="separator:aa80a441c30713e7f0b1726b25e876552"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae836aacfd279502dfbbf1fa2d4f202db"><td class="memItemLeft" align="right" valign="top"><a id="ae836aacfd279502dfbbf1fa2d4f202db"></a>
 static <a class="el" href="classtags_1_1TaggedType.html">TaggedType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Heap</b> ()</td></tr>
 <tr class="separator:ae836aacfd279502dfbbf1fa2d4f202db"><td class="memSeparator" colspan="2">&#160;</td></tr>
