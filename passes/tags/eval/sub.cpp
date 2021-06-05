@@ -31,7 +31,7 @@ TaggedType Step::Sub(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  return TaggedType::Int();
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
-        case TaggedType::Kind::INT:       return TaggedType::Mask(ml + vr.GetInt());
+        case TaggedType::Kind::INT:       return TaggedType::Mask(ml - vr.GetInt());
       }
       llvm_unreachable("invalid value kind");
     }

@@ -28,6 +28,9 @@ public:
   void Run();
 
 private:
+  /// Merge information at post-dom frontiers.
+  void PullFrontier();
+
   /// Refine a type to a more precise one.
   void Refine(
       Block *parent,

@@ -37,10 +37,13 @@ void Refinement::Run()
   }
 
   while (!queue_.empty()) {
-    auto *inst = queue_.front();
-    queue_.pop();
-    inQueue_.erase(inst);
-    Dispatch(*inst);
+    while (!queue_.empty()) {
+      auto *inst = queue_.front();
+      queue_.pop();
+      inQueue_.erase(inst);
+      Dispatch(*inst);
+    }
+    PullFrontier();
   }
 }
 
@@ -438,6 +441,60 @@ void Refinement::DefineSplits(
   }
   // Trigger an update of anything relying on the reference.
   analysis_.Refine(ref, analysis_.Find(ref));
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::PullFrontier()
+{
+  std::function<void(Block *)> rewrite =
+    [&, this](Block *block)
+    {
+      using BranchMap = std::unordered_map<Ref<Inst>, TaggedType>;
+      std::optional<BranchMap> merges;
+      for (auto *succ : block->successors()) {
+        BranchMap branch;
+        for (auto it = succ->first_non_phi(); it != succ->end(); ++it) {
+          if (auto *mov = ::cast_or_null<MovInst>(&*it)) {
+            if (auto inst = ::cast_or_null<Inst>(mov->GetArg())) {
+              if (mov->GetType() == inst.GetType() && inst->getParent() != succ) {
+                branch.emplace(inst, analysis_.Find(mov->GetSubValue(0)));
+              }
+            }
+          } else {
+            break;
+          }
+        }
+
+        if (!merges.has_value()) {
+          merges.emplace(std::move(branch));
+        } else {
+          for (auto it = merges->begin(); it != merges->end(); ) {
+            auto jt = branch.find(it->first);
+            if (jt == branch.end() || jt->second != it->second) {
+              it = merges->erase(it);
+            } else {
+              ++it;
+            }
+          }
+        }
+      }
+
+      if (merges.has_value() && !merges->empty()) {
+        for (auto &[ref, ty] : *merges) {
+          if (analysis_.Find(ref) != ty) {
+            Refine(block, ref, ty);
+          }
+        }
+      }
+
+      for (auto *child : *pdt_[block]) {
+        rewrite(child->getBlock());
+      }
+    };
+
+  for (auto *node : pdt_.roots()) {
+    rewrite(node);
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -152,7 +152,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
         case TaggedType::Kind::INT:       return TaggedType::AddrInt();
         case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
-        case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP_OFF:  llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
