@@ -33,6 +33,8 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
       }
     }
     llvm_unreachable("invalid value kind");
+  } else if (ty == Type::I64) {
+    return type.IsHeapOff() ? TaggedType::Addr() : type;
   } else {
     return type;
   }

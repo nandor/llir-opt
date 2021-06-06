@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <stack>
+#include <llvm/ADT/Statistic.h>
 
 #include "core/atom.h"
 #include "core/object.h"
@@ -12,6 +13,10 @@
 #include "passes/tags/register_analysis.h"
 
 using namespace tags;
+
+#define DEBUG_TYPE "eliminate-tags"
+
+STATISTIC(NumMovsRefined, "Number of movs refined");
 
 
 
@@ -592,6 +597,31 @@ void Refinement::VisitXorInst(XorInst &i)
 // -----------------------------------------------------------------------------
 void Refinement::VisitMovInst(MovInst &i)
 {
+  if (auto inst = ::cast_or_null<Inst>(i.GetArg())) {
+    auto varg = analysis_.Find(inst);
+    if (varg.IsAddrInt() && i.GetType() == Type::V64) {
+      auto *parent = i.getParent();
+
+      if (auto *node = pdt_.getNode(parent)) {
+        bool isSplit = false;
+        for (auto *front : pdf_.calculate(pdt_, node)) {
+          for (auto *succ : front->successors()) {
+            if (succ == parent) {
+              isSplit = true;
+              break;
+            }
+          }
+          if (isSplit) {
+            break;
+          }
+        }
+        if (!isSplit) {
+          NumMovsRefined++;
+          Refine(parent, inst, TaggedType::Odd());
+        }
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

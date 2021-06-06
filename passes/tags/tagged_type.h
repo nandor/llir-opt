@@ -47,7 +47,7 @@ public:
   bool IsInt() const { return k_ == Kind::INT; }
   bool IsYoung() const { return k_ == Kind::YOUNG; }
   bool IsHeap() const { return k_ == Kind::HEAP; }
-  bool IsYoungOff() const { return k_ == Kind::HEAP_OFF; }
+  bool IsHeapOff() const { return k_ == Kind::HEAP_OFF; }
   bool IsPtrNull() const { return k_ == Kind::PTR_NULL; }
   bool IsPtrInt() const { return k_ == Kind::PTR_INT; }
   bool IsPtr() const { return k_ == Kind::PTR; }
