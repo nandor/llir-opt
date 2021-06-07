@@ -144,32 +144,39 @@ $(function() {
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      <a class="code" href="classBlock.html">Block</a> *bt,</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;      <a class="code" href="classBlock.html">Block</a> *bf</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  );</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keywordtype">void</span> RefineAndOne(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classBlock.html">Block</a> *b, <a class="code" href="classBlock.html">Block</a> *bt, <a class="code" href="classBlock.html">Block</a> *bf);</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  std::pair&lt;std::set&lt;Block *&gt;, std::set&lt;Block *&gt;&gt;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  Liveness(</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> ref,</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;      <span class="keyword">const</span> llvm::SmallPtrSetImpl&lt;const Block *&gt; &amp;defs</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  );</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keywordtype">void</span> DefineSplits(</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> ref,</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;      <span class="keyword">const</span> std::unordered_map&lt;const Block *, TaggedType&gt; &amp;splits</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  );</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <a class="code" href="classFunc.html">Func</a> &amp;func_;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <a class="code" href="classDominatorTree.html">DominatorTree</a> dt_;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <a class="code" href="classDominanceFrontier.html">DominanceFrontier</a> df_;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <a class="code" href="classPostDominatorTree.html">PostDominatorTree</a> pdt_;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <a class="code" href="classPostDominanceFrontier.html">PostDominanceFrontier</a> pdf_;</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  std::queue&lt;Inst *&gt; queue_;</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  std::unordered_set&lt;Inst *&gt; inQueue_;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;};</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;} <span class="comment">// end namespace</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keywordtype">void</span> RefineInequality(</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> lhs,</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> rhs,</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;      <a class="code" href="classBlock.html">Block</a> *b,</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;      <a class="code" href="classBlock.html">Block</a> *bt,</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;      <a class="code" href="classBlock.html">Block</a> *bf</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  );</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keywordtype">void</span> RefineAndOne(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classBlock.html">Block</a> *b, <a class="code" href="classBlock.html">Block</a> *bt, <a class="code" href="classBlock.html">Block</a> *bf);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  std::pair&lt;std::set&lt;Block *&gt;, std::set&lt;Block *&gt;&gt;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  Liveness(</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> ref,</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;      <span class="keyword">const</span> llvm::SmallPtrSetImpl&lt;const Block *&gt; &amp;defs</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  );</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">void</span> DefineSplits(</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;      <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> ref,</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;      <span class="keyword">const</span> std::unordered_map&lt;const Block *, TaggedType&gt; &amp;splits</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  );</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <a class="code" href="classFunc.html">Func</a> &amp;func_;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  <a class="code" href="classDominatorTree.html">DominatorTree</a> dt_;</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <a class="code" href="classDominanceFrontier.html">DominanceFrontier</a> df_;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <a class="code" href="classPostDominatorTree.html">PostDominatorTree</a> pdt_;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;  <a class="code" href="classPostDominanceFrontier.html">PostDominanceFrontier</a> pdf_;</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;  std::queue&lt;Inst *&gt; queue_;</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  std::unordered_set&lt;Inst *&gt; inQueue_;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;};</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;} <span class="comment">// end namespace</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
