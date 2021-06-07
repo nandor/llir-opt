@@ -4,6 +4,7 @@
 
 #include <stack>
 #include <llvm/ADT/Statistic.h>
+#include <llvm/ADT/PostOrderIterator.h>
 
 #include "core/atom.h"
 #include "core/object.h"
@@ -95,10 +96,10 @@ void Refinement::Refine(
     if (inQueue_.insert(source).second) {
       queue_.push(source);
     }
-  } else {
+  } else if (auto *node = pdt_.getNode(start)) {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
-    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(start))) {
+    for (auto *front : pdf_.calculate(pdt_, node)) {
       for (auto *succ : front->successors()) {
         if (pdt_.Dominates(start, end, succ)) {
           splits.emplace(succ, type);
@@ -461,54 +462,44 @@ void Refinement::DefineSplits(
 // -----------------------------------------------------------------------------
 void Refinement::PullFrontier()
 {
-  std::function<void(Block *)> rewrite =
-    [&, this](Block *block)
-    {
-      using BranchMap = std::unordered_map<Ref<Inst>, TaggedType>;
-      std::optional<BranchMap> merges;
-      for (auto *succ : block->successors()) {
-        BranchMap branch;
-        for (auto it = succ->first_non_phi(); it != succ->end(); ++it) {
-          if (auto *mov = ::cast_or_null<MovInst>(&*it)) {
-            if (auto inst = ::cast_or_null<Inst>(mov->GetArg())) {
-              if (mov->GetType() == inst.GetType() && inst->getParent() != succ) {
-                branch.emplace(inst, analysis_.Find(mov->GetSubValue(0)));
-              }
+  for (Block *block : llvm::post_order(&func_)) {
+    using BranchMap = std::unordered_map<Ref<Inst>, TaggedType>;
+    std::optional<BranchMap> merges;
+    for (auto *succ : block->successors()) {
+      BranchMap branch;
+      for (auto it = succ->first_non_phi(); it != succ->end(); ++it) {
+        if (auto *mov = ::cast_or_null<MovInst>(&*it)) {
+          if (auto inst = ::cast_or_null<Inst>(mov->GetArg())) {
+            if (mov->GetType() == inst.GetType() && inst->getParent() != succ) {
+              branch.emplace(inst, analysis_.Find(mov->GetSubValue(0)));
             }
-          } else {
-            break;
           }
-        }
-
-        if (!merges.has_value()) {
-          merges.emplace(std::move(branch));
         } else {
-          for (auto it = merges->begin(); it != merges->end(); ) {
-            auto jt = branch.find(it->first);
-            if (jt == branch.end() || jt->second != it->second) {
-              it = merges->erase(it);
-            } else {
-              ++it;
-            }
-          }
+          break;
         }
       }
 
-      if (merges.has_value() && !merges->empty()) {
-        for (auto &[ref, ty] : *merges) {
-          if (analysis_.Find(ref) != ty) {
-            Refine(block, ref, ty);
+      if (!merges.has_value()) {
+        merges.emplace(std::move(branch));
+      } else {
+        for (auto it = merges->begin(); it != merges->end(); ) {
+          auto jt = branch.find(it->first);
+          if (jt == branch.end() || jt->second != it->second) {
+            it = merges->erase(it);
+          } else {
+            ++it;
           }
         }
       }
+    }
 
-      for (auto *child : *pdt_[block]) {
-        rewrite(child->getBlock());
+    if (merges.has_value() && !merges->empty()) {
+      for (auto &[ref, ty] : *merges) {
+        if (analysis_.Find(ref) != ty) {
+          Refine(block, ref, ty);
+        }
       }
-    };
-
-  for (auto *node : pdt_.roots()) {
-    rewrite(node);
+    }
   }
 }
 
@@ -614,30 +605,46 @@ void Refinement::VisitXorInst(XorInst &i)
 // -----------------------------------------------------------------------------
 void Refinement::VisitMovInst(MovInst &i)
 {
-  if (auto inst = ::cast_or_null<Inst>(i.GetArg())) {
-    auto varg = analysis_.Find(inst);
-    if (varg.IsAddrInt() && i.GetType() == Type::V64) {
-      auto *parent = i.getParent();
+  auto inst = ::cast_or_null<Inst>(i.GetArg());
+  if (!inst) {
+    return;
+  }
 
-      if (auto *node = pdt_.getNode(parent)) {
-        bool isSplit = false;
-        for (auto *front : pdf_.calculate(pdt_, node)) {
-          for (auto *succ : front->successors()) {
-            if (succ == parent) {
-              isSplit = true;
-              break;
-            }
-          }
-          if (isSplit) {
-            break;
-          }
-        }
-        if (!isSplit) {
-          NumMovsRefined++;
-          Refine(parent, inst, TaggedType::Odd());
+  auto *parent = i.getParent();
+  auto *node = pdt_.getNode(parent);
+  if (!node) {
+    return;
+  }
+
+  if (parent != inst->getParent()) {
+    bool isSplit = false;
+    for (auto *front : pdf_.calculate(pdt_, node)) {
+      for (auto *succ : front->successors()) {
+        if (succ == parent) {
+          isSplit = true;
+          break;
         }
       }
+      if (isSplit) {
+        break;
+      }
     }
+    if (isSplit) {
+      return;
+    }
+  }
+
+  auto varg = analysis_.Find(inst);
+  auto vmov = analysis_.Find(i.GetSubValue(0));
+  if (varg.IsAddrInt() && i.GetType() == Type::V64) {
+    NumMovsRefined++;
+    Refine(parent, inst, TaggedType::Odd());
+    return;
+  }
+  if (vmov < varg) {
+    NumMovsRefined++;
+    Refine(parent, inst, vmov);
+    return;
   }
 }
 
@@ -648,7 +655,6 @@ void Refinement::VisitPhiInst(PhiInst &phi)
   if (vphi.IsUnknown()) {
     return;
   }
-
   auto *parent = phi.getParent();
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     auto ref = phi.GetValue(i);

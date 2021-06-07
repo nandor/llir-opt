@@ -67,7 +67,7 @@ public:
 
     bool isDuplicateEdge = false;
     for (const Block *bb : start->successors()) {
-      if (bb == start) {
+      if (bb == end) {
         if (isDuplicateEdge) {
           return false;
         }

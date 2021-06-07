@@ -21,8 +21,8 @@ TaggedType Step::Sub(TaggedType vl, TaggedType vr)
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
         case TaggedType::Kind::VAL:       return TaggedType::Int();
-        case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
-        case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
+        case TaggedType::Kind::HEAP:      return TaggedType::Int();
+        case TaggedType::Kind::HEAP_OFF:  llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR:       return TaggedType::Int();
         case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");

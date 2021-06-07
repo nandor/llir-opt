@@ -423,17 +423,17 @@ void Step::VisitCmpInst(CmpInst &i)
   switch (i.GetCC()) {
     case Cond::EQ: case Cond::UEQ: {
       if ((vl.IsOdd() && vr.IsEven()) || (vl.IsEven() && vr.IsOdd())) {
-        analysis_.Mark(i, TaggedType::Zero());
+        Mark(i, TaggedType::Zero());
       } else {
-        analysis_.Mark(i, TaggedType::ZeroOne());
+        Mark(i, TaggedType::ZeroOne());
       }
       return;
     }
     case Cond::NE: case Cond::UNE: {
       if ((vl.IsOdd() && vr.IsEven()) || (vl.IsEven() && vr.IsOdd())) {
-        analysis_.Mark(i, TaggedType::One());
+        Mark(i, TaggedType::One());
       } else {
-        analysis_.Mark(i, TaggedType::ZeroOne());
+        Mark(i, TaggedType::ZeroOne());
       }
       return;
     }
@@ -445,7 +445,7 @@ void Step::VisitCmpInst(CmpInst &i)
     case Cond::ULE:
     case Cond::GE:
     case Cond::UGE: {
-      analysis_.Mark(i, TaggedType::ZeroOne());
+      Mark(i, TaggedType::ZeroOne());
       return;
     }
     case Cond::OEQ:
@@ -456,7 +456,7 @@ void Step::VisitCmpInst(CmpInst &i)
     case Cond::OGE:
     case Cond::UO:
     case Cond::O: {
-      analysis_.Mark(i, TaggedType::ZeroOne());
+      Mark(i, TaggedType::ZeroOne());
       return;
     }
   }
