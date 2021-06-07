@@ -273,12 +273,6 @@ void Init::VisitX86_RdTscInst(X86_RdTscInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Init::VisitCmpInst(CmpInst &i)
-{
-  analysis_.Mark(i, TaggedType::ZeroOne());
-}
-
-// -----------------------------------------------------------------------------
 void Init::VisitLoadInst(LoadInst &i)
 {
   Infer(i.GetSubValue(0));

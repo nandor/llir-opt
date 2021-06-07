@@ -412,6 +412,57 @@ void Step::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
 }
 
 // -----------------------------------------------------------------------------
+void Step::VisitCmpInst(CmpInst &i)
+{
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  if (vl.IsUnknown() || vr.IsUnknown()) {
+    return;
+  }
+
+  switch (i.GetCC()) {
+    case Cond::EQ: case Cond::UEQ: {
+      if ((vl.IsOdd() && vr.IsEven()) || (vl.IsEven() && vr.IsOdd())) {
+        analysis_.Mark(i, TaggedType::Zero());
+      } else {
+        analysis_.Mark(i, TaggedType::ZeroOne());
+      }
+      return;
+    }
+    case Cond::NE: case Cond::UNE: {
+      if ((vl.IsOdd() && vr.IsEven()) || (vl.IsEven() && vr.IsOdd())) {
+        analysis_.Mark(i, TaggedType::One());
+      } else {
+        analysis_.Mark(i, TaggedType::ZeroOne());
+      }
+      return;
+    }
+    case Cond::LT:
+    case Cond::ULT:
+    case Cond::GT:
+    case Cond::UGT:
+    case Cond::LE:
+    case Cond::ULE:
+    case Cond::GE:
+    case Cond::UGE: {
+      analysis_.Mark(i, TaggedType::ZeroOne());
+      return;
+    }
+    case Cond::OEQ:
+    case Cond::ONE:
+    case Cond::OLT:
+    case Cond::OGT:
+    case Cond::OLE:
+    case Cond::OGE:
+    case Cond::UO:
+    case Cond::O: {
+      analysis_.Mark(i, TaggedType::ZeroOne());
+      return;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Step::VisitSelectInst(SelectInst &select)
 {
   auto vt = analysis_.Find(select.GetTrue());

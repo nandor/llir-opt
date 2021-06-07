@@ -81,6 +81,14 @@ private:
       Block *bt,
       Block *bf
   );
+  /// Refine inequalities.
+  void RefineInequality(
+      Ref<Inst> lhs,
+      Ref<Inst> rhs,
+      Block *b,
+      Block *bt,
+      Block *bf
+  );
   /// Refine bit tests.
   void RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf);
 

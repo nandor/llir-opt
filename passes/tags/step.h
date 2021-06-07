@@ -51,6 +51,7 @@ private:
   void VisitByteSwapInst(ByteSwapInst &i) override;
   void VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
   void VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
+  void VisitCmpInst(CmpInst &i) override;
   void VisitSelectInst(SelectInst &i) override;
   void VisitPhiInst(PhiInst &i) override;
   void VisitReturnInst(ReturnInst &i) override;
@@ -76,7 +77,6 @@ private:
   void VisitCopySignInst(CopySignInst &i) override {}
   void VisitFloatInst(FloatInst &i) override {}
   void VisitX86_RdTscInst(X86_RdTscInst &i) override {}
-  void VisitCmpInst(CmpInst &i) override {}
   void VisitStoreInst(StoreInst &i) override {}
   void VisitNegInst(NegInst &i) override {}
   void VisitRotateInst(RotateInst &i) override {}

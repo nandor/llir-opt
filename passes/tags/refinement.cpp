@@ -208,6 +208,16 @@ void Refinement::RefineEquality(
 }
 
 // -----------------------------------------------------------------------------
+void Refinement::RefineInequality(
+    Ref<Inst> lhs,
+    Ref<Inst> rhs,
+    Block *b,
+    Block *blt,
+    Block *bgt)
+{
+}
+
+// -----------------------------------------------------------------------------
 void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
 {
   auto ty = analysis_.Find(arg);
@@ -534,7 +544,7 @@ void Refinement::VisitSubInst(SubInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
-  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsIntLike()) {
+  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsInt()) {
     RefineAddr(i, i.GetLHS());
     return;
   }
@@ -547,10 +557,10 @@ void Refinement::VisitAddInst(AddInst &i)
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
   if (vo.IsPtr()) {
-    if (vl.IsIntLike() && vr.IsPtrUnion()) {
+    if (vl.IsInt() && vr.IsPtrUnion()) {
       RefineAddr(i, i.GetRHS());
     }
-    if (vr.IsIntLike() && vl.IsPtrUnion()) {
+    if (vr.IsInt() && vl.IsPtrUnion()) {
       RefineAddr(i, i.GetLHS());
     }
     if (vl.IsPtrLike() && vr.IsPtrUnion()) {
@@ -576,6 +586,13 @@ void Refinement::VisitCmpInst(CmpInst &i)
     if (vr.IsVal() && vl.IsOdd()) {
       return Refine(i.getParent(), i.GetRHS(), TaggedType::Odd());
     }
+  }
+
+  if (vl.IsAddrInt() && vr.IsInt()) {
+    return Refine(i.getParent(), i.GetLHS(), TaggedType::Int());
+  }
+  if (vr.IsAddrInt() && vl.IsInt()) {
+    return Refine(i.getParent(), i.GetRHS(), TaggedType::Int());
   }
 }
 
@@ -697,6 +714,14 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
       }
       case Cond::NE: case Cond::UNE: case Cond::ONE: {
         return RefineEquality(l, r, inst->getParent(), bf, bt);
+      }
+      case Cond::LE: case Cond::ULE: case Cond::OLE:
+      case Cond::LT: case Cond::ULT: case Cond::OLT: {
+        return RefineInequality(l, r, inst->getParent(), bt, bf);
+      }
+      case Cond::GE: case Cond::UGE: case Cond::OGE:
+      case Cond::GT: case Cond::UGT: case Cond::OGT: {
+        return RefineInequality(l, r, inst->getParent(), bf, bt);
       }
       default: {
         return;

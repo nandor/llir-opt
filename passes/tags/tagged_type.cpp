@@ -206,31 +206,6 @@ bool TaggedType::IsOne() const
 }
 
 // -----------------------------------------------------------------------------
-bool TaggedType::IsIntLike() const
-{
-  switch (k_) {
-    case Kind::INT: {
-      return true;
-    }
-    case Kind::UNKNOWN:
-    case Kind::YOUNG:
-    case Kind::HEAP_OFF:
-    case Kind::HEAP:
-    case Kind::VAL:
-    case Kind::PTR:
-    case Kind::PTR_NULL:
-    case Kind::PTR_INT:
-    case Kind::ADDR:
-    case Kind::ADDR_NULL:
-    case Kind::ADDR_INT:
-    case Kind::UNDEF: {
-      return false;
-    }
-  }
-  llvm_unreachable("invalid kind");
-}
-
-// -----------------------------------------------------------------------------
 bool TaggedType::IsZeroOrOne() const
 {
   switch (k_) {

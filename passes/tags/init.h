@@ -34,7 +34,6 @@ public:
   void VisitCopySignInst(CopySignInst &i) override;
   void VisitFloatInst(FloatInst &i) override;
   void VisitX86_RdTscInst(X86_RdTscInst &i) override;
-  void VisitCmpInst(CmpInst &i) override;
   void VisitLoadInst(LoadInst &i) override;
   void VisitBitCountInst(BitCountInst &i) override;
   void VisitRotateInst(RotateInst &i) override;
