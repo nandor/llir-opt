@@ -134,7 +134,7 @@ $(function() {
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">bool</span> IsOddLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsOdd() || IsOne(); }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">bool</span> IsEvenLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsEven() || IsZero(); }</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">bool</span> IsPtrLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsHeap() || IsPtr() || IsAddr(); }</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">bool</span> IsPtrUnion()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsVal() || IsPtrNull() || IsPtrInt(); }</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">bool</span> IsPtrUnion() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">bool</span> IsZeroOrOne() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <a class="code" href="classtags_1_1MaskedType.html">MaskedType</a> GetInt()<span class="keyword"> const </span>{ assert(IsInt()); <span class="keywordflow">return</span> u_.MaskVal; }</div>
