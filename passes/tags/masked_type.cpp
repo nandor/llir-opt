@@ -43,7 +43,7 @@ MaskedType MaskedType::operator-(const MaskedType &that) const
 // -----------------------------------------------------------------------------
 MaskedType MaskedType::operator&(const MaskedType &that) const
 {
-  auto zeros = ~(value_ & that.value_) & (known_ & that.known_);
+  auto zeros = (~value_ & known_) | (~that.value_ & that.known_);
   auto known = zeros | (known_ & that.known_);
   return MaskedType(value_ & that.value_ & known, known);
 }
