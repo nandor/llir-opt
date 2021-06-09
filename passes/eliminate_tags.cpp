@@ -24,7 +24,7 @@ using namespace tags;
 
 STATISTIC(NumTypesRewritten, "Number of v64 replaced with i64");
 STATISTIC(NumAddCmp, "Number of add-cmp pairs rewritten");
-STATISTIC(NumZeroOneFolded, "Number of instructions folded to zero/one");
+STATISTIC(NumConstFolded, "Number of instructions folded to zero/one");
 
 
 
@@ -297,7 +297,7 @@ bool EliminateTags::RewriteConst()
 
         // If any sub-value changed, replace it.
         if (numValues) {
-          ++NumZeroOneFolded;
+          ++NumConstFolded;
           inst->replaceAllUsesWith(newValues);
           for (unsigned i = 0, n = newValues.size(); i < n; ++i) {
             auto ref = inst->GetSubValue(i);

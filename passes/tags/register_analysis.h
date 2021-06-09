@@ -69,8 +69,6 @@ private:
   {
     return Refine(inst.GetSubValue(0), type);
   }
-  /// Refine an argument instruction.
-  bool Refine(ArgInst &arg, const TaggedType &type);
 
   /// Queue the users of an instruction to be updated.
   void ForwardQueue(Ref<Inst> inst);

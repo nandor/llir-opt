@@ -44,6 +44,7 @@ add_library(passes
     sccp/solver.cpp
     sccp/x86.cpp
 
+    tags/constraints.cpp
     tags/eval/add.cpp
     tags/eval/and.cpp
     tags/eval/conv.cpp

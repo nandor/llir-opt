@@ -172,7 +172,7 @@ TaggedType Step::Add(TaggedType vl, TaggedType vr)
     case TaggedType::Kind::ADDR: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-        case TaggedType::Kind::INT:       return TaggedType::AddrInt();
+        case TaggedType::Kind::INT:       return TaggedType::Addr();
         case TaggedType::Kind::PTR:       return TaggedType::PtrInt();
         case TaggedType::Kind::VAL:       return TaggedType::PtrInt();
         case TaggedType::Kind::HEAP:      return TaggedType::PtrInt();

@@ -64,7 +64,7 @@ public:
   bool IsOddLike() const { return IsOdd() || IsOne(); }
   bool IsEvenLike() const { return IsEven() || IsZero(); }
   bool IsPtrLike() const { return IsHeap() || IsPtr() || IsAddr(); }
-  bool IsPtrUnion() const { return IsVal() || IsPtrNull() || IsPtrInt(); }
+  bool IsPtrUnion() const;
   bool IsZeroOrOne() const;
 
   MaskedType GetInt() const { assert(IsInt()); return u_.MaskVal; }

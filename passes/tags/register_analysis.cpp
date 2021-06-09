@@ -8,6 +8,7 @@
 #include "core/printer.h"
 #include "passes/tags/init.h"
 #include "passes/tags/step.h"
+#include "passes/tags/constraints.h"
 #include "passes/tags/refinement.h"
 #include "passes/tags/register_analysis.h"
 
@@ -121,12 +122,6 @@ bool RegisterAnalysis::Refine(Ref<Inst> inst, const TaggedType &tnew)
 }
 
 // -----------------------------------------------------------------------------
-bool RegisterAnalysis::Refine(ArgInst &arg, const TaggedType &type)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void RegisterAnalysis::ForwardQueue(Ref<Inst> inst)
 {
   Func *f = const_cast<Func *>(inst->getParent()->getParent());
@@ -151,16 +146,22 @@ void RegisterAnalysis::ForwardQueue(Ref<Inst> inst)
 // -----------------------------------------------------------------------------
 void RegisterAnalysis::BackwardQueue(Ref<Inst> inst)
 {
+  // Push the instruction itself as well.
+  if (inRefineQueue_.insert(&*inst).second) {
+    refineQueue_.push(&*inst);
+  }
+  // Push the users for propagation.
   for (Use &use : inst->uses()) {
-    if (use.get() == inst) {
-      auto *userInst = ::cast<Inst>(use.getUser());
-      auto *userFunc = userInst->getParent()->getParent();
-      if (inRefineQueue_.insert(userInst).second) {
-        refineQueue_.push(userInst);
-      }
-      if (inBackwardQueue_.insert(userFunc).second) {
-        backwardQueue_.push(userFunc);
-      }
+    if ((*use).Index() != inst.Index()) {
+      continue;
+    }
+    auto *userInst = ::cast<Inst>(use.getUser());
+    auto *userFunc = userInst->getParent()->getParent();
+    if (inRefineQueue_.insert(userInst).second) {
+      refineQueue_.push(userInst);
+    }
+    if (inBackwardQueue_.insert(userFunc).second) {
+      backwardQueue_.push(userFunc);
     }
   }
 }
@@ -222,6 +223,8 @@ void RegisterAnalysis::Solve()
       refineQueue_.pop();
     }
   }
+  // Refine based on constraints.
+  ConstraintSolver(*this, target_, prog_).Solve();
 }
 
 // -----------------------------------------------------------------------------

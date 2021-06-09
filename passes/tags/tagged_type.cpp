@@ -206,6 +206,31 @@ bool TaggedType::IsOne() const
 }
 
 // -----------------------------------------------------------------------------
+bool TaggedType::IsPtrUnion() const
+{
+  switch (k_) {
+    case Kind::INT:
+    case Kind::UNKNOWN:
+    case Kind::YOUNG:
+    case Kind::HEAP_OFF:
+    case Kind::HEAP:
+    case Kind::PTR:
+    case Kind::ADDR:
+    case Kind::UNDEF: {
+      return false;
+    }
+    case Kind::VAL:
+    case Kind::PTR_NULL:
+    case Kind::PTR_INT:
+    case Kind::ADDR_NULL:
+    case Kind::ADDR_INT: {
+      return true;
+    }
+  }
+  llvm_unreachable("invalid kind");
+}
+
+// -----------------------------------------------------------------------------
 bool TaggedType::IsZeroOrOne() const
 {
   switch (k_) {

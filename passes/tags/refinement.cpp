@@ -547,7 +547,7 @@ void Refinement::VisitAddInst(AddInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
-  if (vo.IsPtr()) {
+  if (vo.IsPtrLike()) {
     if (vl.IsInt() && vr.IsPtrUnion()) {
       RefineAddr(i, i.GetRHS());
     }
@@ -559,6 +559,18 @@ void Refinement::VisitAddInst(AddInst &i)
     }
     if (vr.IsPtrLike() && vl.IsPtrUnion()) {
       RefineInt(i, i.GetLHS());
+    }
+  }
+  if (vo.IsVal()) {
+    // addr|int + int == addr | int, so if addr|int + int = val, then
+    // the address and the val must be integers.
+    if (vl.IsAddrInt() && vr.IsInt()) {
+      RefineInt(i, i.GetSubValue(0));
+      RefineInt(i, i.GetLHS());
+    }
+    if (vr.IsAddrInt() && vl.IsInt()) {
+      RefineInt(i, i.GetSubValue(0));
+      RefineInt(i, i.GetRHS());
     }
   }
 }
