@@ -258,6 +258,36 @@ bool TaggedType::IsZeroOrOne() const
   llvm_unreachable("invalid kind");
 }
 
+
+// -----------------------------------------------------------------------------
+bool TaggedType::IsNonZero() const
+{
+  switch (k_) {
+    case Kind::UNKNOWN:
+    case Kind::UNDEF: {
+      return false;
+    }
+    case Kind::PTR_NULL:
+    case Kind::ADDR_NULL:
+    case Kind::PTR_INT:
+    case Kind::ADDR_INT: {
+      return false;
+    }
+    case Kind::INT: {
+      return GetInt().GetValue() != 0;
+    }
+    case Kind::YOUNG:
+    case Kind::HEAP_OFF:
+    case Kind::HEAP:
+    case Kind::VAL:
+    case Kind::PTR:
+    case Kind::ADDR: {
+      return true;
+    }
+  }
+  llvm_unreachable("invalid kind");
+}
+
 // -----------------------------------------------------------------------------
 TaggedType TaggedType::operator|(const TaggedType &that) const
 {

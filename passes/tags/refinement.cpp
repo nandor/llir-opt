@@ -117,9 +117,14 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
-      // This is a trap, handled elsewhere.
+      // Should trap, nothing to refine.
+      return;
+    }
+    case TaggedType::Kind::INT: {
+      // Integer-to-pointer cast, results in UB.
+      // Insert a move performing an explicit integer-to-pointer cast.
+      Refine(inst.getParent(), addr, TaggedType::Ptr());
       return;
     }
     case TaggedType::Kind::YOUNG:
@@ -155,8 +160,10 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
 {
   switch (analysis_.Find(addr).GetKind()) {
     case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::INT:
     case TaggedType::Kind::UNDEF: {
+      // Should trap, nothing to refine.
+    }
+    case TaggedType::Kind::INT: {
       // Already an integer, nothing to refine.
       return;
     }
@@ -165,7 +172,8 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
     case TaggedType::Kind::ADDR: {
-      // Should trap, handled elsewhere.
+      // Add an explicit pointer-to-integer cast.
+      Refine(inst.getParent(), addr, TaggedType::Int());
       return;
     }
     case TaggedType::Kind::VAL: {

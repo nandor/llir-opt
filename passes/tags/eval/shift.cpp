@@ -40,24 +40,12 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
 // -----------------------------------------------------------------------------
 TaggedType Step::Shl(Type ty, TaggedType vl, TaggedType vr)
 {
-  if (vl.IsUnknown()) {
+  if (vl.IsUnknown() || vr.IsUnknown()) {
     return TaggedType::Unknown();
   }
-
-  switch (vr.GetKind()) {
-    case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-    case TaggedType::Kind::INT:       return TaggedType::Int();
-    case TaggedType::Kind::PTR_INT:   return TaggedType::Int();
-    case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
-    case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
-    case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
-    case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
-    case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
-    case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
-    case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
-    case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
-    case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
-    case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
+  if (vr.IsNonZero()) {
+    return TaggedType::Even();
+  } else {
+    return TaggedType::Int();
   }
-  llvm_unreachable("invalid value kind");
 }

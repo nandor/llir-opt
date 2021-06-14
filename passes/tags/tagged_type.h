@@ -66,6 +66,7 @@ public:
   bool IsPtrLike() const { return IsHeap() || IsPtr() || IsAddr(); }
   bool IsPtrUnion() const;
   bool IsZeroOrOne() const;
+  bool IsNonZero() const;
 
   MaskedType GetInt() const { assert(IsInt()); return u_.MaskVal; }
 
