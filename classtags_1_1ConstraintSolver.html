@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classtags_1_1ConstraintSolver-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -101,18 +102,142 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7033d9e3cf9009f20a90104b9b6fc0c8"><td class="memItemLeft" align="right" valign="top"><a id="a7033d9e3cf9009f20a90104b9b6fc0c8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Solve</b> ()</td></tr>
 <tr class="separator:a7033d9e3cf9009f20a90104b9b6fc0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2454042875a4991cee9e0839eda9d2ab"><td class="memItemLeft" align="right" valign="top"><a id="a2454042875a4991cee9e0839eda9d2ab"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitArgInst</b> (ArgInst &amp;i) override</td></tr>
+<tr class="separator:a2454042875a4991cee9e0839eda9d2ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31a8f7db3eabc5ea61938c229c9ce3f1"><td class="memItemLeft" align="right" valign="top"><a id="a31a8f7db3eabc5ea61938c229c9ce3f1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCallSite</b> (<a class="el" href="classCallSite.html">CallSite</a> &amp;i) override</td></tr>
+<tr class="separator:a31a8f7db3eabc5ea61938c229c9ce3f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3c20feece9e976568d25044bc062e95"><td class="memItemLeft" align="right" valign="top"><a id="af3c20feece9e976568d25044bc062e95"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitLandingPadInst</b> (LandingPadInst &amp;i) override</td></tr>
+<tr class="separator:af3c20feece9e976568d25044bc062e95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c664492a0bd52562186f09342826104"><td class="memItemLeft" align="right" valign="top"><a id="a6c664492a0bd52562186f09342826104"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSubInst</b> (SubInst &amp;i) override</td></tr>
 <tr class="separator:a6c664492a0bd52562186f09342826104"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af37b9a2a6476533beb4cc32283c9bb5c"><td class="memItemLeft" align="right" valign="top"><a id="af37b9a2a6476533beb4cc32283c9bb5c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAddInst</b> (AddInst &amp;i) override</td></tr>
 <tr class="separator:af37b9a2a6476533beb4cc32283c9bb5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad774d60edf6cad0bb25e99e54eef003a"><td class="memItemLeft" align="right" valign="top"><a id="ad774d60edf6cad0bb25e99e54eef003a"></a>
+<tr class="memitem:a7567eaf1961843d6cf31931bef99fc4e"><td class="memItemLeft" align="right" valign="top"><a id="a7567eaf1961843d6cf31931bef99fc4e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAndInst</b> (AndInst &amp;i) override</td></tr>
+<tr class="separator:a7567eaf1961843d6cf31931bef99fc4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefbfff479a9b11f7a520d6011537d82e"><td class="memItemLeft" align="right" valign="top"><a id="aefbfff479a9b11f7a520d6011537d82e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitOrInst</b> (OrInst &amp;i) override</td></tr>
+<tr class="separator:aefbfff479a9b11f7a520d6011537d82e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28f7048e4421d4e642175df76b5ebe0c"><td class="memItemLeft" align="right" valign="top"><a id="a28f7048e4421d4e642175df76b5ebe0c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitXorInst</b> (XorInst &amp;i) override</td></tr>
+<tr class="separator:a28f7048e4421d4e642175df76b5ebe0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb5bab1cc16ff115f9196cab9035bfee"><td class="memItemLeft" align="right" valign="top"><a id="abb5bab1cc16ff115f9196cab9035bfee"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCmpInst</b> (CmpInst &amp;i) override</td></tr>
+<tr class="separator:abb5bab1cc16ff115f9196cab9035bfee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae72b98eeb2f17cc6f6387b9f3e18132b"><td class="memItemLeft" align="right" valign="top"><a id="ae72b98eeb2f17cc6f6387b9f3e18132b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSelectInst</b> (SelectInst &amp;i) override</td></tr>
+<tr class="separator:ae72b98eeb2f17cc6f6387b9f3e18132b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49292878b58e0d4bd273393fd753df6a"><td class="memItemLeft" align="right" valign="top"><a id="a49292878b58e0d4bd273393fd753df6a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitPhiInst</b> (<a class="el" href="classPhiInst.html">PhiInst</a> &amp;i) override</td></tr>
+<tr class="separator:a49292878b58e0d4bd273393fd753df6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68b3907acbb8690a060ce3e4cf70d8de"><td class="memItemLeft" align="right" valign="top"><a id="a68b3907acbb8690a060ce3e4cf70d8de"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMovInst</b> (<a class="el" href="classMovInst.html">MovInst</a> &amp;i) override</td></tr>
+<tr class="separator:a68b3907acbb8690a060ce3e4cf70d8de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1429323d2f2754013acd753d4ea6c960"><td class="memItemLeft" align="right" valign="top"><a id="a1429323d2f2754013acd753d4ea6c960"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitExtensionInst</b> (ExtensionInst &amp;i) override</td></tr>
+<tr class="separator:a1429323d2f2754013acd753d4ea6c960"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a424d794141432b2d715e7d904ee0c77a"><td class="memItemLeft" align="right" valign="top"><a id="a424d794141432b2d715e7d904ee0c77a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTruncInst</b> (TruncInst &amp;i) override</td></tr>
+<tr class="separator:a424d794141432b2d715e7d904ee0c77a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2f9c6b22bd157863d8db708d15ea84b"><td class="memItemLeft" align="right" valign="top"><a id="ab2f9c6b22bd157863d8db708d15ea84b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMemoryStoreInst</b> (MemoryStoreInst &amp;store) override</td></tr>
+<tr class="separator:ab2f9c6b22bd157863d8db708d15ea84b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4584ba306faf9b7d567fed86abf7aa49"><td class="memItemLeft" align="right" valign="top"><a id="a4584ba306faf9b7d567fed86abf7aa49"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMemoryLoadInst</b> (MemoryLoadInst &amp;load) override</td></tr>
+<tr class="separator:a4584ba306faf9b7d567fed86abf7aa49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a034707b4135e2b79a3e4faea136ece79"><td class="memItemLeft" align="right" valign="top"><a id="a034707b4135e2b79a3e4faea136ece79"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMemoryExchangeInst</b> (MemoryExchangeInst &amp;i) override</td></tr>
+<tr class="separator:a034707b4135e2b79a3e4faea136ece79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb33acab4d3fa7019c6350c93ac4619e"><td class="memItemLeft" align="right" valign="top"><a id="acb33acab4d3fa7019c6350c93ac4619e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMemoryCompareExchangeInst</b> (MemoryCompareExchangeInst &amp;i) override</td></tr>
+<tr class="separator:acb33acab4d3fa7019c6350c93ac4619e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa06287f3b6fb06845b40bad00461c1e8"><td class="memItemLeft" align="right" valign="top"><a id="aa06287f3b6fb06845b40bad00461c1e8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitFrameInst</b> (FrameInst &amp;i) override</td></tr>
+<tr class="separator:aa06287f3b6fb06845b40bad00461c1e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a89748098b09f8fae190f8cd5d000c1"><td class="memItemLeft" align="right" valign="top"><a id="a1a89748098b09f8fae190f8cd5d000c1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitUndefInst</b> (UndefInst &amp;i) override</td></tr>
+<tr class="separator:a1a89748098b09f8fae190f8cd5d000c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c99792799dfabd8a342e3378b9a26c9"><td class="memItemLeft" align="right" valign="top"><a id="a8c99792799dfabd8a342e3378b9a26c9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitAllocaInst</b> (AllocaInst &amp;i) override</td></tr>
+<tr class="separator:a8c99792799dfabd8a342e3378b9a26c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59e1b7979aad167380826d1657bdc4ef"><td class="memItemLeft" align="right" valign="top"><a id="a59e1b7979aad167380826d1657bdc4ef"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitFloatInst</b> (FloatInst &amp;i) override</td></tr>
+<tr class="separator:a59e1b7979aad167380826d1657bdc4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19c4c7148788419cbbf8012fc947bbb8"><td class="memItemLeft" align="right" valign="top"><a id="a19c4c7148788419cbbf8012fc947bbb8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitShiftRightInst</b> (ShiftRightInst &amp;i) override</td></tr>
+<tr class="separator:a19c4c7148788419cbbf8012fc947bbb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1643df1530883223cf9315a56d738719"><td class="memItemLeft" align="right" valign="top"><a id="a1643df1530883223cf9315a56d738719"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSllInst</b> (SllInst &amp;i) override</td></tr>
+<tr class="separator:a1643df1530883223cf9315a56d738719"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1081eaacbc35811878ad2ef29d516f73"><td class="memItemLeft" align="right" valign="top"><a id="a1081eaacbc35811878ad2ef29d516f73"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitRotateInst</b> (RotateInst &amp;i) override</td></tr>
+<tr class="separator:a1081eaacbc35811878ad2ef29d516f73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23e6dd4980761679041658b4958d5010"><td class="memItemLeft" align="right" valign="top"><a id="a23e6dd4980761679041658b4958d5010"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitGetInst</b> (GetInst &amp;i) override</td></tr>
+<tr class="separator:a23e6dd4980761679041658b4958d5010"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59fadaa66e43ba5db031cc5afde123be"><td class="memItemLeft" align="right" valign="top"><a id="a59fadaa66e43ba5db031cc5afde123be"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_RdTscInst</b> (X86_RdTscInst &amp;i) override</td></tr>
+<tr class="separator:a59fadaa66e43ba5db031cc5afde123be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acde92a225da6511c193dd3adfbe3cc9c"><td class="memItemLeft" align="right" valign="top"><a id="acde92a225da6511c193dd3adfbe3cc9c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitMultiplyInst</b> (MultiplyInst &amp;i) override</td></tr>
+<tr class="separator:acde92a225da6511c193dd3adfbe3cc9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acdc14b6a62112ab6ea51c7609ef400b0"><td class="memItemLeft" align="right" valign="top"><a id="acdc14b6a62112ab6ea51c7609ef400b0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitDivisionRemainderInst</b> (DivisionRemainderInst &amp;i) override</td></tr>
+<tr class="separator:acdc14b6a62112ab6ea51c7609ef400b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb8a68e0cb2150fa17a5ba4343670a1f"><td class="memItemLeft" align="right" valign="top"><a id="afb8a68e0cb2150fa17a5ba4343670a1f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitByteSwapInst</b> (ByteSwapInst &amp;i) override</td></tr>
+<tr class="separator:afb8a68e0cb2150fa17a5ba4343670a1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a112e652aecb6923a2dbea8c6a2c33ec1"><td class="memItemLeft" align="right" valign="top"><a id="a112e652aecb6923a2dbea8c6a2c33ec1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitBitCountInst</b> (BitCountInst &amp;i) override</td></tr>
+<tr class="separator:a112e652aecb6923a2dbea8c6a2c33ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91c6eb672a98ed6817c1c78f6228f767"><td class="memItemLeft" align="right" valign="top"><a id="a91c6eb672a98ed6817c1c78f6228f767"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitBitCastInst</b> (BitCastInst &amp;i) override</td></tr>
+<tr class="separator:a91c6eb672a98ed6817c1c78f6228f767"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74a06fa29b00c503dfbe5a0eea835542"><td class="memItemLeft" align="right" valign="top"><a id="a74a06fa29b00c503dfbe5a0eea835542"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitVaStartInst</b> (VaStartInst &amp;i) override</td></tr>
+<tr class="separator:a74a06fa29b00c503dfbe5a0eea835542"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b632f9513aab888e745e8519362a193"><td class="memItemLeft" align="right" valign="top"><a id="a2b632f9513aab888e745e8519362a193"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_FPUControlInst</b> (X86_FPUControlInst &amp;i) override</td></tr>
+<tr class="separator:a2b632f9513aab888e745e8519362a193"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2a36ed8b0ca9046ef4e6b0441f96de5"><td class="memItemLeft" align="right" valign="top"><a id="ad2a36ed8b0ca9046ef4e6b0441f96de5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTerminatorInst</b> (TerminatorInst &amp;i) override</td></tr>
+<tr class="separator:ad2a36ed8b0ca9046ef4e6b0441f96de5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3924548b139b668a9f8a36732a64c0b8"><td class="memItemLeft" align="right" valign="top"><a id="a3924548b139b668a9f8a36732a64c0b8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitSetInst</b> (SetInst &amp;i) override</td></tr>
+<tr class="separator:a3924548b139b668a9f8a36732a64c0b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a721222260b027874603010ab95efdca1"><td class="memItemLeft" align="right" valign="top"><a id="a721222260b027874603010ab95efdca1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_OutInst</b> (X86_OutInst &amp;i) override</td></tr>
+<tr class="separator:a721222260b027874603010ab95efdca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f2c99bacc066f6c3cbc14ef1e502758"><td class="memItemLeft" align="right" valign="top"><a id="a8f2c99bacc066f6c3cbc14ef1e502758"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_WrMsrInst</b> (X86_WrMsrInst &amp;i) override</td></tr>
+<tr class="separator:a8f2c99bacc066f6c3cbc14ef1e502758"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad811a8ec16638e2d0cbaeb0814900e43"><td class="memItemLeft" align="right" valign="top"><a id="ad811a8ec16638e2d0cbaeb0814900e43"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LidtInst</b> (X86_LidtInst &amp;i) override</td></tr>
+<tr class="separator:ad811a8ec16638e2d0cbaeb0814900e43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4af2b9805b8fa8a7e5aa1b797522ac86"><td class="memItemLeft" align="right" valign="top"><a id="a4af2b9805b8fa8a7e5aa1b797522ac86"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LgdtInst</b> (X86_LgdtInst &amp;i) override</td></tr>
+<tr class="separator:a4af2b9805b8fa8a7e5aa1b797522ac86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a608e1052c4544fce19b4fbb15d02a494"><td class="memItemLeft" align="right" valign="top"><a id="a608e1052c4544fce19b4fbb15d02a494"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_LtrInst</b> (X86_LtrInst &amp;i) override</td></tr>
+<tr class="separator:a608e1052c4544fce19b4fbb15d02a494"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e2820f0805cea33db23a26b2b860fe8"><td class="memItemLeft" align="right" valign="top"><a id="a8e2820f0805cea33db23a26b2b860fe8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>VisitInst</b> (<a class="el" href="classInst.html">Inst</a> &amp;i) override</td></tr>
-<tr class="separator:ad774d60edf6cad0bb25e99e54eef003a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a8e2820f0805cea33db23a26b2b860fe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/tags/<a class="el" href="constraints_8h_source.html">constraints.h</a></li>
+<li>passes/tags/constraint/arith.cpp</li>
+<li>passes/tags/constraint/call.cpp</li>
+<li>passes/tags/constraint/cmp.cpp</li>
+<li>passes/tags/constraint/cond.cpp</li>
+<li>passes/tags/constraint/const.cpp</li>
+<li>passes/tags/constraint/conv.cpp</li>
+<li>passes/tags/constraint/memory.cpp</li>
 <li>passes/tags/constraints.cpp</li>
 </ul>
 </div><!-- contents -->
