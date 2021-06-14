@@ -35,14 +35,76 @@ void ConstraintSolver::Solve()
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::VisitSubInst(SubInst &i)
+void ConstraintSolver::VisitInst(Inst &i)
+{
+  std::string msg;
+  llvm::raw_string_ostream os(msg);
+  os << i << "\n";
+  llvm::report_fatal_error(msg.c_str());
+}
+
+// -----------------------------------------------------------------------------
+ID<ConstraintSolver::Constraint> ConstraintSolver::Find(Ref<Inst> a)
+{
+  if (auto it = ids_.find(a); it != ids_.end()) {
+    return union_.Find(it->second);
+  } else {
+    auto id = union_.Emplace();
+    ids_.emplace(a, id);
+    return id;
+  }
+}
+
+// -----------------------------------------------------------------------------
+ConstraintSolver::Constraint *ConstraintSolver::Map(Ref<Inst> a)
+{
+  return union_.Map(Find(a));
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::Subset(Ref<Inst> from, Ref<Inst> to)
 {
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::VisitAddInst(AddInst &i)
+void ConstraintSolver::AtMost(Ref<Inst> a, const TaggedType &type)
 {
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-  auto vo = analysis_.Find(i);
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::AtLeast(Ref<Inst> a, const TaggedType &type)
+{
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
+{
+  auto type = analysis_.Find(arg);
+  if (type.IsUnknown()) {
+    switch (auto ty = arg.GetType()) {
+      case Type::V64: {
+        return AtMost(arg, TaggedType::Val());
+      }
+      case Type::I8:
+      case Type::I16:
+      case Type::I32:
+      case Type::I64:
+      case Type::I128: {
+        if (target_->GetPointerType() == ty) {
+          return AtMost(arg, TaggedType::PtrInt());
+        } else {
+          return AtMost(arg, TaggedType::Int());
+        }
+      }
+      case Type::F32:
+      case Type::F64:
+      case Type::F80:
+      case Type::F128: {
+        return AtMost(arg, TaggedType::Int());
+      }
+    }
+    llvm_unreachable("invalid type");
+  } else {
+    return AtMost(arg, type);
+  }
 }

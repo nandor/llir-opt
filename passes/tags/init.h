@@ -12,6 +12,9 @@
 namespace tags {
 
 class RegisterAnalysis;
+class TaggedType;
+
+
 
 /**
  * Helper to produce the initial types for known values.
@@ -60,7 +63,7 @@ public:
   }
 
 private:
-  void Infer(Ref<Inst> inst);
+  TaggedType Infer(Type ty);
 
 private:
   /// Reference to the analysis.

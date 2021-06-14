@@ -44,6 +44,13 @@ add_library(passes
     sccp/solver.cpp
     sccp/x86.cpp
 
+    tags/constraint/arith.cpp
+    tags/constraint/call.cpp
+    tags/constraint/cmp.cpp
+    tags/constraint/cond.cpp
+    tags/constraint/const.cpp
+    tags/constraint/conv.cpp
+    tags/constraint/memory.cpp
     tags/constraints.cpp
     tags/eval/add.cpp
     tags/eval/and.cpp

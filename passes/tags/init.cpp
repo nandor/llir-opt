@@ -44,32 +44,8 @@ void Init::VisitArgInst(ArgInst &i)
               }
               default: {
                 if (func.HasAddressTaken() || !func.IsLocal()) {
-                  switch (auto ty = i.GetType()) {
-                    case Type::V64: {
-                      analysis_.Mark(i, TaggedType::Val());
-                      return;
-                    }
-                    case Type::I8:
-                    case Type::I16:
-                    case Type::I32:
-                    case Type::I64:
-                    case Type::I128: {
-                      if (target_->GetPointerType() == ty) {
-                        analysis_.Mark(i, TaggedType::PtrInt());
-                      } else {
-                        analysis_.Mark(i, TaggedType::Int());
-                      }
-                      return;
-                    }
-                    case Type::F32:
-                    case Type::F64:
-                    case Type::F80:
-                    case Type::F128: {
-                      analysis_.Mark(i, TaggedType::Int());
-                      return;
-                    }
-                  }
-                  llvm_unreachable("invalid type");
+                  analysis_.Mark(i, Infer(i.GetType()));
+                  return;
                 } else {
                   return;
                 }
@@ -275,7 +251,7 @@ void Init::VisitX86_RdTscInst(X86_RdTscInst &i)
 // -----------------------------------------------------------------------------
 void Init::VisitLoadInst(LoadInst &i)
 {
-  Infer(i.GetSubValue(0));
+  analysis_.Mark(i, Infer(i.GetType()));
 }
 
 // -----------------------------------------------------------------------------
@@ -318,7 +294,7 @@ void Init::VisitLandingPadInst(LandingPadInst &pad)
         analysis_.Mark(pad.GetSubValue(0), TaggedType::Ptr());
         analysis_.Mark(pad.GetSubValue(1), TaggedType::Young());
         for (unsigned i = 2, n = pad.GetNumRets(); i < n; ++i) {
-          Infer(pad.GetSubValue(i));
+          analysis_.Mark(pad.GetSubValue(i), Infer(pad.GetType(i)));
         }
         return;
       }
@@ -339,12 +315,11 @@ void Init::VisitLandingPadInst(LandingPadInst &pad)
 }
 
 // -----------------------------------------------------------------------------
-void Init::Infer(Ref<Inst> inst)
+TaggedType Init::Infer(Type ty)
 {
-  switch (auto ty = inst.GetType()) {
+  switch (ty) {
     case Type::V64: {
-      analysis_.Mark(inst, TaggedType::Val());
-      return;
+      return TaggedType::Val();
     }
     case Type::I8:
     case Type::I16:
@@ -352,18 +327,16 @@ void Init::Infer(Ref<Inst> inst)
     case Type::I64:
     case Type::I128: {
       if (target_->GetPointerType() == ty) {
-        analysis_.Mark(inst, TaggedType::PtrInt());
+        return TaggedType::PtrInt();
       } else {
-        analysis_.Mark(inst, TaggedType::Int());
+        return TaggedType::Int();
       }
-      return;
     }
     case Type::F32:
     case Type::F64:
     case Type::F80:
     case Type::F128: {
-      analysis_.Mark(inst, TaggedType::Int());
-      return;
+      return TaggedType::Int();
     }
   }
   llvm_unreachable("invalid type");

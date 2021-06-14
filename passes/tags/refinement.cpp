@@ -535,7 +535,7 @@ void Refinement::VisitSubInst(SubInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
-  if (vo.IsPtr() && vl.IsPtrUnion() && vr.IsInt()) {
+  if (vo.IsPtrLike() && vl.IsPtrUnion() && vr.IsInt()) {
     RefineAddr(i, i.GetLHS());
     return;
   }
