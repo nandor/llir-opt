@@ -224,6 +224,14 @@ void Refinement::RefineInequality(
     Block *blt,
     Block *bgt)
 {
+  auto vl = analysis_.Find(lhs);
+  auto vr = analysis_.Find(rhs);
+  if (vl.IsVal() && vr.IsOdd()) {
+    return Specialise(lhs, b, { { TaggedType::Odd(), blt } });
+  }
+  if (vr.IsVal() && vl.IsOdd()) {
+    return Specialise(rhs, b, { { TaggedType::Odd(), bgt } });
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -590,15 +598,6 @@ void Refinement::VisitCmpInst(CmpInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
 
-  if (!IsEquality(cc) || IsOrdered(cc)) {
-    if (vl.IsVal() && vr.IsOdd()) {
-      return Refine(i.getParent(), i.GetLHS(), TaggedType::Odd());
-    }
-    if (vr.IsVal() && vl.IsOdd()) {
-      return Refine(i.getParent(), i.GetRHS(), TaggedType::Odd());
-    }
-  }
-
   if (vl.IsAddrInt() && vr.IsInt()) {
     return Refine(i.getParent(), i.GetLHS(), TaggedType::Int());
   }
@@ -639,6 +638,10 @@ void Refinement::VisitMovInst(MovInst &i)
   if (parent != inst->getParent()) {
     bool isSplit = false;
     for (auto *front : pdf_.calculate(pdt_, node)) {
+      if (front == parent) {
+        isSplit = true;
+        break;
+      }
       for (auto *succ : front->successors()) {
         if (succ == parent) {
           isSplit = true;

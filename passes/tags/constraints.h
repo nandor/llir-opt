@@ -50,6 +50,7 @@ public:
   void VisitShiftRightInst(ShiftRightInst &i) override { ExactlyInt(i); }
   void VisitSllInst(SllInst &i) override { ExactlyInt(i); }
   void VisitRotateInst(RotateInst &i) override { ExactlyInt(i); }
+  void VisitCopySignInst(CopySignInst &i) override { ExactlyInt(i); }
   void VisitGetInst(GetInst &i) override { ExactlyInt(i); }
   void VisitX86_RdTscInst(X86_RdTscInst &i) override { ExactlyInt(i); }
   void VisitMultiplyInst(MultiplyInst &i) override { ExactlyInt(i); }
@@ -59,6 +60,8 @@ public:
   void VisitBitCastInst(BitCastInst &i) override { Equal(i, i.GetArg()); }
   void VisitVaStartInst(VaStartInst &i) override { ExactlyPointer(i.GetVAList()); }
   void VisitX86_FPUControlInst(X86_FPUControlInst &i) override { ExactlyPointer(i.GetAddr()); }
+  void VisitSyscallInst(SyscallInst &i) override { ExactlyInt(i); }
+  void VisitCloneInst(CloneInst &i) override { ExactlyInt(i); }
   void VisitTerminatorInst(TerminatorInst &i) override {}
   void VisitSetInst(SetInst &i) override {}
   void VisitX86_OutInst(X86_OutInst &i) override {}
@@ -66,6 +69,9 @@ public:
   void VisitX86_LidtInst(X86_LidtInst &i) override {}
   void VisitX86_LgdtInst(X86_LgdtInst &i) override {}
   void VisitX86_LtrInst(X86_LtrInst &i) override {}
+  void VisitX86_HltInst(X86_HltInst &i) override {}
+  void VisitX86_PauseInst(X86_PauseInst &i) override {}
+  void VisitX86_FnClExInst(X86_FnClExInst &i) override {}
 
   void VisitInst(Inst &i) override;
 

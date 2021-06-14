@@ -105,7 +105,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
         }
         llvm_unreachable("invalid calling convention");
       } else {
-        llvm_unreachable("not implemented");
+        AtMostInfer(arg);
       }
     }
   }
@@ -165,7 +165,10 @@ void ConstraintSolver::VisitCallSite(CallSite &site)
       case CallingConv::MULTIBOOT:
       case CallingConv::WIN64:
       case CallingConv::C: {
-        llvm_unreachable("not implemented");
+        for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
+          AtMostInfer(site.GetSubValue(i));
+        }
+        break;
       }
       case CallingConv::CAML: {
         ExactlyPointer(site.GetSubValue(0));

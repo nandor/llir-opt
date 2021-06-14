@@ -13,13 +13,13 @@ using namespace tags;
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryExchangeInst(MemoryExchangeInst &i)
 {
-  llvm_unreachable("not implemented");
+  ExactlyPointer(i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
 {
-  llvm_unreachable("not implemented");
+  ExactlyPointer(i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
