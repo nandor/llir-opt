@@ -123,76 +123,77 @@ $(function() {
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> VisitShiftRightInst(ShiftRightInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keywordtype">void</span> VisitSllInst(SllInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> VisitRotateInst(RotateInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> VisitX86_RdTscInst(X86_RdTscInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> VisitMultiplyInst(MultiplyInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> VisitDivisionRemainderInst(DivisionRemainderInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">void</span> VisitByteSwapInst(ByteSwapInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> VisitBitCountInst(BitCountInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span> VisitBitCastInst(BitCastInst &amp;i)<span class="keyword"> override </span>{ Equal(i, i.GetArg()); }</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> VisitVaStartInst(VaStartInst &amp;i)<span class="keyword"> override </span>{ ExactlyPointer(i.GetVAList()); }</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> VisitX86_FPUControlInst(X86_FPUControlInst &amp;i)<span class="keyword"> override </span>{ ExactlyPointer(i.GetAddr()); }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(SetInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">void</span> VisitX86_OutInst(X86_OutInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> VisitX86_LidtInst(X86_LidtInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span> VisitX86_LgdtInst(X86_LgdtInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">void</span> VisitX86_LtrInst(X86_LtrInst &amp;i)<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keyword">struct </span>Constraint {</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> Min;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> Max;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    Constraint(<a class="code" href="classID.html">ID&lt;Constraint&gt;</a> <span class="keywordtype">id</span>)</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      : Min(TaggedType::Unknown())</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      , Max(TaggedType::PtrInt())</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    {</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    }</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  };</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <a class="code" href="classID.html">ID&lt;Constraint&gt;</a> Find(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  Constraint *Map(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keywordtype">void</span> Subset(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> from, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> to);</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keywordtype">void</span> AtMost(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="keywordtype">void</span> AtLeast(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keywordtype">void</span> AtMostInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keywordtype">void</span> AtMostPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { AtMost(arg, TaggedType::Ptr()); }</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordtype">void</span> ExactlyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Ptr()); }</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">void</span> ExactlyYoung(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Young()); }</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordtype">void</span> ExactlyHeap(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Heap()); }</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keywordtype">void</span> ExactlyInt(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Int()); }</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordtype">void</span> ExactlyUndef(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Undef()); }</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="keywordtype">void</span> Exactly(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type)</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  {</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    AtMost(a, type);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    AtLeast(a, type);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  }</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keywordtype">void</span> Equal(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> b)</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  {</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    Subset(a, b);</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    Subset(b, a);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  }</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  std::unordered_map&lt;Ref&lt;Inst&gt;, <a class="code" href="classID.html">ID&lt;Constraint&gt;</a>&gt; ids_;</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;  <a class="code" href="classUnionFind.html">UnionFind&lt;Constraint&gt;</a> union_;</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;};</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;}</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">void</span> VisitCopySignInst(CopySignInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> VisitX86_RdTscInst(X86_RdTscInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> VisitMultiplyInst(MultiplyInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">void</span> VisitDivisionRemainderInst(DivisionRemainderInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> VisitByteSwapInst(ByteSwapInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span> VisitBitCountInst(BitCountInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> VisitBitCastInst(BitCastInst &amp;i)<span class="keyword"> override </span>{ Equal(i, i.GetArg()); }</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> VisitVaStartInst(VaStartInst &amp;i)<span class="keyword"> override </span>{ ExactlyPointer(i.GetVAList()); }</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> VisitX86_FPUControlInst(X86_FPUControlInst &amp;i)<span class="keyword"> override </span>{ ExactlyPointer(i.GetAddr()); }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(SetInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> VisitX86_OutInst(X86_OutInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> VisitX86_WrMsrInst(X86_WrMsrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span> VisitX86_LidtInst(X86_LidtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">void</span> VisitX86_LgdtInst(X86_LgdtInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span> VisitX86_LtrInst(X86_LtrInst &amp;i)<span class="keyword"> override </span>{}</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">void</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">struct </span>Constraint {</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> Min;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> Max;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    Constraint(<a class="code" href="classID.html">ID&lt;Constraint&gt;</a> <span class="keywordtype">id</span>)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      : Min(TaggedType::Unknown())</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      , Max(TaggedType::PtrInt())</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    {</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  };</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <a class="code" href="classID.html">ID&lt;Constraint&gt;</a> Find(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  Constraint *Map(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keywordtype">void</span> Subset(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> from, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> to);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="keywordtype">void</span> AtMost(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keywordtype">void</span> AtLeast(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <span class="keywordtype">void</span> AtMostInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordtype">void</span> AtMostPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { AtMost(arg, TaggedType::Ptr()); }</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">void</span> ExactlyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Ptr()); }</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordtype">void</span> ExactlyYoung(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Young()); }</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keywordtype">void</span> ExactlyHeap(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Heap()); }</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordtype">void</span> ExactlyInt(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Int()); }</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keywordtype">void</span> ExactlyUndef(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, TaggedType::Undef()); }</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">void</span> Exactly(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> &amp;type)</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  {</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    AtMost(a, type);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    AtLeast(a, type);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  }</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">void</span> Equal(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> b)</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  {</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    Subset(a, b);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    Subset(b, a);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  }</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;  std::unordered_map&lt;Ref&lt;Inst&gt;, <a class="code" href="classID.html">ID&lt;Constraint&gt;</a>&gt; ids_;</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  <a class="code" href="classUnionFind.html">UnionFind&lt;Constraint&gt;</a> union_;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;};</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;}</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassCallSite_html"><div class="ttname"><a href="classCallSite.html">CallSite</a></div><div class="ttdef"><b>Definition:</b> call.h:20</div></div>
