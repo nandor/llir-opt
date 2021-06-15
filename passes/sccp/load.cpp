@@ -156,7 +156,10 @@ void SCCPSolver::VisitLoadInst(LoadInst &inst)
       Mark(inst, addr);
       return;
     }
-    case Lattice::Kind::INT:
+    case Lattice::Kind::INT: {
+      Mark(inst, Lattice::Undefined());
+      return;
+    }
     case Lattice::Kind::MASK:
     case Lattice::Kind::FLOAT:
     case Lattice::Kind::FLOAT_ZERO:
