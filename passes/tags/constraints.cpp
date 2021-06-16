@@ -12,6 +12,91 @@
 using namespace tags;
 
 
+
+// -----------------------------------------------------------------------------
+bool operator<(ConstraintType a, ConstraintType b)
+{
+  switch (a) {
+    case ConstraintType::BOT: {
+      return b != ConstraintType::BOT;
+    }
+    case ConstraintType::INT: {
+      return b == ConstraintType::PTR_INT ||
+             b == ConstraintType::ADDR_INT ||
+             b == ConstraintType::VAL;
+    }
+    case ConstraintType::VAL: {
+      return b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT ||
+             b == ConstraintType::ADDR_INT;
+    }
+    case ConstraintType::HEAP: {
+      return b == ConstraintType::VAL ||
+             b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT ||
+             b == ConstraintType::ADDR ||
+             b == ConstraintType::ADDR_INT;
+    }
+    case ConstraintType::PTR_BOT: {
+      return b == ConstraintType::HEAP ||
+             b == ConstraintType::VAL ||
+             b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT ||
+             b == ConstraintType::ADDR ||
+             b == ConstraintType::ADDR_INT ||
+             b == ConstraintType::FUNC;
+    }
+    case ConstraintType::YOUNG: {
+      return b == ConstraintType::HEAP ||
+             b == ConstraintType::VAL ||
+             b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT;
+    }
+    case ConstraintType::FUNC: {
+      return b == ConstraintType::HEAP ||
+             b == ConstraintType::VAL ||
+             b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT;
+    }
+    case ConstraintType::PTR: {
+      return b == ConstraintType::PTR_INT;
+    }
+    case ConstraintType::PTR_INT: {
+      return false;
+    }
+    case ConstraintType::ADDR: {
+      return b == ConstraintType::PTR ||
+             b == ConstraintType::PTR_INT ||
+             b == ConstraintType::ADDR_INT;
+    }
+    case ConstraintType::ADDR_INT: {
+      return b == ConstraintType::PTR_INT;
+    }
+  }
+  llvm_unreachable("invalid kind");
+}
+
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, ConstraintType type)
+{
+  switch (type) {
+    case ConstraintType::BOT: os << "bot"; return os;
+    case ConstraintType::INT: os << "int"; return os;
+    case ConstraintType::PTR_BOT: os << "ptr_bot"; return os;
+    case ConstraintType::YOUNG: os << "young"; return os;
+    case ConstraintType::HEAP: os << "heap"; return os;
+    case ConstraintType::ADDR: os << "addr"; return os;
+    case ConstraintType::PTR: os << "ptr"; return os;
+    case ConstraintType::ADDR_INT: os << "addr|int"; return os;
+    case ConstraintType::PTR_INT: os << "ptr|int"; return os;
+    case ConstraintType::VAL: os << "val"; return os;
+    case ConstraintType::FUNC: os << "func"; return os;
+  }
+  llvm_unreachable("invalid constraint kind");
+}
+
+
+
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Constraint::Union(Constraint &that)
 {
@@ -50,6 +135,16 @@ void ConstraintSolver::Solve()
 {
   BuildConstraints();
   CollapseEquivalences();
+
+  for (auto *c : union_) {
+    if (c->Min <= c->Max) {
+
+    } else if (c->Max < c->Min) {
+
+    } else {
+      assert(!"invalid constraint");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -176,10 +271,11 @@ void ConstraintSolver::Subset(Ref<Inst> from, Ref<Inst> to)
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::AtMost(Ref<Inst> a, const TaggedType &type)
+void ConstraintSolver::AtMost(Ref<Inst> a, ConstraintType type)
 {
   auto *c = Map(a);
   if (type <= c->Max) {
+    //assert(c->Min <= type && "invalid upper bound");
     c->Max = type;
   } else {
     assert(c->Max < type && "invalid constraint");
@@ -187,10 +283,11 @@ void ConstraintSolver::AtMost(Ref<Inst> a, const TaggedType &type)
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::AtLeast(Ref<Inst> a, const TaggedType &type)
+void ConstraintSolver::AtLeast(Ref<Inst> a, ConstraintType type)
 {
   auto *c = Map(a);
   if (c->Min <= type) {
+    //assert(type <= c->Max && "invalid lower bound");
     c->Min = type;
   } else {
     assert(type < c->Min && "invalid constraint");
@@ -201,31 +298,46 @@ void ConstraintSolver::AtLeast(Ref<Inst> a, const TaggedType &type)
 void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
 {
   auto type = analysis_.Find(arg);
-  if (type.IsUnknown()) {
-    switch (auto ty = arg.GetType()) {
-      case Type::V64: {
-        return AtMost(arg, TaggedType::Val());
-      }
-      case Type::I8:
-      case Type::I16:
-      case Type::I32:
-      case Type::I64:
-      case Type::I128: {
-        if (target_->GetPointerType() == ty) {
-          return AtMost(arg, TaggedType::PtrInt());
-        } else {
-          return AtMost(arg, TaggedType::Int());
+  switch (type.GetKind()) {
+    case TaggedType::Kind::UNKNOWN: {
+      switch (auto ty = arg.GetType()) {
+        case Type::V64: {
+          return AtMost(arg, ConstraintType::VAL);
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::I128: {
+          if (target_->GetPointerType() == ty) {
+            return AtMost(arg, ConstraintType::PTR_INT);
+          } else {
+            return AtMost(arg, ConstraintType::INT);
+          }
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          return AtMost(arg, ConstraintType::INT);
         }
       }
-      case Type::F32:
-      case Type::F64:
-      case Type::F80:
-      case Type::F128: {
-        return AtMost(arg, TaggedType::Int());
-      }
+      llvm_unreachable("invalid type");
     }
-    llvm_unreachable("invalid type");
-  } else {
-    return AtMost(arg, type);
+
+    case TaggedType::Kind::INT: return AtMost(arg, ConstraintType::INT);
+    case TaggedType::Kind::YOUNG: return AtMost(arg, ConstraintType::YOUNG);
+    case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
+    case TaggedType::Kind::HEAP: return AtMost(arg, ConstraintType::HEAP);
+    case TaggedType::Kind::ADDR: return AtMost(arg, ConstraintType::ADDR);
+    case TaggedType::Kind::ADDR_NULL: return AtMost(arg, ConstraintType::ADDR_INT);
+    case TaggedType::Kind::ADDR_INT: return AtMost(arg, ConstraintType::ADDR_INT);
+    case TaggedType::Kind::VAL: return AtMost(arg, ConstraintType::VAL);
+    case TaggedType::Kind::FUNC: return AtMost(arg, ConstraintType::FUNC);
+    case TaggedType::Kind::PTR: return AtMost(arg, ConstraintType::PTR);
+    case TaggedType::Kind::PTR_NULL: return AtMost(arg, ConstraintType::PTR_INT);
+    case TaggedType::Kind::PTR_INT: return AtMost(arg, ConstraintType::PTR_INT);
+    case TaggedType::Kind::UNDEF: return AtMost(arg, ConstraintType::BOT);
   }
+  llvm_unreachable("invalid type kind");
 }

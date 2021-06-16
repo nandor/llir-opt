@@ -20,6 +20,8 @@ public:
     UNKNOWN,
     // Integrals.
     INT,
+    // Function pointer.
+    FUNC,
     // Caml pointers.
     YOUNG,
     HEAP_OFF,
@@ -108,6 +110,7 @@ public:
   static TaggedType AddrNull() { return TaggedType(Kind::ADDR_NULL); }
   static TaggedType AddrInt() { return TaggedType(Kind::ADDR_INT); }
   static TaggedType Undef() { return TaggedType(Kind::UNDEF); }
+  static TaggedType Func() { return TaggedType(Kind::FUNC); }
 
   static TaggedType Mask(const MaskedType &mod);
   static TaggedType Zero() { return Const(0); }

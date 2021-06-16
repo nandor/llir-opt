@@ -152,6 +152,9 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
       Refine(inst.getParent(), addr, TaggedType::Ptr());
       return;
     }
+    case TaggedType::Kind::FUNC: {
+      llvm_unreachable("not implemented");
+    }
   }
 }
 
@@ -171,7 +174,8 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::ADDR: {
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::FUNC: {
       // Add an explicit pointer-to-integer cast.
       Refine(inst.getParent(), addr, TaggedType::Int());
       return;
@@ -264,6 +268,7 @@ void Refinement::RefineAndOne(Ref<Inst> arg, Block *b, Block *bt, Block *bf)
       Specialise(arg, b, { { TaggedType::Odd(), bt }, { TaggedType::Heap(), bf } });
       return;
     }
+    case TaggedType::Kind::FUNC:
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT:
     case TaggedType::Kind::ADDR_NULL:
@@ -726,7 +731,7 @@ void Refinement::VisitCallSite(CallSite &site)
   }
 
   // Refine the callee to a pointer.
-  RefineAddr(site, site.GetCallee());
+  Refine(site.getParent(), site.GetCallee(), TaggedType::Func());
 }
 
 // -----------------------------------------------------------------------------

@@ -31,7 +31,8 @@ TaggedType Step::Ext(Type ty, TaggedType arg)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::ADDR:
     case TaggedType::Kind::ADDR_INT:
-    case TaggedType::Kind::ADDR_NULL: {
+    case TaggedType::Kind::ADDR_NULL:
+    case TaggedType::Kind::FUNC: {
       return TaggedType::Int();
     }
     case TaggedType::Kind::UNDEF: {
@@ -72,7 +73,8 @@ TaggedType Step::Trunc(Type ty, TaggedType arg)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::ADDR_INT:
     case TaggedType::Kind::ADDR_NULL:
-    case TaggedType::Kind::ADDR: {
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::FUNC: {
       if (fitsPointer) {
         return arg;
       } else {

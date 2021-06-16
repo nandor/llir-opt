@@ -119,7 +119,10 @@ void Init::VisitMovInst(MovInst &i)
         analysis_.Mark(i, TaggedType::Ptr());
         return;
       }
-      case Global::Kind::FUNC:
+      case Global::Kind::FUNC: {
+        analysis_.Mark(i, TaggedType::Func());
+        return;
+      }
       case Global::Kind::BLOCK: {
         analysis_.Mark(i, TaggedType::Ptr());
         return;

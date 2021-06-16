@@ -22,6 +22,7 @@ TaggedType Step::Shr(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::PTR:       return TaggedType::Int();
     case TaggedType::Kind::PTR_INT:   return TaggedType::Int();
     case TaggedType::Kind::PTR_NULL:  return TaggedType::Int();
+    case TaggedType::Kind::FUNC:      return TaggedType::Int();
     case TaggedType::Kind::INT: {
       return TaggedType::Int();
     }

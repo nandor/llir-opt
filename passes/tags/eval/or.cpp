@@ -31,6 +31,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR_INT:  return TaggedType::AddrInt();
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
         case TaggedType::Kind::INT:       return TaggedType::Mask(ml | vr.GetInt());
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -49,6 +50,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  return TaggedType::PtrInt();
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -67,6 +69,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -85,6 +88,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -103,6 +107,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -125,6 +130,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  return TaggedType::PtrInt();
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -143,6 +149,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
@@ -162,10 +169,12 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+        case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid value kind");
     }
     case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
+    case TaggedType::Kind::FUNC:      llvm_unreachable("not implemented");
   }
   llvm_unreachable("invalid value kind");
 }

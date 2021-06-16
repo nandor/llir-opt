@@ -114,7 +114,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitCallSite(CallSite &site)
 {
-  ExactlyPointer(site.GetCallee());
+  ExactlyFunc(site.GetCallee());
 
   std::queue<Func *> q;
   llvm::SmallPtrSet<Func *, 8> v;

@@ -17,6 +17,27 @@ namespace tags {
 
 class RegisterAnalysis;
 
+enum class ConstraintType {
+  BOT,
+  // Pure integers.
+  INT,
+  // Pure pointers.
+  PTR_BOT,
+  YOUNG,
+  HEAP,
+  ADDR,
+  PTR,
+  FUNC,
+  // Pointers or integers.
+  ADDR_INT,
+  PTR_INT,
+  VAL,
+};
+
+
+/**
+ * Implementation of the backtracking-based constraint solver.
+ */
 class ConstraintSolver : private InstVisitor<void> {
 public:
   ConstraintSolver(RegisterAnalysis &analysis, const Target *target, Prog &prog);
@@ -63,7 +84,7 @@ private:
   void VisitBitCountInst(BitCountInst &i) override { ExactlyInt(i); }
   void VisitBitCastInst(BitCastInst &i) override { Equal(i, i.GetArg()); }
   void VisitVaStartInst(VaStartInst &i) override { ExactlyPointer(i.GetVAList()); }
-  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override { ExactlyPointer(i.GetAddr()); }
+  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override { AnyPointer(i.GetAddr()); }
   void VisitSyscallInst(SyscallInst &i) override { ExactlyInt(i); }
   void VisitCloneInst(CloneInst &i) override { ExactlyInt(i); }
   void VisitTerminatorInst(TerminatorInst &i) override {}
@@ -83,14 +104,14 @@ private:
   /// Bounds for a single variable.
   struct Constraint {
     ID<Constraint> Id;
-    TaggedType Min;
-    TaggedType Max;
+    ConstraintType Min;
+    ConstraintType Max;
     BitSet<Constraint> Subsets;
 
     Constraint(ID<Constraint> id)
       : Id(id)
-      , Min(TaggedType::Unknown())
-      , Max(TaggedType::PtrInt())
+      , Min(ConstraintType::BOT)
+      , Max(ConstraintType::PTR_INT)
     {
     }
 
@@ -104,19 +125,26 @@ private:
 
 private:
   void Subset(Ref<Inst> from, Ref<Inst> to);
-  void AtMost(Ref<Inst> a, const TaggedType &type);
-  void AtLeast(Ref<Inst> a, const TaggedType &type);
+  void AtMost(Ref<Inst> a, ConstraintType type);
+  void AtLeast(Ref<Inst> a, ConstraintType type);
 
   void AtMostInfer(Ref<Inst> arg);
 
-  void AtMostPointer(Ref<Inst> arg) { AtMost(arg, TaggedType::Ptr()); }
-  void ExactlyPointer(Ref<Inst> arg) { Exactly(arg, TaggedType::Ptr()); }
-  void ExactlyYoung(Ref<Inst> arg) { Exactly(arg, TaggedType::Young()); }
-  void ExactlyHeap(Ref<Inst> arg) { Exactly(arg, TaggedType::Heap()); }
-  void ExactlyInt(Ref<Inst> arg) { Exactly(arg, TaggedType::Int()); }
-  void ExactlyUndef(Ref<Inst> arg) { Exactly(arg, TaggedType::Undef()); }
+  void AtMostPointer(Ref<Inst> arg) { AtMost(arg, ConstraintType::PTR); }
+  void ExactlyPointer(Ref<Inst> arg) { Exactly(arg, ConstraintType::PTR); }
+  void ExactlyYoung(Ref<Inst> arg) { Exactly(arg, ConstraintType::YOUNG); }
+  void ExactlyHeap(Ref<Inst> arg) { Exactly(arg, ConstraintType::HEAP); }
+  void ExactlyInt(Ref<Inst> arg) { Exactly(arg, ConstraintType::INT); }
+  void ExactlyUndef(Ref<Inst> arg) { Exactly(arg, ConstraintType::BOT); }
+  void ExactlyFunc(Ref<Inst> arg) { Exactly(arg, ConstraintType::FUNC); }
 
-  void Exactly(Ref<Inst> a, const TaggedType &type)
+  void AnyPointer(Ref<Inst> a)
+  {
+    AtLeast(a, ConstraintType::PTR_BOT);
+    AtMost(a, ConstraintType::PTR);
+  }
+
+  void Exactly(Ref<Inst> a, const ConstraintType &type)
   {
     AtMost(a, type);
     AtLeast(a, type);
@@ -143,3 +171,17 @@ private:
 };
 
 }
+
+
+// -----------------------------------------------------------------------------
+bool operator<(tags::ConstraintType a, tags::ConstraintType b);
+
+// -----------------------------------------------------------------------------
+inline bool operator<=(tags::ConstraintType a, tags::ConstraintType b)
+{
+  return a == b || a < b;
+}
+
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, tags::ConstraintType type);
+

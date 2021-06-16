@@ -13,24 +13,24 @@ using namespace tags;
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryExchangeInst(MemoryExchangeInst &i)
 {
-  ExactlyPointer(i.GetAddr());
+  AnyPointer(i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
 {
-  ExactlyPointer(i.GetAddr());
+  AnyPointer(i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryStoreInst(MemoryStoreInst &store)
 {
-  ExactlyPointer(store.GetAddr());
+  AnyPointer(store.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMemoryLoadInst(MemoryLoadInst &load)
 {
-  ExactlyPointer(load.GetAddr());
+  AnyPointer(load.GetAddr());
   AtMostInfer(load);
 }

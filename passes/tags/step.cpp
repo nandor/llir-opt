@@ -27,6 +27,7 @@ TaggedType Step::Clamp(TaggedType type, Type ty)
       case TaggedType::Kind::ADDR_INT:  return TaggedType::Val();
       case TaggedType::Kind::ADDR_NULL: return TaggedType::Undef();
       case TaggedType::Kind::ADDR:      return TaggedType::Undef();
+      case TaggedType::Kind::FUNC:      return TaggedType::Func();
       case TaggedType::Kind::INT: {
         const auto &m = type.GetInt();
         return TaggedType::Mask(MaskedType(m.GetValue() | 1, m.GetKnown() | 1));
