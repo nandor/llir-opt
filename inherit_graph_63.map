@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classFlaggedType.html" title=" " alt="" coords="5,5,109,32"/>
+<area shape="rect" id="node1" href="$classEmitter.html" title=" " alt="" coords="5,81,76,108"/>
+<area shape="rect" id="node2" href="$classAArch64Emitter.html" title=" " alt="" coords="124,5,248,32"/>
+<area shape="rect" id="node3" href="$classPPCEmitter.html" title=" " alt="" coords="139,56,233,83"/>
+<area shape="rect" id="node4" href="$classRISCVEmitter.html" title=" " alt="" coords="131,107,241,133"/>
+<area shape="rect" id="node5" href="$classX86Emitter.html" title=" " alt="" coords="139,157,233,184"/>
 </map>
