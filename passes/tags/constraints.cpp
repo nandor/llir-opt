@@ -137,13 +137,7 @@ void ConstraintSolver::Solve()
   CollapseEquivalences();
 
   for (auto *c : union_) {
-    if (c->Min <= c->Max) {
-
-    } else if (c->Max < c->Min) {
-
-    } else {
-      assert(!"invalid constraint");
-    }
+    assert(c->Min <= c->Max && "invalid constraint range");
   }
 }
 
@@ -275,7 +269,7 @@ void ConstraintSolver::AtMost(Ref<Inst> a, ConstraintType type)
 {
   auto *c = Map(a);
   if (type <= c->Max) {
-    //assert(c->Min <= type && "invalid upper bound");
+    assert(c->Min <= type && "invalid upper bound");
     c->Max = type;
   } else {
     assert(c->Max < type && "invalid constraint");
@@ -287,7 +281,7 @@ void ConstraintSolver::AtLeast(Ref<Inst> a, ConstraintType type)
 {
   auto *c = Map(a);
   if (c->Min <= type) {
-    //assert(type <= c->Max && "invalid lower bound");
+    assert(type <= c->Max && "invalid lower bound");
     c->Min = type;
   } else {
     assert(type < c->Min && "invalid constraint");

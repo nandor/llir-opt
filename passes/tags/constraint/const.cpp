@@ -20,9 +20,11 @@ void ConstraintSolver::VisitMovInst(MovInst &i)
   {
     switch (g->GetKind()) {
       case Global::Kind::EXTERN: {
-        return ExactlyPointer(i);
+        return AnyPointer(i);
       }
-      case Global::Kind::FUNC:
+      case Global::Kind::FUNC: {
+        return ExactlyFunc(i);
+      }
       case Global::Kind::BLOCK: {
         return ExactlyPointer(i);
       }

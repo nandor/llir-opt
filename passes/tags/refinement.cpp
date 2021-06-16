@@ -22,6 +22,16 @@ STATISTIC(NumMovsRefined, "Number of movs refined");
 
 
 // -----------------------------------------------------------------------------
+static Type ToType(Type ty, TaggedType kind)
+{
+  if (ty == Type::V64 && kind.IsOddLike()) {
+    return Type::I64;
+  } else {
+    return ty;
+  }
+}
+
+// -----------------------------------------------------------------------------
 Refinement::Refinement(RegisterAnalysis &analysis, const Target *target, Func &func)
   : analysis_(analysis)
   , target_(target)
@@ -57,14 +67,30 @@ void Refinement::Run()
 void Refinement::Refine(
     Block *parent,
     Ref<Inst> ref,
-    const TaggedType &type)
+    const TaggedType &nt)
 {
   if (pdt_.dominates(parent, ref->getParent())) {
-    // If the definition is post-dominated by the use, change its type.
-    analysis_.Refine(ref, type);
-    auto *source = &*ref;
-    if (inQueue_.insert(source).second) {
-      queue_.push(source);
+    // If the refinement creates an integer-to-pointer cast, add an explicit
+    // mov instruction to perform it, carrying information through type.
+    auto ot = analysis_.Find(ref);
+    if ((ot.IsInt() && nt.IsPtrLike()) || (nt.IsInt() && ot.IsPtrLike())) {
+      auto *block = ref->getParent();
+      auto *mov = new MovInst(ToType(ref.GetType(), nt), ref, ref->GetAnnots());
+      block->AddInst(mov, &*ref);
+      for (auto ut = ref->use_begin(); ut != ref->use_end(); ) {
+        Use &use = *ut++;
+        if (use.getUser() != mov) {
+          use = mov->GetSubValue(0);
+        }
+      }
+      analysis_.Define(mov->GetSubValue(0), nt);
+    } else {
+      // If the definition is post-dominated by the use, change its type.
+      analysis_.Refine(ref, nt);
+      auto *source = &*ref;
+      if (inQueue_.insert(source).second) {
+        queue_.push(source);
+      }
     }
   } else {
     // Find the post-dominated nodes which are successors of the frontier.
@@ -72,7 +98,7 @@ void Refinement::Refine(
     for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
       for (auto *succ : front->successors()) {
         if (pdt_.dominates(parent, succ)) {
-          splits.emplace(succ, type);
+          splits.emplace(succ, nt);
         }
       }
     }
@@ -348,16 +374,6 @@ Refinement::Liveness(
     }
   }
   return std::make_pair(livePhi, liveMov);
-}
-
-// -----------------------------------------------------------------------------
-static Type ToType(Type ty, TaggedType kind)
-{
-  if (ty == Type::V64 && kind.IsOddLike()) {
-    return Type::I64;
-  } else {
-    return ty;
-  }
 }
 
 // -----------------------------------------------------------------------------

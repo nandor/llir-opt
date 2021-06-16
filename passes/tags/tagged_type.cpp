@@ -327,7 +327,9 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
           auto k = same & u_.MaskVal.GetKnown() & that.u_.MaskVal.GetKnown();
           return TaggedType::Mask({vl & k, k});
         }
-        case Kind::FUNC: llvm_unreachable("not implemented");
+        case Kind::FUNC: {
+          return TaggedType::PtrInt();
+        }
       }
       llvm_unreachable("invalid kind");
     }
@@ -388,7 +390,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::ADDR:      return TaggedType::Ptr();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();
         case Kind::ADDR_NULL: return TaggedType::PtrNull();
-        case Kind::FUNC: llvm_unreachable("not implemented");
+        case Kind::FUNC:      return TaggedType::Ptr();
       }
       llvm_unreachable("invalid kind");
     }
