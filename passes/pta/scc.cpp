@@ -63,7 +63,7 @@ void SCCSolver::Solve(std::function<void(const Group &)> &&f)
   }
   sccs_.clear();
 }
-#include <llvm/Support/raw_ostream.h>
+
 // -----------------------------------------------------------------------------
 void SCCSolver::VisitFull(GraphNode *node)
 {

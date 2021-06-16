@@ -5,6 +5,7 @@
 #pragma once
 
 #include "core/adt/id.h"
+#include "core/adt/bitset.h"
 #include "core/adt/union_find.h"
 #include "core/target.h"
 #include "core/inst_visitor.h"
@@ -21,7 +22,10 @@ public:
   ConstraintSolver(RegisterAnalysis &analysis, const Target *target, Prog &prog);
 
   void Solve();
+  void BuildConstraints();
+  void CollapseEquivalences();
 
+private:
   void VisitArgInst(ArgInst &i) override;
   void VisitCallSite(CallSite &i) override;
   void VisitLandingPadInst(LandingPadInst &i) override;
@@ -78,14 +82,21 @@ public:
 private:
   /// Bounds for a single variable.
   struct Constraint {
+    ID<Constraint> Id;
     TaggedType Min;
     TaggedType Max;
+    BitSet<Constraint> Subsets;
 
     Constraint(ID<Constraint> id)
-      : Min(TaggedType::Unknown())
+      : Id(id)
+      , Min(TaggedType::Unknown())
       , Max(TaggedType::PtrInt())
     {
     }
+
+    void Union(Constraint &that);
+
+    void dump(llvm::raw_ostream &os = llvm::errs());
   };
 
   ID<Constraint> Find(Ref<Inst> a);

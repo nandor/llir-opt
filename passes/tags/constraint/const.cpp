@@ -41,8 +41,13 @@ void ConstraintSolver::VisitMovInst(MovInst &i)
   auto arg = i.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
-      AtMostInfer(i);
-      Subset(i, ::cast<Inst>(arg));
+      auto ai = ::cast<Inst>(arg);
+      if (analysis_.Find(i) <= analysis_.Find(ai)) {
+        Subset(i, ai);
+        AtMostInfer(i);
+      } else {
+        AtMostInfer(i);
+      }
       return;
     }
     case Value::Kind::GLOBAL: {
