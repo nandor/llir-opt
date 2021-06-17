@@ -51,6 +51,7 @@ add_library(passes
     tags/constraint/const.cpp
     tags/constraint/conv.cpp
     tags/constraint/memory.cpp
+    tags/constraint_type.cpp
     tags/constraints.cpp
     tags/eval/add.cpp
     tags/eval/and.cpp

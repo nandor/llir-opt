@@ -14,12 +14,12 @@ using namespace tags;
 void ConstraintSolver::VisitExtensionInst(ExtensionInst &i)
 {
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitTruncInst(TruncInst &i)
 {
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }

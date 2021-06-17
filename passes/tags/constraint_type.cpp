@@ -89,7 +89,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, ConstraintType type)
     case ConstraintType::PTR: os << "ptr"; return os;
     case ConstraintType::ADDR_INT: os << "addr|int"; return os;
     case ConstraintType::PTR_INT: os << "ptr|int"; return os;
-    case ConstraintType::HEAP_INT: os << "val"; return os;
+    case ConstraintType::HEAP_INT: os << "heap|int"; return os;
     case ConstraintType::FUNC: os << "func"; return os;
   }
   llvm_unreachable("invalid constraint kind");
@@ -210,7 +210,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
         case ConstraintType::FUNC:      llvm_unreachable("not implemented");
         case ConstraintType::PTR:       return ConstraintType::PTR;
-        case ConstraintType::PTR_INT:   llvm_unreachable("not implemented");
+        case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      return ConstraintType::ADDR;
         case ConstraintType::ADDR_INT:  llvm_unreachable("not implemented");
       }
@@ -270,9 +270,9 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
         case ConstraintType::PTR_BOT:  return ConstraintType::PTR_BOT;
         case ConstraintType::YOUNG:    llvm_unreachable("not implemented");
         case ConstraintType::FUNC:     llvm_unreachable("not implemented");
-        case ConstraintType::PTR:      return ConstraintType::PTR;
+        case ConstraintType::PTR:      return ConstraintType::HEAP;
         case ConstraintType::PTR_INT:  llvm_unreachable("not implemented");
-        case ConstraintType::ADDR:     llvm_unreachable("not implemented");
+        case ConstraintType::ADDR:     return ConstraintType::PTR_BOT;
         case ConstraintType::ADDR_INT: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");

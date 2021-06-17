@@ -44,7 +44,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
           case CallingConv::MULTIBOOT:
           case CallingConv::WIN64: {
             if (IsExtern(func)) {
-              AtMostInfer(arg);
+              Infer(arg);
             } else {
               Subset(call->arg(idx), arg);
             }
@@ -59,7 +59,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
                     case 1: ExactlyYoung(arg); continue;
                     default: {
                       if (IsExtern(func)) {
-                        AtMostInfer(arg);
+                        Infer(arg);
                       } else {
                         Subset(call->arg(idx), arg);
                       }
@@ -115,7 +115,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
         }
         llvm_unreachable("invalid calling convention");
       } else {
-        AtMostInfer(arg);
+        Infer(arg);
       }
     }
   }
@@ -176,7 +176,7 @@ void ConstraintSolver::VisitCallSite(CallSite &site)
       case CallingConv::WIN64:
       case CallingConv::C: {
         for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
-          AtMostInfer(site.GetSubValue(i));
+          Infer(site.GetSubValue(i));
         }
         break;
       }
@@ -184,7 +184,7 @@ void ConstraintSolver::VisitCallSite(CallSite &site)
         ExactlyPointer(site.GetSubValue(0));
         ExactlyYoung(site.GetSubValue(1));
         for (unsigned i = 2, n = site.GetNumRets(); i < n; ++i) {
-          AtMostInfer(site.GetSubValue(i));
+          Infer(site.GetSubValue(i));
         }
         break;
       }
@@ -212,7 +212,7 @@ void ConstraintSolver::VisitLandingPadInst(LandingPadInst &pad)
               ExactlyPointer(pad.GetSubValue(0));
               ExactlyYoung(pad.GetSubValue(1));
               for (unsigned i = 2, n = pad.GetNumRets(); i < n; ++i) {
-                AtMostInfer(pad.GetSubValue(i));
+                Infer(pad.GetSubValue(i));
               }
               return;
             }

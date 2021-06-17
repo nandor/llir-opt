@@ -365,7 +365,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::VAL:       return TaggedType::Val();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::PTR_NULL:  return TaggedType::PtrNull();
-        case Kind::ADDR:      return TaggedType::PtrInt();
+        case Kind::ADDR:      return TaggedType::Addr();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();
         case Kind::ADDR_NULL: return TaggedType::PtrNull();
         case Kind::INT: {

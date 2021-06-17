@@ -32,5 +32,5 @@ void ConstraintSolver::VisitMemoryStoreInst(MemoryStoreInst &store)
 void ConstraintSolver::VisitMemoryLoadInst(MemoryLoadInst &load)
 {
   AnyPointer(load.GetAddr());
-  AtMostInfer(load);
+  Infer(load);
 }

@@ -14,6 +14,13 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
+void ConstraintSolver::VisitUndefInst(UndefInst &i)
+{
+  AtMost(i, ConstraintType::PTR_INT);
+  AtLeast(i, ConstraintType::BOT);
+}
+
+// -----------------------------------------------------------------------------
 void ConstraintSolver::VisitMovInst(MovInst &i)
 {
   auto global = [this, &i](ConstRef<Global> g)
@@ -44,11 +51,12 @@ void ConstraintSolver::VisitMovInst(MovInst &i)
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
       auto ai = ::cast<Inst>(arg);
-      if (analysis_.Find(i) <= analysis_.Find(ai)) {
+      auto ty = analysis_.Find(i);
+      if (ty <= analysis_.Find(ai)) {
         Subset(i, ai);
-        AtMostInfer(i);
+        AtMostInfer(i, ty);
       } else {
-        AtMostInfer(i);
+        Infer(i);
       }
       return;
     }

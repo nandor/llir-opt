@@ -14,90 +14,6 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
-bool operator<(ConstraintType a, ConstraintType b)
-{
-  switch (a) {
-    case ConstraintType::BOT: {
-      return b != ConstraintType::BOT;
-    }
-    case ConstraintType::INT: {
-      return b == ConstraintType::PTR_INT ||
-             b == ConstraintType::ADDR_INT ||
-             b == ConstraintType::VAL;
-    }
-    case ConstraintType::VAL: {
-      return b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT ||
-             b == ConstraintType::ADDR_INT;
-    }
-    case ConstraintType::HEAP: {
-      return b == ConstraintType::VAL ||
-             b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT ||
-             b == ConstraintType::ADDR ||
-             b == ConstraintType::ADDR_INT;
-    }
-    case ConstraintType::PTR_BOT: {
-      return b == ConstraintType::HEAP ||
-             b == ConstraintType::VAL ||
-             b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT ||
-             b == ConstraintType::ADDR ||
-             b == ConstraintType::ADDR_INT ||
-             b == ConstraintType::FUNC;
-    }
-    case ConstraintType::YOUNG: {
-      return b == ConstraintType::HEAP ||
-             b == ConstraintType::VAL ||
-             b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT;
-    }
-    case ConstraintType::FUNC: {
-      return b == ConstraintType::HEAP ||
-             b == ConstraintType::VAL ||
-             b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT;
-    }
-    case ConstraintType::PTR: {
-      return b == ConstraintType::PTR_INT;
-    }
-    case ConstraintType::PTR_INT: {
-      return false;
-    }
-    case ConstraintType::ADDR: {
-      return b == ConstraintType::PTR ||
-             b == ConstraintType::PTR_INT ||
-             b == ConstraintType::ADDR_INT;
-    }
-    case ConstraintType::ADDR_INT: {
-      return b == ConstraintType::PTR_INT;
-    }
-  }
-  llvm_unreachable("invalid kind");
-}
-
-// -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, ConstraintType type)
-{
-  switch (type) {
-    case ConstraintType::BOT: os << "bot"; return os;
-    case ConstraintType::INT: os << "int"; return os;
-    case ConstraintType::PTR_BOT: os << "ptr_bot"; return os;
-    case ConstraintType::YOUNG: os << "young"; return os;
-    case ConstraintType::HEAP: os << "heap"; return os;
-    case ConstraintType::ADDR: os << "addr"; return os;
-    case ConstraintType::PTR: os << "ptr"; return os;
-    case ConstraintType::ADDR_INT: os << "addr|int"; return os;
-    case ConstraintType::PTR_INT: os << "ptr|int"; return os;
-    case ConstraintType::VAL: os << "val"; return os;
-    case ConstraintType::FUNC: os << "func"; return os;
-  }
-  llvm_unreachable("invalid constraint kind");
-}
-
-
-
-// -----------------------------------------------------------------------------
 void ConstraintSolver::Constraint::Union(Constraint &that)
 {
   if (that.Max <= Max) {
@@ -110,13 +26,13 @@ void ConstraintSolver::Constraint::Union(Constraint &that)
   } else {
     assert(that.Min <= Min && "invalid constraint");
   }
-  Subsets.Union(that.Subsets);
+  Subset.Union(that.Subset);
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Constraint::dump(llvm::raw_ostream &os)
 {
-  os << Id << "{" << Min << ", " << Max << "," << Subsets << "}";
+  os << Id << "{" << Min << ", " << Max << "," << Subset << "}";
 }
 
 // -----------------------------------------------------------------------------
@@ -137,7 +53,10 @@ void ConstraintSolver::Solve()
   CollapseEquivalences();
 
   for (auto *c : union_) {
-    assert(c->Min <= c->Max && "invalid constraint range");
+    if (c->Min == c->Max) {
+      continue;
+    }
+    assert(c->Min < c->Max && "invalid constraint range");
   }
 }
 
@@ -182,7 +101,7 @@ void ConstraintSolver::CollapseEquivalences()
     ++index;
 
     auto *c = union_.Map(nodeId);
-    for (auto succId : c->Subsets) {
+    for (auto succId : c->Subset) {
       if (succId >= nodes.size() || nodes[succId].Index == 0) {
         visit(succId);
         nodes[nodeId].Link = std::min(nodes[nodeId].Link, nodes[succId].Link);
@@ -194,19 +113,13 @@ void ConstraintSolver::CollapseEquivalences()
     if (nodes[nodeId].Link == nodes[nodeId].Index) {
       nodes[nodeId].InComponent = true;
 
-      BitSet<Constraint> *scc = nullptr;
+      BitSet<Constraint> &scc = sccs.emplace_back();
+      scc.Insert(nodeId);
       while (!stack.empty() && nodes[stack.top()].Index > nodes[nodeId].Link) {
         auto topId = stack.top();
         stack.pop();
         nodes[topId].InComponent = true;
-        if (!scc) {
-          scc = &sccs.emplace_back();
-        }
-        scc->Insert(topId);
-      }
-
-      if (scc) {
-        scc->Insert(nodeId);
+        scc.Insert(topId);
       }
     } else {
       stack.push(nodeId);
@@ -224,6 +137,38 @@ void ConstraintSolver::CollapseEquivalences()
     auto base = *scc.begin();
     for (auto it = scc.begin(); it != scc.end(); ++it) {
       union_.Union(base, *it);
+    }
+
+    auto *to = union_.Map(base);
+
+    std::optional<std::pair<ConstraintType, ConstraintType>> in;
+    for (auto pred : to->Subset) {
+      auto *from = union_.Map(pred);
+      if (to == from) {
+        continue;
+      }
+      if (in) {
+        in->first = GLB(in->first, from->Min);
+        in->second = LUB(in->second, from->Max);
+      } else {
+        in.emplace(from->Min, from->Max);
+      }
+    }
+
+    if (in) {
+      if (to->Min <= in->first) {
+        assert(in->first <= to->Max && "invalid lower bound");
+        to->Min = in->first;
+      } else {
+        assert(in->first < to->Min && "invalid constraint");
+      }
+
+      if (in->second <= to->Max) {
+        assert(to->Min <= in->second && "invalid upper bound");
+        to->Max = in->second;
+      } else {
+        assert(to->Max < in->second && "invalid constraint");
+      }
     }
   }
 }
@@ -258,7 +203,7 @@ ConstraintSolver::Constraint *ConstraintSolver::Map(Ref<Inst> a)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Subset(Ref<Inst> from, Ref<Inst> to)
 {
-  Map(from)->Subsets.Insert(Find(to));
+  Map(to)->Subset.Insert(Find(from));
 }
 
 // -----------------------------------------------------------------------------
@@ -286,14 +231,13 @@ void ConstraintSolver::AtLeast(Ref<Inst> a, ConstraintType type)
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
+void ConstraintSolver::AtMostInfer(Ref<Inst> arg, TaggedType type)
 {
-  auto type = analysis_.Find(arg);
   switch (type.GetKind()) {
     case TaggedType::Kind::UNKNOWN: {
       switch (auto ty = arg.GetType()) {
         case Type::V64: {
-          return AtMost(arg, ConstraintType::VAL);
+          return AtMost(arg, ConstraintType::HEAP_INT);
         }
         case Type::I8:
         case Type::I16:
@@ -315,7 +259,6 @@ void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
       }
       llvm_unreachable("invalid type");
     }
-
     case TaggedType::Kind::INT: return AtMost(arg, ConstraintType::INT);
     case TaggedType::Kind::YOUNG: return AtMost(arg, ConstraintType::YOUNG);
     case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
@@ -323,7 +266,7 @@ void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
     case TaggedType::Kind::ADDR: return AtMost(arg, ConstraintType::ADDR);
     case TaggedType::Kind::ADDR_NULL: return AtMost(arg, ConstraintType::ADDR_INT);
     case TaggedType::Kind::ADDR_INT: return AtMost(arg, ConstraintType::ADDR_INT);
-    case TaggedType::Kind::VAL: return AtMost(arg, ConstraintType::VAL);
+    case TaggedType::Kind::VAL: return AtMost(arg, ConstraintType::HEAP_INT);
     case TaggedType::Kind::FUNC: return AtMost(arg, ConstraintType::FUNC);
     case TaggedType::Kind::PTR: return AtMost(arg, ConstraintType::PTR);
     case TaggedType::Kind::PTR_NULL: return AtMost(arg, ConstraintType::PTR_INT);
@@ -331,4 +274,58 @@ void ConstraintSolver::AtMostInfer(Ref<Inst> arg)
     case TaggedType::Kind::UNDEF: return AtMost(arg, ConstraintType::BOT);
   }
   llvm_unreachable("invalid type kind");
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::AtLeastInfer(Ref<Inst> arg, TaggedType type)
+{
+  switch (type.GetKind()) {
+    case TaggedType::Kind::UNKNOWN: {
+      switch (auto ty = arg.GetType()) {
+        case Type::V64: {
+          return AtLeast(arg, ConstraintType::BOT);
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::I128: {
+          if (target_->GetPointerType() == ty) {
+            return AtLeast(arg, ConstraintType::BOT);
+          } else {
+            return AtLeast(arg, ConstraintType::INT);
+          }
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          return AtLeast(arg, ConstraintType::INT);
+        }
+      }
+      llvm_unreachable("invalid type");
+    }
+    case TaggedType::Kind::INT: return AtLeast(arg, ConstraintType::INT);
+    case TaggedType::Kind::YOUNG: return AtLeast(arg, ConstraintType::YOUNG);
+    case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
+    case TaggedType::Kind::HEAP: return AtLeast(arg, ConstraintType::HEAP);
+    case TaggedType::Kind::ADDR: return AtLeast(arg, ConstraintType::ADDR);
+    case TaggedType::Kind::ADDR_NULL: return AtLeast(arg, ConstraintType::BOT);
+    case TaggedType::Kind::ADDR_INT: return AtLeast(arg, ConstraintType::BOT);
+    case TaggedType::Kind::VAL: return AtLeast(arg, ConstraintType::BOT);
+    case TaggedType::Kind::FUNC: return AtLeast(arg, ConstraintType::FUNC);
+    case TaggedType::Kind::PTR: return AtLeast(arg, ConstraintType::PTR_BOT);
+    case TaggedType::Kind::PTR_NULL: return AtLeast(arg, ConstraintType::BOT);
+    case TaggedType::Kind::PTR_INT: return AtLeast(arg, ConstraintType::BOT);
+    case TaggedType::Kind::UNDEF: return AtLeast(arg, ConstraintType::BOT);
+  }
+  llvm_unreachable("invalid type kind");
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::Infer(Ref<Inst> arg)
+{
+   auto ty = analysis_.Find(arg);
+   AtLeastInfer(arg, ty);
+   AtMostInfer(arg, ty);
 }

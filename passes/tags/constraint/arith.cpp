@@ -14,21 +14,21 @@ using namespace tags;
 void ConstraintSolver::VisitSubInst(SubInst &i)
 {
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitAddInst(AddInst &i)
 {
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitOrInst(OrInst &i)
 {
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }
 
 // -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ void ConstraintSolver::VisitAndInst(AndInst &i)
   auto vo = analysis_.Find(i);
   */
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }
 
 // -----------------------------------------------------------------------------
@@ -68,5 +68,5 @@ void ConstraintSolver::VisitXorInst(XorInst &i)
   auto vo = analysis_.Find(i);
   */
   // TODO:
-  AtMostInfer(i);
+  Infer(i);
 }

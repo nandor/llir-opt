@@ -10,29 +10,13 @@
 #include "core/target.h"
 #include "core/inst_visitor.h"
 #include "passes/tags/tagged_type.h"
+#include "passes/tags/constraint_type.h"
 
 
 
 namespace tags {
 
 class RegisterAnalysis;
-
-enum class ConstraintType {
-  BOT,
-  // Pure integers.
-  INT,
-  // Pure pointers.
-  PTR_BOT,
-  YOUNG,
-  HEAP,
-  ADDR,
-  PTR,
-  FUNC,
-  // Pointers or integers.
-  ADDR_INT,
-  PTR_INT,
-  VAL,
-};
 
 
 /**
@@ -69,7 +53,7 @@ private:
   void VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
 
   void VisitFrameInst(FrameInst &i) override { ExactlyPointer(i); }
-  void VisitUndefInst(UndefInst &i) override { ExactlyUndef(i); }
+  void VisitUndefInst(UndefInst &i) override;
   void VisitAllocaInst(AllocaInst &i) override { ExactlyPointer(i); }
   void VisitFloatInst(FloatInst &i) override { ExactlyInt(i); }
   void VisitShiftRightInst(ShiftRightInst &i) override { ExactlyInt(i); }
@@ -106,7 +90,7 @@ private:
     ID<Constraint> Id;
     ConstraintType Min;
     ConstraintType Max;
-    BitSet<Constraint> Subsets;
+    BitSet<Constraint> Subset;
 
     Constraint(ID<Constraint> id)
       : Id(id)
@@ -128,14 +112,11 @@ private:
   void AtMost(Ref<Inst> a, ConstraintType type);
   void AtLeast(Ref<Inst> a, ConstraintType type);
 
-  void AtMostInfer(Ref<Inst> arg);
-
   void AtMostPointer(Ref<Inst> arg) { AtMost(arg, ConstraintType::PTR); }
   void ExactlyPointer(Ref<Inst> arg) { Exactly(arg, ConstraintType::PTR); }
   void ExactlyYoung(Ref<Inst> arg) { Exactly(arg, ConstraintType::YOUNG); }
   void ExactlyHeap(Ref<Inst> arg) { Exactly(arg, ConstraintType::HEAP); }
   void ExactlyInt(Ref<Inst> arg) { Exactly(arg, ConstraintType::INT); }
-  void ExactlyUndef(Ref<Inst> arg) { Exactly(arg, ConstraintType::BOT); }
   void ExactlyFunc(Ref<Inst> arg) { Exactly(arg, ConstraintType::FUNC); }
 
   void AnyPointer(Ref<Inst> a)
@@ -155,6 +136,10 @@ private:
     Subset(a, b);
     Subset(b, a);
   }
+
+  void AtLeastInfer(Ref<Inst> arg, TaggedType type);
+  void AtMostInfer(Ref<Inst> arg, TaggedType type);
+  void Infer(Ref<Inst> arg);
 
 private:
   bool IsExtern(const Func &f);
@@ -176,17 +161,4 @@ private:
 };
 
 }
-
-
-// -----------------------------------------------------------------------------
-bool operator<(tags::ConstraintType a, tags::ConstraintType b);
-
-// -----------------------------------------------------------------------------
-inline bool operator<=(tags::ConstraintType a, tags::ConstraintType b)
-{
-  return a == b || a < b;
-}
-
-// -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, tags::ConstraintType type);
 

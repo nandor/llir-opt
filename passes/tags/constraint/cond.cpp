@@ -16,6 +16,7 @@ void ConstraintSolver::VisitPhiInst(PhiInst &phi)
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     Subset(phi.GetValue(i), phi.GetSubValue(0));
   }
+  Infer(phi);
 }
 
 // -----------------------------------------------------------------------------
@@ -23,4 +24,5 @@ void ConstraintSolver::VisitSelectInst(SelectInst &i)
 {
   Subset(i.GetTrue(), i.GetSubValue(0));
   Subset(i.GetFalse(), i.GetSubValue(0));
+  Infer(i);
 }
