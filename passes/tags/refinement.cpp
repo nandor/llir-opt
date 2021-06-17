@@ -157,7 +157,8 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
     case TaggedType::Kind::HEAP:
     case TaggedType::Kind::HEAP_OFF:
     case TaggedType::Kind::PTR:
-    case TaggedType::Kind::ADDR: {
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::FUNC: {
       // Already a pointer, nothing to refine.
       return;
     }
@@ -177,9 +178,6 @@ void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
       // Refine to PTR.
       Refine(inst.getParent(), addr, TaggedType::Ptr());
       return;
-    }
-    case TaggedType::Kind::FUNC: {
-      llvm_unreachable("not implemented");
     }
   }
 }
