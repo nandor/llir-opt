@@ -202,9 +202,6 @@ void ConstraintSolver::CollapseEquivalences()
         if (!scc) {
           scc = &sccs.emplace_back();
         }
-        if (topId == 1) {
-          abort();
-        }
         scc->Insert(topId);
       }
 

@@ -9,6 +9,16 @@
 using namespace tags;
 
 
+// -----------------------------------------------------------------------------
+bool ConstraintSolver::IsExtern(const Func &f)
+{
+  auto it = externs_.emplace(&f, false);
+  if (it.second) {
+    it.first->second = f.IsRoot() || f.HasAddressTaken();
+  }
+  return it.first->second;
+}
+
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitArgInst(ArgInst &arg)
@@ -33,7 +43,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
           case CallingConv::INTR:
           case CallingConv::MULTIBOOT:
           case CallingConv::WIN64: {
-            if (func.IsRoot() || func.HasAddressTaken()) {
+            if (IsExtern(func)) {
               AtMostInfer(arg);
             } else {
               Subset(call->arg(idx), arg);
@@ -48,7 +58,7 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
                     case 0: ExactlyPointer(arg); continue;
                     case 1: ExactlyYoung(arg); continue;
                     default: {
-                      if (func.HasAddressTaken() || !func.IsLocal()) {
+                      if (IsExtern(func)) {
                         AtMostInfer(arg);
                       } else {
                         Subset(call->arg(idx), arg);

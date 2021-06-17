@@ -157,6 +157,9 @@ private:
   }
 
 private:
+  bool IsExtern(const Func &f);
+
+private:
   /// Reference to the analysis.
   RegisterAnalysis &analysis_;
   /// Reference to target info.
@@ -168,6 +171,8 @@ private:
   std::unordered_map<Ref<Inst>, ID<Constraint>> ids_;
   /// Union-find describing constraints for an ID.
   UnionFind<Constraint> union_;
+  /// Cache of functions which have their address taken.
+  std::unordered_map<const Func *, bool> externs_;
 };
 
 }
