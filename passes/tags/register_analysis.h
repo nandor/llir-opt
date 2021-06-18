@@ -11,6 +11,7 @@
 
 #include "core/inst_visitor.h"
 #include "core/target.h"
+#include "core/analysis/dominator.h"
 #include "passes/tags/tagged_type.h"
 
 
@@ -18,6 +19,20 @@
 namespace tags {
 class Init;
 class Step;
+
+/// Cache of dominator/post-dominator trees and frontiers.
+struct DominatorCache {
+  /// Dominator tree.
+  DominatorTree DT;
+  /// Dominance frontier.
+  DominanceFrontier DF;
+  /// Post-Dominator Tree.
+  PostDominatorTree PDT;
+  /// Post-Dominance Frontier.
+  PostDominanceFrontier PDF;
+
+  DominatorCache(Func &func);
+};
 
 class RegisterAnalysis {
 public:
@@ -76,6 +91,17 @@ private:
   void BackwardQueue(Ref<Inst > inst);
 
 private:
+  /// Return cached dominance information.
+  DominatorCache &GetDoms(Func &func)
+  {
+    auto it = doms_.emplace(&func, nullptr);
+    if (it.second) {
+      it.first->second.reset(new DominatorCache(func));
+    }
+    return *it.first->second;
+  }
+
+private:
   /// Reference to the underlying program.
   Prog &prog_;
   /// Reference to the target arch.
@@ -103,6 +129,8 @@ private:
     > args_;
   /// Mapping from functions to their return values.
   std::unordered_map<const Func *, std::vector<TaggedType>> rets_;
+  /// Cache of dominators for functions.
+  std::unordered_map<Func *, std::unique_ptr<DominatorCache>> doms_;
 };
 
 } // end namespace

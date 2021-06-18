@@ -383,7 +383,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::PTR:       return TaggedType::Ptr();
         case Kind::YOUNG:     return TaggedType::Ptr();
         case Kind::HEAP_OFF:  return TaggedType::Ptr();
-        case Kind::INT:       return TaggedType::PtrInt();
+        case Kind::INT:       return that.IsZero() ? TaggedType::PtrNull() : TaggedType::PtrInt();
         case Kind::VAL:       return TaggedType::PtrInt();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::PTR_NULL:  return TaggedType::PtrNull();
@@ -408,7 +408,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::UNDEF:     llvm_unreachable("not implemented");
         case Kind::YOUNG:     llvm_unreachable("not implemented");
         case Kind::HEAP_OFF: llvm_unreachable("not implemented");
-        case Kind::INT:       return TaggedType::PtrInt();
+        case Kind::INT:       return that.IsZero() ? TaggedType::PtrNull() : TaggedType::PtrInt();
         case Kind::ADDR:      return TaggedType::PtrNull();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();
         case Kind::ADDR_NULL: return TaggedType::PtrNull();

@@ -108,7 +108,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:      return ConstraintType::PTR_INT;
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
-        case ConstraintType::FUNC:      llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:      return ConstraintType::PTR_INT;
         case ConstraintType::PTR:       return ConstraintType::PTR_INT;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      llvm_unreachable("not implemented");
@@ -140,7 +140,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:      return ConstraintType::HEAP;
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:     return ConstraintType::HEAP;
-        case ConstraintType::FUNC:      return ConstraintType::PTR;
+        case ConstraintType::FUNC:      return ConstraintType::HEAP;
         case ConstraintType::PTR:       return ConstraintType::PTR;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      return ConstraintType::PTR;
@@ -159,7 +159,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:      llvm_unreachable("not implemented");
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:     return ConstraintType::YOUNG;
-        case ConstraintType::FUNC:      return ConstraintType::FUNC;
+        case ConstraintType::FUNC:      return ConstraintType::HEAP;
         case ConstraintType::PTR:       return ConstraintType::PTR;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      llvm_unreachable("not implemented");
@@ -191,11 +191,11 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:     return ConstraintType::PTR;
         case ConstraintType::PTR_BOT:  llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:    llvm_unreachable("not implemented");
-        case ConstraintType::FUNC:     llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:     return ConstraintType::PTR;
         case ConstraintType::PTR:      return ConstraintType::PTR;
         case ConstraintType::PTR_INT:  return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:     return ConstraintType::PTR;
-        case ConstraintType::ADDR_INT: llvm_unreachable("not implemented");
+        case ConstraintType::ADDR_INT: return ConstraintType::PTR_INT;
       }
       llvm_unreachable("invalid kind");
     }
@@ -204,15 +204,15 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
       switch (b) {
         case ConstraintType::BOT:       llvm_unreachable("not implemented");
         case ConstraintType::INT:       llvm_unreachable("not implemented");
-        case ConstraintType::HEAP_INT:  llvm_unreachable("not implemented");
-        case ConstraintType::HEAP:      llvm_unreachable("not implemented");
+        case ConstraintType::HEAP_INT:  return ConstraintType::ADDR_INT;
+        case ConstraintType::HEAP:      return ConstraintType::ADDR;
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
         case ConstraintType::FUNC:      llvm_unreachable("not implemented");
         case ConstraintType::PTR:       return ConstraintType::PTR;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      return ConstraintType::ADDR;
-        case ConstraintType::ADDR_INT:  llvm_unreachable("not implemented");
+        case ConstraintType::ADDR_INT:  return ConstraintType::ADDR_INT;
       }
       llvm_unreachable("invalid kind");
     }
@@ -244,14 +244,14 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
     case ConstraintType::BOT: return ConstraintType::BOT;
     case ConstraintType::INT: {
       switch (b) {
-        case ConstraintType::BOT: return ConstraintType::BOT;
-        case ConstraintType::INT: return ConstraintType::INT;
-        case ConstraintType::HEAP_INT: llvm_unreachable("not implemented");
-        case ConstraintType::HEAP:    return ConstraintType::BOT;
-        case ConstraintType::PTR_BOT: return ConstraintType::BOT;
+        case ConstraintType::BOT:       return ConstraintType::BOT;
+        case ConstraintType::INT:       return ConstraintType::INT;
+        case ConstraintType::HEAP_INT:  llvm_unreachable("not implemented");
+        case ConstraintType::HEAP:      return ConstraintType::BOT;
+        case ConstraintType::PTR_BOT:   return ConstraintType::BOT;
         case ConstraintType::YOUNG: llvm_unreachable("not implemented");
-        case ConstraintType::FUNC: llvm_unreachable("not implemented");
-        case ConstraintType::PTR: llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:      return ConstraintType::BOT;
+        case ConstraintType::PTR:       return ConstraintType::BOT;
         case ConstraintType::PTR_INT: llvm_unreachable("not implemented");
         case ConstraintType::ADDR: llvm_unreachable("not implemented");
         case ConstraintType::ADDR_INT: llvm_unreachable("not implemented");
@@ -285,7 +285,7 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:      return ConstraintType::PTR_BOT;
         case ConstraintType::PTR_BOT:   return ConstraintType::PTR_BOT;
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
-        case ConstraintType::FUNC:      llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:      return ConstraintType::PTR_BOT;
         case ConstraintType::PTR:       return ConstraintType::PTR_BOT;
         case ConstraintType::PTR_INT:   llvm_unreachable("not implemented");
         case ConstraintType::ADDR:      return ConstraintType::PTR_BOT;
@@ -301,7 +301,7 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:     llvm_unreachable("not implemented");
         case ConstraintType::PTR_BOT:  llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:    return ConstraintType::YOUNG;
-        case ConstraintType::FUNC:     return ConstraintType::FUNC;
+        case ConstraintType::FUNC:     return ConstraintType::PTR_BOT;
         case ConstraintType::PTR:      return ConstraintType::PTR_BOT;
         case ConstraintType::PTR_INT:  return ConstraintType::BOT;
         case ConstraintType::ADDR:     llvm_unreachable("not implemented");
@@ -311,16 +311,16 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
     }
     case ConstraintType::FUNC: {
       switch (b) {
-        case ConstraintType::BOT: llvm_unreachable("not implemented");
-        case ConstraintType::INT: return ConstraintType::PTR_INT;
+        case ConstraintType::BOT:      return ConstraintType::BOT;
+        case ConstraintType::INT:      return ConstraintType::BOT;
         case ConstraintType::HEAP_INT: llvm_unreachable("not implemented");
-        case ConstraintType::HEAP: llvm_unreachable("not implemented");
-        case ConstraintType::PTR_BOT: llvm_unreachable("not implemented");
-        case ConstraintType::YOUNG: llvm_unreachable("not implemented");
-        case ConstraintType::FUNC: return ConstraintType::FUNC;
-        case ConstraintType::PTR: return ConstraintType::PTR_BOT;
-        case ConstraintType::PTR_INT: return ConstraintType::BOT;
-        case ConstraintType::ADDR: llvm_unreachable("not implemented");
+        case ConstraintType::HEAP:     llvm_unreachable("not implemented");
+        case ConstraintType::PTR_BOT:  return ConstraintType::PTR_BOT;
+        case ConstraintType::YOUNG:    llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:     return ConstraintType::FUNC;
+        case ConstraintType::PTR:      return ConstraintType::PTR_BOT;
+        case ConstraintType::PTR_INT:  return ConstraintType::BOT;
+        case ConstraintType::ADDR:     llvm_unreachable("not implemented");
         case ConstraintType::ADDR_INT: llvm_unreachable("not implemented");
       }
       llvm_unreachable("invalid kind");
@@ -330,7 +330,7 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
         case ConstraintType::BOT: return ConstraintType::BOT;
         case ConstraintType::INT: return ConstraintType::BOT;
         case ConstraintType::HEAP_INT: llvm_unreachable("not implemented");
-        case ConstraintType::HEAP: llvm_unreachable("not implemented");
+        case ConstraintType::HEAP:    return ConstraintType::PTR_BOT;
         case ConstraintType::PTR_BOT: return ConstraintType::PTR_BOT;
         case ConstraintType::YOUNG: llvm_unreachable("not implemented");
         case ConstraintType::FUNC: llvm_unreachable("not implemented");
@@ -341,15 +341,13 @@ ConstraintType tags::GLB(ConstraintType a, ConstraintType b)
       }
       llvm_unreachable("invalid kind");
     }
-    case ConstraintType::PTR_INT: {
-      llvm_unreachable("not implemented");
-    }
+    case ConstraintType::PTR_INT: return a;
     case ConstraintType::ADDR: {
       switch (b) {
         case ConstraintType::BOT:       return ConstraintType::BOT;
         case ConstraintType::INT:       return ConstraintType::BOT;
         case ConstraintType::HEAP_INT:  llvm_unreachable("not implemented");
-        case ConstraintType::HEAP:      llvm_unreachable("not implemented");
+        case ConstraintType::HEAP:      return ConstraintType::HEAP;
         case ConstraintType::PTR_BOT:   return ConstraintType::PTR_BOT;
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
         case ConstraintType::FUNC:      llvm_unreachable("not implemented");

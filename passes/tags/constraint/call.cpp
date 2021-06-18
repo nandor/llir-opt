@@ -124,50 +124,59 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitCallSite(CallSite &site)
 {
+  // Enforce a function pointer constraint on the callee.
   ExactlyFunc(site.GetCallee());
 
+  // Add subset constraints on returns entering here.
   std::queue<Func *> q;
   llvm::SmallPtrSet<Func *, 8> v;
-  bool indirect = false;
+  llvm::SmallPtrSet<ReturnInst *, 8> subsets;
+  bool clamp = false;
+
   if (auto *f = site.GetDirectCallee()) {
     q.push(f);
-  }
-
-  while (!q.empty()) {
-    auto *f = q.front();
-    q.pop();
-    if (!v.insert(f).second) {
-      continue;
-    }
-
-    for (Block &block : *f) {
-      auto *term = block.GetTerminator();
-      if (!term->IsReturn()) {
+    while (!q.empty()) {
+      auto *f = q.front();
+      q.pop();
+      if (!v.insert(f).second) {
         continue;
       }
-      if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
-        for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
-          if (i < ret->arg_size()) {
-            Subset(ret->arg(i), site.GetSubValue(i));
-          } else {
-            llvm_unreachable("not implemented");
+
+      for (Block &block : *f) {
+        auto *term = block.GetTerminator();
+        if (!term->IsReturn()) {
+          continue;
+        }
+        if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+          subsets.insert(ret);
+          for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
+            if (i < ret->arg_size()) {
+              auto arg = ret->arg(i);
+              auto dst = site.GetSubValue(i);
+              if (!(analysis_.Find(arg) <= analysis_.Find(dst))) {
+                clamp = true;
+              }
+            } else {
+              llvm_unreachable("not implemented");
+            }
           }
+          continue;
         }
-        continue;
-      }
-      if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
-        if (auto *f = tcall->GetDirectCallee()) {
-          q.push(f);
-        } else {
-          indirect = true;
+        if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+          if (auto *f = tcall->GetDirectCallee()) {
+            q.push(f);
+          } else {
+            clamp = true;
+          }
+          continue;
         }
-        continue;
+        llvm_unreachable("invalid return instruction");
       }
-      llvm_unreachable("invalid return instruction");
     }
   }
 
-  if (indirect) {
+  // Enfore the widest constraints on the return values.
+  if (clamp) {
     switch (site.GetCallingConv()) {
       case CallingConv::SETJMP:
       case CallingConv::XEN:
@@ -194,7 +203,17 @@ void ConstraintSolver::VisitCallSite(CallSite &site)
         break;
       }
       case CallingConv::CAML_GC: {
-        llvm_unreachable("not implemented");
+        ExactlyPointer(site.GetSubValue(0));
+        ExactlyYoung(site.GetSubValue(1));
+        break;
+      }
+    }
+  } else {
+    for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
+      for (auto *ret : subsets) {
+        if (i < ret->arg_size()) {
+          Subset(ret->arg(i), site.GetSubValue(i));
+        }
       }
     }
   }

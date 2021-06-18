@@ -14,7 +14,60 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
+void ConstraintSolver::VisitGetInst(GetInst &i)
+{
+  switch (i.GetReg()) {
+    case Register::SP:
+    case Register::FS:
+    case Register::RET_ADDR:
+    case Register::FRAME_ADDR: {
+      return ExactlyPointer(i);
+    }
+    case Register::X86_CR0:
+    case Register::X86_CR4: {
+      return ExactlyInt(i);
+    }
+    case Register::X86_CR2:
+    case Register::X86_CR3: {
+      return ExactlyPointer(i);
+    }
+    case Register::X86_DS:
+    case Register::X86_ES:
+    case Register::X86_SS:
+    case Register::X86_FS:
+    case Register::X86_GS:
+    case Register::X86_CS: {
+      return ExactlyInt(i);
+    }
+    case Register::AARCH64_FPSR:
+    case Register::AARCH64_FPCR:
+    case Register::AARCH64_CNTVCT:
+    case Register::AARCH64_CNTFRQ:
+    case Register::AARCH64_FAR:
+    case Register::AARCH64_VBAR: {
+      return ExactlyInt(i);
+    }
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR: {
+      return ExactlyInt(i);
+    }
+    case Register::PPC_FPSCR: {
+      return ExactlyInt(i);
+    }
+  }
+  llvm_unreachable("invalid register kind");
+}
+
+// -----------------------------------------------------------------------------
 void ConstraintSolver::VisitUndefInst(UndefInst &i)
+{
+  AtMost(i, ConstraintType::PTR_INT);
+  AtLeast(i, ConstraintType::BOT);
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::VisitSyscallInst(SyscallInst &i)
 {
   AtMost(i, ConstraintType::PTR_INT);
   AtLeast(i, ConstraintType::BOT);
@@ -50,13 +103,10 @@ void ConstraintSolver::VisitMovInst(MovInst &i)
   auto arg = i.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
+      Infer(i);
       auto ai = ::cast<Inst>(arg);
-      auto ty = analysis_.Find(i);
-      if (ty <= analysis_.Find(ai)) {
-        Subset(i, ai);
-        AtMostInfer(i, ty);
-      } else {
-        Infer(i);
+      if (analysis_.Find(ai) <= analysis_.Find(i)) {
+        Subset(ai, i);
       }
       return;
     }

@@ -36,11 +36,7 @@ Refinement::Refinement(RegisterAnalysis &analysis, const Target *target, Func &f
   : analysis_(analysis)
   , target_(target)
   , func_(func)
-  , dt_(func_)
-  , pdt_(func_)
 {
-  df_.analyze(dt_);
-  pdf_.analyze(pdt_);
 }
 
 // -----------------------------------------------------------------------------
@@ -69,7 +65,15 @@ void Refinement::Refine(
     Ref<Inst> ref,
     const TaggedType &nt)
 {
-  if (pdt_.dominates(parent, ref->getParent())) {
+  assert(parent->getParent() == ref->getParent()->getParent() && "invalid block");
+
+  // Do not refine to a worse type.
+  if (analysis_.Find(ref) <= nt) {
+    return;
+  }
+
+  auto &doms = analysis_.GetDoms(*parent->getParent());
+  if (doms.PDT.dominates(parent, ref->getParent())) {
     // If the refinement creates an integer-to-pointer cast, add an explicit
     // mov instruction to perform it, carrying information through type.
     auto ot = analysis_.Find(ref);
@@ -95,16 +99,16 @@ void Refinement::Refine(
   } else {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
-    for (auto *front : pdf_.calculate(pdt_, pdt_.getNode(parent))) {
+    for (auto *front : doms.PDF.calculate(doms.PDT, doms.PDT.getNode(parent))) {
       for (auto *succ : front->successors()) {
-        if (pdt_.dominates(parent, succ)) {
+        if (doms.PDT.dominates(parent, succ)) {
           splits.emplace(succ, nt);
         }
       }
     }
 
     // Find the set of nodes which lead into a use of the references.
-    DefineSplits(ref, splits);
+    DefineSplits(doms, ref, splits);
   }
 }
 
@@ -113,28 +117,33 @@ void Refinement::Refine(
     Block *start,
     Block *end,
     Ref<Inst> ref,
-    const TaggedType &type)
+    const TaggedType &nt)
 {
-  if (pdt_.Dominates(start, end, ref->getParent())) {
-    // If the definition is post-dominated by the edge, change its type.
-    analysis_.Refine(ref, type);
+  auto *func = ref->getParent()->getParent();
+  assert(start->getParent() == func && "invalid block");
+  assert(end->getParent() == func && "invalid block");
+
+  auto &doms = analysis_.GetDoms(*func);
+  if (doms.PDT.Dominates(start, end, ref->getParent())) {
+    // If the definition is post-dominated by the edge, change its nt.
+    analysis_.Refine(ref, nt);
     auto *source = &*ref;
     if (inQueue_.insert(source).second) {
       queue_.push(source);
     }
-  } else if (auto *node = pdt_.getNode(start)) {
+  } else if (auto *node = doms.PDT.getNode(start)) {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
-    for (auto *front : pdf_.calculate(pdt_, node)) {
+    for (auto *front : doms.PDF.calculate(doms.PDT, node)) {
       for (auto *succ : front->successors()) {
-        if (pdt_.Dominates(start, end, succ)) {
-          splits.emplace(succ, type);
+        if (doms.PDT.Dominates(start, end, succ)) {
+          splits.emplace(succ, nt);
         }
       }
     }
 
-    // Find the set of nodes which lead into a use of the references.
-    DefineSplits(ref, splits);
+    // Introduce the movs.
+    DefineSplits(doms, ref, splits);
   }
 }
 
@@ -310,9 +319,12 @@ void Refinement::Specialise(
     const Block *from,
     const std::vector<std::pair<TaggedType, Block *>> &branches)
 {
+  assert(from->getParent() == ref->getParent()->getParent() && "invalid block");
+
+  auto &doms = analysis_.GetDoms(*from->getParent());
   std::unordered_map<const Block *, TaggedType> splits;
   for (auto &[ty, block] : branches) {
-    if (!dt_.Dominates(from, block, block)) {
+    if (!doms.DT.Dominates(from, block, block)) {
       continue;
     }
     bool split = false;
@@ -328,7 +340,7 @@ void Refinement::Specialise(
       splits.emplace(block, ty);
     }
   }
-  DefineSplits(ref, splits);
+  DefineSplits(doms, ref, splits);
 }
 
 // -----------------------------------------------------------------------------
@@ -376,6 +388,7 @@ Refinement::Liveness(
 
 // -----------------------------------------------------------------------------
 void Refinement::DefineSplits(
+    DominatorCache &doms,
     Ref<Inst> ref,
     const std::unordered_map<const Block *, TaggedType> &splits)
 {
@@ -398,7 +411,7 @@ void Refinement::DefineSplits(
     while (!q.empty()) {
       const Block *block = q.front();
       q.pop();
-      for (auto front : df_.calculate(dt_, dt_.getNode(block))) {
+      for (auto front : doms.DF.calculate(doms.DT, doms.DT.getNode(block))) {
         if (livePhi.count(front) && !phis.count(front)) {
           auto *phi = new PhiInst(ref.GetType(), {});
           front->AddPhi(phi);
@@ -407,7 +420,7 @@ void Refinement::DefineSplits(
             phi->Add(pred, ref);
             TaggedType predTy = TaggedType::Unknown();
             for (auto &[block, ty] : splits) {
-              if (dt_.dominates(block, pred)) {
+              if (doms.DT.dominates(block, pred)) {
                 predTy |= ty;
               }
             }
@@ -470,7 +483,7 @@ void Refinement::DefineSplits(
         }
       }
       // Rewrite dominated nodes.
-      for (auto *child : *dt_[block]) {
+      for (auto *child : *doms.DT[block]) {
         rewrite(child->getBlock());
       }
       // Remove the definition.
@@ -478,7 +491,7 @@ void Refinement::DefineSplits(
         defs.pop();
       }
     };
-  rewrite(dt_.getRoot());
+  rewrite(doms.DT.getRoot());
 
   // Recompute the types of the users of the refined instructions.
   for (auto &[mov, type] : newMovs) {
@@ -649,14 +662,15 @@ void Refinement::VisitMovInst(MovInst &i)
   }
 
   auto *parent = i.getParent();
-  auto *node = pdt_.getNode(parent);
+  auto &doms = analysis_.GetDoms(*parent->getParent());
+  auto *node = doms.PDT.getNode(parent);
   if (!node) {
     return;
   }
 
   if (parent != inst->getParent()) {
     bool isSplit = false;
-    for (auto *front : pdf_.calculate(pdt_, node)) {
+    for (auto *front : doms.PDF.calculate(doms.PDT, node)) {
       if (front == parent) {
         isSplit = true;
         break;
@@ -700,9 +714,18 @@ void Refinement::VisitPhiInst(PhiInst &phi)
   auto *parent = phi.getParent();
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
     auto ref = phi.GetValue(i);
-    auto block = phi.GetBlock(i);
-    if (vphi < analysis_.Find(ref)) {
-      Refine(phi.GetBlock(i), parent, ref, vphi);
+    auto *block = phi.GetBlock(i);
+    auto vref = analysis_.Find(ref);
+    if (vphi < vref) {
+      Refine(block, parent, ref, vphi);
+      continue;
+    }
+    if (vphi.IsPtrLike() && vref.IsInt()) {
+      auto *mov = new MovInst(ToType(ref.GetType(), vphi), ref, ref->GetAnnots());
+      block->AddInst(mov, block->GetTerminator());
+      phi.SetValue(i, mov);
+      analysis_.Define(mov, vphi);
+      continue;
     }
   }
 }

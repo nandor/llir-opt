@@ -13,10 +13,30 @@ using namespace tags;
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitPhiInst(PhiInst &phi)
 {
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    Subset(phi.GetValue(i), phi.GetSubValue(0));
-  }
+  // Independently infer constraints for the PHI node.
   Infer(phi);
+
+  // Add subset constraints if not a cast.
+  auto phiTy = analysis_.Find(phi);
+  bool cast = false;
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    auto inTy = analysis_.Find(phi.GetValue(i));
+    if (!(inTy <= phiTy)) {
+      cast = true;
+      break;
+    }
+  }
+  if (!cast) {
+    for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+      auto ref = phi.GetValue(i);
+      auto inTy = analysis_.Find(ref);
+      if (inTy <= phiTy) {
+        Subset(ref, phi);
+      } else {
+        assert(!"invalid PHI constraint");
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

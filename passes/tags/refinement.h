@@ -5,11 +5,11 @@
 #pragma once
 
 #include <queue>
+#include <set>
 #include <unordered_set>
 
 #include "core/inst_visitor.h"
 #include "core/target.h"
-#include "core/analysis/dominator.h"
 #include "passes/tags/tagged_type.h"
 
 
@@ -17,6 +17,7 @@
 namespace tags {
 
 class RegisterAnalysis;
+struct DominatorCache;
 
 /**
  * Helper to produce the initial types for known values.
@@ -101,6 +102,7 @@ private:
   );
   /// Define split points.
   void DefineSplits(
+      DominatorCache &doms,
       Ref<Inst> ref,
       const std::unordered_map<const Block *, TaggedType> &splits
   );
@@ -112,14 +114,6 @@ private:
   const Target *target_;
   /// Function to optimise.
   Func &func_;
-  /// Dominator tree.
-  DominatorTree dt_;
-  /// Dominance frontier.
-  DominanceFrontier df_;
-  /// Post-Dominator Tree.
-  PostDominatorTree pdt_;
-  /// Post-Dominance Frontier.
-  PostDominanceFrontier pdf_;
   /// Queue of instructions to simplify.
   std::queue<Inst *> queue_;
   /// Set of items in the queue.

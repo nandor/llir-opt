@@ -17,6 +17,15 @@ using namespace tags;
 
 
 // -----------------------------------------------------------------------------
+DominatorCache::DominatorCache(Func &func)
+  : DT(func)
+  , PDT(func)
+{
+  DF.analyze(DT);
+  PDF.analyze(PDT);
+}
+
+// -----------------------------------------------------------------------------
 static bool Converges(Type ty, TaggedType told, TaggedType tnew)
 {
   return (told < tnew) && (ty != Type::V64 || tnew <= TaggedType::Val());
@@ -204,15 +213,10 @@ void RegisterAnalysis::Solve()
     }
   }
   // Propagate types through the queued instructions.
-  std::unordered_map<Func *, std::unique_ptr<Refinement>> cache;
   while (!refineQueue_.empty() || !backwardQueue_.empty()) {
     while (!backwardQueue_.empty()) {
       auto *f = backwardQueue_.front();
-      auto it = cache.emplace(f, nullptr);
-      if (it.second) {
-        it.first->second.reset(new Refinement(*this, target_, *f));
-      }
-      it.first->second->Run();
+      Refinement(*this, target_, *f).Run();
       inBackwardQueue_.erase(f);
       backwardQueue_.pop();
     }

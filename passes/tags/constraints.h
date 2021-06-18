@@ -27,8 +27,11 @@ public:
   ConstraintSolver(RegisterAnalysis &analysis, const Target *target, Prog &prog);
 
   void Solve();
+
+private:
   void BuildConstraints();
   void CollapseEquivalences();
+  void RewriteTypes();
 
 private:
   void VisitArgInst(ArgInst &i) override;
@@ -60,7 +63,7 @@ private:
   void VisitSllInst(SllInst &i) override { ExactlyInt(i); }
   void VisitRotateInst(RotateInst &i) override { ExactlyInt(i); }
   void VisitCopySignInst(CopySignInst &i) override { ExactlyInt(i); }
-  void VisitGetInst(GetInst &i) override { ExactlyInt(i); }
+  void VisitGetInst(GetInst &i) override;
   void VisitX86_RdTscInst(X86_RdTscInst &i) override { ExactlyInt(i); }
   void VisitMultiplyInst(MultiplyInst &i) override { ExactlyInt(i); }
   void VisitDivisionRemainderInst(DivisionRemainderInst &i) override { ExactlyInt(i); }
@@ -69,7 +72,7 @@ private:
   void VisitBitCastInst(BitCastInst &i) override { Equal(i, i.GetArg()); }
   void VisitVaStartInst(VaStartInst &i) override { ExactlyPointer(i.GetVAList()); }
   void VisitX86_FPUControlInst(X86_FPUControlInst &i) override { AnyPointer(i.GetAddr()); }
-  void VisitSyscallInst(SyscallInst &i) override { ExactlyInt(i); }
+  void VisitSyscallInst(SyscallInst &i) override;
   void VisitCloneInst(CloneInst &i) override { ExactlyInt(i); }
   void VisitTerminatorInst(TerminatorInst &i) override {}
   void VisitSetInst(SetInst &i) override {}
@@ -137,8 +140,19 @@ private:
     Subset(b, a);
   }
 
-  void AtLeastInfer(Ref<Inst> arg, TaggedType type);
-  void AtMostInfer(Ref<Inst> arg, TaggedType type);
+  ConstraintType LowerBound(Type ty, TaggedType type);
+  ConstraintType UpperBound(Type ty, TaggedType type);
+
+  void AtLeastInfer(Ref<Inst> arg, TaggedType type)
+  {
+    return AtLeast(arg, LowerBound(arg.GetType(), type));
+  }
+
+  void AtMostInfer(Ref<Inst> arg, TaggedType type)
+  {
+    return AtMost(arg, UpperBound(arg.GetType(), type));
+  }
+
   void Infer(Ref<Inst> arg);
 
 private:
