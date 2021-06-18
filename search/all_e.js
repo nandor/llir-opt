@@ -7,7 +7,7 @@ var searchData=
   ['objectclosure_703',['ObjectClosure',['../structObjectClosure.html',1,'']]],
   ['objectgraph_704',['ObjectGraph',['../classObjectGraph.html',1,'ObjectGraph'],['../classObjectGraph.html#ac0470b1f3faf5113a815b3ac33ded1bb',1,'ObjectGraph::ObjectGraph()']]],
   ['objectmap_705',['ObjectMap',['../classSymbolicContext.html#a3a3766c2109a5279815f2d875dc1f7ba',1,'SymbolicContext::ObjectMap()'],['../classSymbolicFrame.html#a9c50c58abbb2b62b8588d3f3f46cdcc7',1,'SymbolicFrame::ObjectMap()']]],
-  ['objects_706',['objects',['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func::objects()'],['../structObjectClosure.html#abb90f6fd5866a21e5ddca99a6a9fbd23',1,'ObjectClosure::Objects()']]],
+  ['objects_706',['Objects',['../structObjectClosure.html#abb90f6fd5866a21e5ddca99a6a9fbd23',1,'ObjectClosure::Objects()'],['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func::objects()']]],
   ['objectsplitpass_707',['ObjectSplitPass',['../classObjectSplitPass.html',1,'ObjectSplitPass'],['../classObjectSplitPass.html#a6baa5ae6656ffe324c78f1b5e2d50716',1,'ObjectSplitPass::ObjectSplitPass()']]],
   ['objinfo_5f_708',['objInfo_',['../classAnnotPrinter.html#a9d307808964b8a401f0eb6cbaa01f72b',1,'AnnotPrinter::objInfo_()'],['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter::objInfo_()']]],
   ['off_709',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
