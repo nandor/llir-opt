@@ -1,0 +1,11 @@
+<map id="tags::DominatorCache" name="tags::DominatorCache">
+<area shape="rect" id="node1" title="Cache of dominator/post&#45;dominator trees and frontiers." alt="" coords="544,110,711,137"/>
+<area shape="rect" id="node2" href="$classDominanceFrontier.html" title=" " alt="" coords="305,18,451,45"/>
+<area shape="rect" id="node3" title=" " alt="" coords="6,5,241,47"/>
+<area shape="rect" id="node4" href="$classPostDominanceFrontier.html" title=" " alt="" coords="291,81,465,107"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,71,241,112"/>
+<area shape="rect" id="node6" href="$classDominatorTree.html" title=" " alt="" coords="319,142,437,169"/>
+<area shape="rect" id="node7" title=" " alt="" coords="30,136,217,177"/>
+<area shape="rect" id="node8" href="$classPostDominatorTree.html" title=" " alt="" coords="305,199,451,226"/>
+<area shape="rect" id="node9" title=" " alt="" coords="30,201,217,243"/>
+</map>

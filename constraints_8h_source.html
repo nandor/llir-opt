@@ -130,7 +130,7 @@ $(function() {
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> VisitSllInst(SllInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> VisitRotateInst(RotateInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> VisitCopySignInst(CopySignInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">void</span> VisitGetInst(GetInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">void</span> VisitX86_RdTscInst(X86_RdTscInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span> VisitMultiplyInst(MultiplyInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> VisitDivisionRemainderInst(DivisionRemainderInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
@@ -139,7 +139,7 @@ $(function() {
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span> VisitBitCastInst(BitCastInst &amp;i)<span class="keyword"> override </span>{ Equal(i, i.GetArg()); }</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">void</span> VisitVaStartInst(VaStartInst &amp;i)<span class="keyword"> override </span>{ ExactlyPointer(i.GetVAList()); }</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">void</span> VisitX86_FPUControlInst(X86_FPUControlInst &amp;i)<span class="keyword"> override </span>{ AnyPointer(i.GetAddr()); }</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">void</span> VisitSyscallInst(SyscallInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">void</span> VisitSyscallInst(SyscallInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">void</span> VisitCloneInst(CloneInst &amp;i)<span class="keyword"> override </span>{ ExactlyInt(i); }</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">void</span> VisitTerminatorInst(TerminatorInst &amp;i)<span class="keyword"> override </span>{}</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keywordtype">void</span> VisitSetInst(SetInst &amp;i)<span class="keyword"> override </span>{}</div>
@@ -175,56 +175,72 @@ $(function() {
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <a class="code" href="classID.html">ID&lt;Constraint&gt;</a> Find(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  Constraint *Map(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a);</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">void</span> Subset(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> from, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> to);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keywordtype">void</span> AtMost(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, ConstraintType type);</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keywordtype">void</span> AtLeast(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, ConstraintType type);</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  <span class="keywordtype">void</span> AtMostPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { AtMost(arg, ConstraintType::PTR); }</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  <span class="keywordtype">void</span> ExactlyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::PTR); }</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  <span class="keywordtype">void</span> ExactlyYoung(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::YOUNG); }</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="keywordtype">void</span> ExactlyHeap(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::HEAP); }</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keywordtype">void</span> ExactlyInt(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::INT); }</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <span class="keywordtype">void</span> ExactlyFunc(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::FUNC); }</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;  <span class="keywordtype">void</span> AnyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a)</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    AtLeast(a, ConstraintType::PTR_BOT);</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    AtMost(a, ConstraintType::PTR);</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  }</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;  <span class="keywordtype">void</span> Exactly(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> ConstraintType &amp;type)</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  {</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    AtMost(a, type);</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    AtLeast(a, type);</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;  }</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;  <span class="keywordtype">void</span> Equal(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> b)</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;  {</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    Subset(a, b);</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    Subset(b, a);</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;  }</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;  <span class="keywordtype">void</span> AtLeastInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type);</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  <span class="keywordtype">void</span> AtMostInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type);</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;  <span class="keywordtype">void</span> Infer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  Constraint *Dummy();</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keywordtype">void</span> Subset(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> from, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> to);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keywordtype">void</span> AtMost(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, ConstraintType type);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <span class="keywordtype">void</span> AtLeast(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, ConstraintType type);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  <span class="keywordtype">void</span> AtMostPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { AtMost(arg, ConstraintType::PTR); }</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  <span class="keywordtype">void</span> ExactlyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::PTR); }</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="keywordtype">void</span> ExactlyYoung(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::YOUNG); }</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keywordtype">void</span> ExactlyHeap(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::HEAP); }</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <span class="keywordtype">void</span> ExactlyInt(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::INT); }</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  <span class="keywordtype">void</span> ExactlyFunc(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg) { Exactly(arg, ConstraintType::FUNC); }</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  <span class="keywordtype">void</span> AnyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a)</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;  {</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    AtLeast(a, ConstraintType::PTR_BOT);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    AtMost(a, ConstraintType::PTR);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;  }</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  <span class="keywordtype">void</span> Exactly(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <span class="keyword">const</span> ConstraintType &amp;type)</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;  {</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    AtMost(a, type);</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    AtLeast(a, type);</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;  }</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;  <span class="keywordtype">void</span> Equal(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> a, <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> b)</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;  {</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    Subset(a, b);</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    Subset(b, a);</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;  }</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  ConstraintType LowerBound(Type ty, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;  ConstraintType UpperBound(Type ty, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type);</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">bool</span> IsExtern(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> &amp;f);</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  std::unordered_map&lt;Ref&lt;Inst&gt;, <a class="code" href="classID.html">ID&lt;Constraint&gt;</a>&gt; ids_;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <a class="code" href="classUnionFind.html">UnionFind&lt;Constraint&gt;</a> union_;</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  std::unordered_map&lt;const Func *, bool&gt; externs_;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;};</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;  <span class="keywordtype">void</span> AtLeastInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type)</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  {</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordflow">return</span> AtLeast(arg, LowerBound(arg.GetType(), type));</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  }</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">void</span> AtMostInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg, <a class="code" href="classtags_1_1TaggedType.html">TaggedType</a> type)</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  {</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordflow">return</span> AtMost(arg, UpperBound(arg.GetType(), type));</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  }</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  <span class="keywordtype">void</span> Infer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="keywordtype">void</span> DummyInfer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="keywordtype">void</span> DummyPointer(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <span class="keywordtype">void</span> DummyYoung(<a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> arg);</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <span class="keywordtype">bool</span> IsExtern(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> &amp;f);</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;}</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <a class="code" href="classtags_1_1RegisterAnalysis.html">RegisterAnalysis</a> &amp;analysis_;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  <span class="keyword">const</span> <a class="code" href="classTarget.html">Target</a> *target_;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  std::unordered_map&lt;Ref&lt;Inst&gt;, <a class="code" href="classID.html">ID&lt;Constraint&gt;</a>&gt; ids_;</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <a class="code" href="classUnionFind.html">UnionFind&lt;Constraint&gt;</a> union_;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  std::unordered_map&lt;const Func *, bool&gt; externs_;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;};</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;}</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
@@ -233,7 +249,7 @@ $(function() {
 <div class="ttc" id="aclassID_html"><div class="ttname"><a href="classID.html">ID&lt; Constraint &gt;</a></div></div>
 <div class="ttc" id="aclassMovInst_html"><div class="ttname"><a href="classMovInst.html">MovInst</a></div><div class="ttdef"><b>Definition:</b> mov.h:17</div></div>
 <div class="ttc" id="aclassBitSet_html"><div class="ttname"><a href="classBitSet.html">BitSet&lt; Constraint &gt;</a></div></div>
-<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html">tags::RegisterAnalysis</a></div><div class="ttdef"><b>Definition:</b> register_analysis.h:22</div></div>
+<div class="ttc" id="aclasstags_1_1RegisterAnalysis_html"><div class="ttname"><a href="classtags_1_1RegisterAnalysis.html">tags::RegisterAnalysis</a></div><div class="ttdef"><b>Definition:</b> register_analysis.h:37</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclasstags_1_1ConstraintSolver_html"><div class="ttname"><a href="classtags_1_1ConstraintSolver.html">tags::ConstraintSolver</a></div><div class="ttdef"><b>Definition:</b> constraints.h:25</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
