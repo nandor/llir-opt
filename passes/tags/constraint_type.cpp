@@ -127,8 +127,8 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::FUNC:      llvm_unreachable("not implemented");
         case ConstraintType::PTR:       return ConstraintType::PTR_INT;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
-        case ConstraintType::ADDR:      return ConstraintType::PTR_INT;
-        case ConstraintType::ADDR_INT:  return ConstraintType::PTR_INT;
+        case ConstraintType::ADDR:      return ConstraintType::ADDR_INT;
+        case ConstraintType::ADDR_INT:  return ConstraintType::ADDR_INT;
       }
       llvm_unreachable("invalid kind");
     }

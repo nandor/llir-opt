@@ -404,10 +404,10 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::PTR_NULL:  return TaggedType::PtrNull();
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::VAL:       return TaggedType::PtrInt();
-        case Kind::HEAP:      llvm_unreachable("not implemented");
-        case Kind::UNDEF:     llvm_unreachable("not implemented");
+        case Kind::HEAP:      return TaggedType::PtrNull();
+        case Kind::UNDEF:     return TaggedType::PtrNull();
         case Kind::YOUNG:     llvm_unreachable("not implemented");
-        case Kind::HEAP_OFF: llvm_unreachable("not implemented");
+        case Kind::HEAP_OFF:  llvm_unreachable("not implemented");
         case Kind::INT:       return that.IsZero() ? TaggedType::PtrNull() : TaggedType::PtrInt();
         case Kind::ADDR:      return TaggedType::PtrNull();
         case Kind::ADDR_INT:  return TaggedType::PtrInt();

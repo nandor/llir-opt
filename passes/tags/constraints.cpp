@@ -222,6 +222,7 @@ void ConstraintSolver::RewriteTypes()
           auto ty = analysis_.Find(ref);
           auto *c = Map(ref);
           // TODO: rewrite types if a narrower bound is identified.
+          //llvm::errs() << ty << " " << c->Min << " " << c->Max << "\n";
         }
       }
     }

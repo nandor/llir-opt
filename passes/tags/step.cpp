@@ -84,11 +84,17 @@ void Step::VisitCallSite(CallSite &call)
           if (!otherCall || otherCall == &call || otherCall->GetCallee() != movRef) {
             continue;
           }
+          auto otherParent = otherCall->getParent()->getParent();
           for (unsigned i = 0, n = otherCall->arg_size(); i < n; ++i) {
             if (args.size() <= i) {
               args.resize(i + 1, TaggedType::Undef());
             }
-            args[i] |= analysis_.Find(otherCall->arg(i));
+
+            auto ref = otherCall->arg(i);
+            auto arg = ::cast_or_null<ArgInst>(ref);
+            if (otherParent != f || !arg || arg->GetIndex() != i) {
+              args[i] |= analysis_.Find(ref);
+            }
           }
         }
       }
@@ -594,21 +600,28 @@ void Step::Return(
       case Kind::REFINE: {
         for (Block &block : *f) {
           auto *term = block.GetTerminator();
-          if (term == inst) {
+          if (term == inst || !term->IsReturn()) {
             continue;
           }
-
           if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
             unsigned n = ret->arg_size();
-            rets.resize(n, TaggedType::Unknown());
+            if (n > rets.size()) {
+              rets.resize(n, TaggedType::Unknown());
+            }
             for (unsigned i = 0; i < n; ++i) {
-              rets[i] |= analysis_.Find(ret->arg(i));
+              auto ref = ret->arg(i);
+              auto call = ::cast_or_null<CallSite>(ref);
+              if (!call || call->GetDirectCallee() != f || ref.Index() != i) {
+                rets[i] |= analysis_.Find(ref);
+              }
             }
             continue;
           }
           if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
             unsigned n = tcall->type_size();
-            rets.resize(n, TaggedType::Unknown());
+            if (n > rets.size()) {
+              rets.resize(n, TaggedType::Unknown());
+            }
             if (auto *f = tcall->GetDirectCallee()) {
               auto it = analysis_.rets_.find(f);
               if (it != analysis_.rets_.end()) {
@@ -663,10 +676,18 @@ void Step::Return(
             }
             continue;
           }
-          assert(!term->IsReturn() && "unknown return instruction");
+          llvm_unreachable("invalid return instruction");
         }
-        analysis_.rets_.erase(f);
-        analysis_.rets_.emplace(f, rets);
+
+        auto it = analysis_.rets_.emplace(f, rets);
+        if (it.second) {
+          changed = true;
+        } else {
+          if (!std::equal(rets.begin(), rets.end(), it.first->second.begin())) {
+            changed = true;
+            it.first->second = rets;
+          }
+        }
         break;
       }
     }
