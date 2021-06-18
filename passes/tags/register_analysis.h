@@ -100,6 +100,12 @@ private:
     }
     return *it.first->second;
   }
+  /// Rebuild cached dominance info.
+  DominatorCache &RebuildDoms(Func &func)
+  {
+    doms_.erase(&func);
+    return GetDoms(func);
+  }
 
 private:
   /// Reference to the underlying program.

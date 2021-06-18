@@ -141,9 +141,33 @@ void Refinement::Refine(
         }
       }
     }
-
-    // Introduce the movs.
-    DefineSplits(doms, ref, splits);
+    if (splits.empty()) {
+      // Create a block along the edge.
+      auto *split = new Block(start->getName());
+      func->insertAfter(start->getIterator(), split);
+      split->AddInst(new JumpInst(end, {}));
+      // Rewrite the terminator of the start.
+      {
+        auto *term = start->GetTerminator();
+        for (auto it = term->op_begin(); it != term->op_end(); ) {
+          Use &use = *it++;
+          if ((*use).Get() == end) {
+            use = split;
+          }
+        }
+      }
+      // Rewrite PHIs of end.
+      for (auto &phi : end->phis()) {
+        auto v = phi.GetValue(start);
+        phi.Remove(start);
+        phi.Add(split, v);
+      }
+      // Add a mov along this edge.
+      DefineSplits(analysis_.RebuildDoms(*func), ref, { { split, nt } });
+    } else {
+      // Introduce the movs.
+      DefineSplits(doms, ref, splits);
+    }
   }
 }
 
@@ -753,6 +777,8 @@ void Refinement::VisitArgInst(ArgInst &arg)
         auto argTy = analysis_.Find(argRef);
         if (ty < argTy) {
           Refine(call->getParent(), argRef, ty);
+        } else if (ty.IsPtrLike() && argTy.IsPtrUnion()) {
+          RefineAddr(*call, argRef);
         }
       }
     }

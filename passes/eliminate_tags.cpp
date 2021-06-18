@@ -227,6 +227,45 @@ bool EliminateTags::NarrowTypes()
         }
       }
     }
+    // Eliminate empty blocks.
+    for (auto it = func.begin(); it != func.end(); ) {
+      Block *block = &*it++;
+      // Find blocks which split edges and are empty.
+      auto *jmp = ::cast_or_null<JumpInst>(block->GetTerminator());
+      if (!jmp || block->size() != 1 || block->pred_size() != 1) {
+        continue;
+      }
+      auto *pred = *block->pred_begin();
+      auto *target = jmp->GetTarget();
+      if (target == block) {
+        continue;
+      }
+      // This step collapses pred -> block -> target into pred-> target.
+      // If there is already such an edge, tranformation is forbidden.
+      bool hasPredTargetEdge = false;
+      for (Block *succ : pred->successors()) {
+        if (succ == target) {
+          hasPredTargetEdge = true;
+          break;
+        }
+      }
+      if (hasPredTargetEdge) {
+        continue;
+      }
+      // Rewrite the terminator of the predecessor.
+      {
+        auto *term = pred->GetTerminator();
+        for (auto it = term->op_begin(); it != term->op_end(); ) {
+          Use &use = *it++;
+          if ((*use).Get() == block) {
+            use = target;
+          }
+        }
+      }
+      // Rewrite other uses (must be PHIs).
+      block->replaceAllUsesWith(pred);
+      block->eraseFromParent();
+    }
   }
   return changed;
 }

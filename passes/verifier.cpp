@@ -71,12 +71,19 @@ void VerifierPass::Verify(Func &func)
       }
       for (Block *succ : block.successors()) {
         for (auto &phi : succ->phis()) {
-          auto v = phi.GetValue(&block);
-          if (!insts.count(v.Get())) {
+          if (!phi.HasValue(&block)) {
             std::string str;
             llvm::raw_string_ostream os(str);
-            os << "def does not dominate use in PHI from " << block.getName();
+            os << "missing PHI block " << block.getName() << " in " << succ->getName();
             Error(phi, os.str());
+          } else {
+            auto v = phi.GetValue(&block);
+            if (!insts.count(v.Get())) {
+              std::string str;
+              llvm::raw_string_ostream os(str);
+              os << "def does not dominate use in PHI from " << block.getName();
+              Error(phi, os.str());
+            }
           }
         }
       }
