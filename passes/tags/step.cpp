@@ -478,13 +478,28 @@ void Step::VisitSelectInst(SelectInst &select)
 void Step::VisitPhiInst(PhiInst &phi)
 {
   TaggedType ty = TaggedType::Unknown();
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    ty |= analysis_.Find(phi.GetValue(i));
+
+  std::queue<PhiInst *> q;
+  llvm::SmallPtrSet<PhiInst *, 8> visited;
+  q.push(&phi);
+  while (!q.empty()) {
+    PhiInst *inst = q.front();
+    q.pop();
+    if (!visited.insert(inst).second) {
+      continue;
+    }
+    for (unsigned i = 0, n = inst->GetNumIncoming(); i < n; ++i) {
+      auto in = inst->GetValue(i);
+      if (auto phiIn = ::cast_or_null<PhiInst>(in)) {
+        q.push(&*phiIn);
+      } else {
+        ty |= analysis_.Find(in);
+      }
+    }
   }
-  if (ty.IsUnknown()) {
-    return;
+  if (!ty.IsUnknown()) {
+    Mark(phi, Clamp(ty, phi.GetType()));
   }
-  Mark(phi, Clamp(ty, phi.GetType()));
 }
 
 // -----------------------------------------------------------------------------
