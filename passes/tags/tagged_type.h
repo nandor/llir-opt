@@ -58,6 +58,7 @@ public:
   bool IsAddr() const { return k_ == Kind::ADDR; }
   bool IsAddrInt() const { return k_ == Kind::ADDR_INT; }
   bool IsAddrNull() const { return k_ == Kind::ADDR_NULL; }
+  bool IsFunc() const { return k_ == Kind::FUNC; }
 
   bool IsEven() const;
   bool IsOdd() const;

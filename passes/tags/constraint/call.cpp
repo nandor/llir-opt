@@ -43,9 +43,8 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
           case CallingConv::INTR:
           case CallingConv::MULTIBOOT:
           case CallingConv::WIN64: {
-            if (IsExtern(func)) {
-              Infer(arg);
-            } else {
+            Infer(arg);
+            if (!IsExtern(func)) {
               Subset(call->arg(idx), arg);
             }
             continue;
@@ -58,9 +57,8 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
                     case 0: ExactlyPointer(arg); continue;
                     case 1: ExactlyYoung(arg); continue;
                     default: {
-                      if (IsExtern(func)) {
-                        Infer(arg);
-                      } else {
+                      Infer(arg);
+                      if (!IsExtern(func)) {
                         Subset(call->arg(idx), arg);
                       }
                       continue;

@@ -88,18 +88,22 @@ void ConstraintSolver::CollapseEquivalences()
   std::vector<Node> nodes;
   std::vector<BitSet<Constraint>> sccs;
   std::stack<ID<Constraint>> stack;
-
   unsigned index = 1;
+
+  auto node = [&nodes] (ID<Constraint> id) -> Node &
+  {
+    if (id >= nodes.size()) {
+      nodes.resize(static_cast<unsigned>(id) + 1);
+    }
+    return nodes[id];
+  };
+
   std::function<void(ID<Constraint>)> visit = [&,this](ID<Constraint> nodeId)
   {
-    if (nodeId >= nodes.size()) {
-      nodes.resize(static_cast<unsigned>(nodeId) + 1);
-    }
-
-    auto *node = &nodes[nodeId];
-    node->Index = index;
-    node->Link = index;
-    node->InComponent = false;
+    auto &nd = node(nodeId);
+    nd.Index = index;
+    nd.Link = index;
+    nd.InComponent = false;
     ++index;
 
     auto *c = union_.Map(nodeId);
@@ -128,10 +132,9 @@ void ConstraintSolver::CollapseEquivalences()
     }
   };
 
-  for (auto *node : union_) {
-    nodes.resize(static_cast<unsigned>(node->Id) + 1);
-    if (nodes[node->Id].Index == 0) {
-      visit(node->Id);
+  for (auto *c : union_) {
+    if (node(c->Id).Index == 0) {
+      visit(c->Id);
     }
   }
 
@@ -187,7 +190,6 @@ void ConstraintSolver::CollapseEquivalences()
         if (to == from) {
           continue;
         }
-
         if (from->Min <= to->Min) {
           assert(to->Min <= from->Max && "invalid lower bound");
           if (from->Min < to->Min) {
@@ -259,6 +261,7 @@ ConstraintSolver::Constraint *ConstraintSolver::Map(Ref<Inst> a)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Subset(Ref<Inst> from, Ref<Inst> to)
 {
+  assert(analysis_.Find(from) <= analysis_.Find(to) && "invalid subset");
   Map(to)->Subset.Insert(Find(from));
 }
 

@@ -209,9 +209,10 @@ void Step::VisitCallSite(CallSite &call)
 void Step::VisitMovInst(MovInst &i)
 {
   if (auto inst = ::cast_or_null<Inst>(i.GetArg())) {
-    auto val = analysis_.Find(inst);
-    assert(!val.IsUnknown() && "cannot propagate unknown");
-    Mark(i, Clamp(val, i.GetType()));
+    auto val = Clamp(analysis_.Find(inst), i.GetType());
+    if (!val.IsUnknown()) {
+      Mark(i, val);
+    }
   }
 }
 

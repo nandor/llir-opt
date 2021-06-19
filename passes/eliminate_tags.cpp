@@ -232,7 +232,8 @@ bool EliminateTags::NarrowTypes()
       Block *block = &*it++;
       // Find blocks which split edges and are empty.
       auto *jmp = ::cast_or_null<JumpInst>(block->GetTerminator());
-      if (!jmp || block->size() != 1 || block->pred_size() != 1) {
+      std::set<Block *> preds(block->pred_begin(), block->pred_end());
+      if (!jmp || block->size() != 1 || preds.size() != 1) {
         continue;
       }
       auto *pred = *block->pred_begin();

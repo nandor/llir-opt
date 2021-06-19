@@ -185,7 +185,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
     }
     case ConstraintType::PTR: {
       switch (b) {
-        case ConstraintType::BOT:      llvm_unreachable("not implemented");
+        case ConstraintType::BOT:      return ConstraintType::PTR;
         case ConstraintType::INT:      return ConstraintType::PTR_INT;
         case ConstraintType::HEAP_INT: return ConstraintType::PTR_INT;
         case ConstraintType::HEAP:     return ConstraintType::PTR;

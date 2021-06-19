@@ -32,6 +32,158 @@ static Type ToType(Type ty, TaggedType kind)
 }
 
 // -----------------------------------------------------------------------------
+static std::optional<TaggedType> RefineMovTo(
+    const TaggedType &vmov,
+    const TaggedType &varg,
+    Type type)
+{
+  if (vmov < varg) {
+    return vmov;
+  }
+  if (varg.IsAddrInt() && type == Type::V64) {
+    return TaggedType::Odd();
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+static std::optional<std::pair<TaggedType, bool>>
+RefineJoinTo(const TaggedType &orig, const TaggedType &ty, Type type)
+{
+  switch (orig.GetKind()) {
+    case TaggedType::Kind::INT: {
+      auto io = orig.GetInt();
+      auto iok = io.GetKnown(), iov = io.GetValue();
+      switch (ty.GetKind()) {
+        case TaggedType::Kind::UNKNOWN:
+        case TaggedType::Kind::UNDEF: {
+          return std::nullopt;
+        }
+        case TaggedType::Kind::INT: {
+          auto it = ty.GetInt();
+          auto itk = it.GetKnown(), itv = it.GetValue();
+          // The known bits of ty must be the same as the known bits of orig.
+          assert(((iok & itk & iov) == (iok & itk & itv)) && "invalid integer join");
+          uint64_t newKnown = itk & ~iok;
+          uint64_t newVal = iov;
+          // If refining to a value, set the last bit as well.
+          if (type == Type::V64) {
+            newKnown |= (iok & 1) != 1;
+            newVal |= 1;
+          }
+          if (newKnown) {
+            return std::make_pair(
+                TaggedType::Mask({ (itk & newKnown & itv) | newVal, newKnown | iok }),
+                false
+            );
+          }
+          return std::nullopt;
+        }
+        case TaggedType::Kind::VAL: {
+          if (!(iok & 1)) {
+            return std::make_pair(
+                TaggedType::Mask({ iov | 1, iok | 1 }),
+                false
+            );
+          } else {
+            assert((iov & 1) && "invalid integer to val");
+            return std::nullopt;
+          }
+        }
+        case TaggedType::Kind::FUNC:
+        case TaggedType::Kind::YOUNG:
+        case TaggedType::Kind::HEAP:
+        case TaggedType::Kind::ADDR:
+        case TaggedType::Kind::PTR: {
+          return std::make_pair(ty, true);
+        }
+        case TaggedType::Kind::HEAP_OFF:
+        case TaggedType::Kind::ADDR_NULL:
+        case TaggedType::Kind::ADDR_INT:
+        case TaggedType::Kind::PTR_NULL:
+        case TaggedType::Kind::PTR_INT: {
+          return std::nullopt;
+        }
+      }
+      llvm_unreachable("invalid type kind");
+    }
+    case TaggedType::Kind::UNKNOWN:
+    case TaggedType::Kind::UNDEF: {
+      return std::nullopt;
+    }
+    case TaggedType::Kind::FUNC:
+    case TaggedType::Kind::YOUNG:
+    case TaggedType::Kind::HEAP_OFF:
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::PTR: {
+      if (ty.IsInt()) {
+        return std::make_pair(ty, true);
+      }
+      if (ty < orig) {
+        return std::make_pair(ty, false);
+      }
+      return std::nullopt;
+    }
+    case TaggedType::Kind::ADDR_NULL: {
+      if (ty.IsPtrLike()) {
+        return std::make_pair(TaggedType::Addr(), false);
+      }
+      if (ty.IsInt()) {
+        return std::make_pair(ty, true);
+      }
+      if (ty.IsFunc()) {
+        return std::make_pair(ty, false);
+      }
+      return std::nullopt;
+    }
+    case TaggedType::Kind::ADDR_INT: {
+      if (ty.IsVal() || type == Type::V64) {
+        return std::make_pair(TaggedType::Odd(), false);
+      }
+      if (ty.IsPtrLike()) {
+        return std::make_pair(TaggedType::Addr(), false);
+      }
+      if (ty.IsInt() || ty.IsFunc()) {
+        return std::make_pair(ty, false);
+      }
+      return std::nullopt;
+    }
+    case TaggedType::Kind::VAL: {
+      if (ty.IsPtrLike()) {
+        return std::make_pair(TaggedType::Heap(), false);
+      }
+      if (ty.IsInt()) {
+        return std::make_pair(TaggedType::Odd(), false);
+      }
+      return std::nullopt;
+    }
+    case TaggedType::Kind::PTR_NULL: {
+      if (ty.IsPtrLike()) {
+        return std::make_pair(TaggedType::Ptr(), false);
+      }
+      if (ty.IsInt() || ty.IsFunc()) {
+        return std::make_pair(ty, false);
+      }
+      return std::nullopt;
+    }
+    case TaggedType::Kind::PTR_INT: {
+      if (ty.IsVal() || type == Type::V64) {
+        return std::make_pair(TaggedType::Val(), false);
+      }
+      if (ty.IsPtrLike()) {
+        return std::make_pair(TaggedType::Ptr(), false);
+      }
+      if (ty.IsInt() || ty.IsFunc()) {
+        return std::make_pair(ty, false);
+      }
+      return std::nullopt;
+    }
+  }
+  llvm_unreachable("invalid type kind");
+}
+
+// -----------------------------------------------------------------------------
 Refinement::Refinement(RegisterAnalysis &analysis, const Target *target, Func &func)
   : analysis_(analysis)
   , target_(target)
@@ -65,37 +217,13 @@ void Refinement::Refine(
     Ref<Inst> ref,
     const TaggedType &nt)
 {
-  assert(parent->getParent() == ref->getParent()->getParent() && "invalid block");
+  auto *func = parent->getParent();
+  assert(func == ref->getParent()->getParent() && "invalid block");
+  assert(analysis_.Find(ref) != nt && "no refinement");
 
-  // Do not refine to a worse type.
-  if (analysis_.Find(ref) <= nt) {
-    return;
-  }
-
-  auto &doms = analysis_.GetDoms(*parent->getParent());
+  auto &doms = analysis_.GetDoms(*func);
   if (doms.PDT.dominates(parent, ref->getParent())) {
-    // If the refinement creates an integer-to-pointer cast, add an explicit
-    // mov instruction to perform it, carrying information through type.
-    auto ot = analysis_.Find(ref);
-    if ((ot.IsInt() && nt.IsPtrLike()) || (nt.IsInt() && ot.IsPtrLike())) {
-      auto *block = ref->getParent();
-      auto *mov = new MovInst(ToType(ref.GetType(), nt), ref, ref->GetAnnots());
-      block->AddInst(mov, &*ref);
-      for (auto ut = ref->use_begin(); ut != ref->use_end(); ) {
-        Use &use = *ut++;
-        if (use.getUser() != mov) {
-          use = mov->GetSubValue(0);
-        }
-      }
-      analysis_.Define(mov->GetSubValue(0), nt);
-    } else {
-      // If the definition is post-dominated by the use, change its type.
-      analysis_.Refine(ref, nt);
-      auto *source = &*ref;
-      if (inQueue_.insert(source).second) {
-        queue_.push(source);
-      }
-    }
+    Refine(ref, nt);
   } else {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
@@ -122,15 +250,12 @@ void Refinement::Refine(
   auto *func = ref->getParent()->getParent();
   assert(start->getParent() == func && "invalid block");
   assert(end->getParent() == func && "invalid block");
+  assert(analysis_.Find(ref) != nt && "no refinement");
 
+  // Refine the value.
   auto &doms = analysis_.GetDoms(*func);
   if (doms.PDT.Dominates(start, end, ref->getParent())) {
-    // If the definition is post-dominated by the edge, change its nt.
-    analysis_.Refine(ref, nt);
-    auto *source = &*ref;
-    if (inQueue_.insert(source).second) {
-      queue_.push(source);
-    }
+    Refine(ref, nt);
   } else if (auto *node = doms.PDT.getNode(start)) {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
@@ -146,6 +271,7 @@ void Refinement::Refine(
       auto *split = new Block(start->getName());
       func->insertAfter(start->getIterator(), split);
       split->AddInst(new JumpInst(end, {}));
+
       // Rewrite the terminator of the start.
       {
         auto *term = start->GetTerminator();
@@ -168,6 +294,34 @@ void Refinement::Refine(
       // Introduce the movs.
       DefineSplits(doms, ref, splits);
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::Refine(Ref<Inst> ref, const TaggedType &nt)
+{
+  auto *block = ref->getParent();
+
+  // If the refinement creates an integer-to-pointer cast, add an explicit
+  // mov instruction to perform it, carrying information through type.
+  auto ot = analysis_.Find(ref);
+  if (nt < ot) {
+    // If the definition is post-dominated by the use, change its type.
+    analysis_.Refine(ref, nt);
+    auto *source = &*ref;
+    if (inQueue_.insert(source).second) {
+      queue_.push(source);
+    }
+  } else {
+    auto *newMov = new MovInst(ToType(ref.GetType(), nt), ref, ref->GetAnnots());
+    block->insert(newMov, std::next(ref->getIterator()));
+    for (auto ut = ref->use_begin(); ut != ref->use_end(); ) {
+      Use &use = *ut++;
+      if (use.getUser() != newMov) {
+        use = newMov->GetSubValue(0);
+      }
+    }
+    analysis_.Define(newMov->GetSubValue(0), nt);
   }
 }
 
@@ -257,6 +411,36 @@ void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
   }
 }
 
+// -----------------------------------------------------------------------------
+void Refinement::RefineFunc(Inst &inst, Ref<Inst> addr)
+{
+  switch (analysis_.Find(addr).GetKind()) {
+    case TaggedType::Kind::UNKNOWN:
+    case TaggedType::Kind::UNDEF: {
+      // Should trap, nothing to refine.
+      return;
+    }
+    case TaggedType::Kind::FUNC: {
+      // Already a pointer, nothing to refine.
+      return;
+    }
+    case TaggedType::Kind::INT:
+    case TaggedType::Kind::YOUNG:
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
+    case TaggedType::Kind::PTR:
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::VAL:
+    case TaggedType::Kind::ADDR_NULL:
+    case TaggedType::Kind::ADDR_INT:
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::PTR_INT: {
+      // Refine to PTR.
+      Refine(inst.getParent(), addr, TaggedType::Func());
+      return;
+    }
+  }
+}
 // -----------------------------------------------------------------------------
 void Refinement::RefineEquality(
     Ref<Inst> lhs,
@@ -588,20 +772,6 @@ void Refinement::VisitMemoryStoreInst(MemoryStoreInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void Refinement::VisitSelectInst(SelectInst &i)
-{
-  auto vo = analysis_.Find(i);
-  auto vt = analysis_.Find(i.GetTrue());
-  auto vf = analysis_.Find(i.GetFalse());
-  if (!(vt <= vo)) {
-    Refine(i.getParent(), i.GetTrue(), vo);
-  }
-  if (!(vf <= vo)) {
-    Refine(i.getParent(), i.GetFalse(), vo);
-  }
-}
-
-// -----------------------------------------------------------------------------
 void Refinement::VisitSubInst(SubInst &i)
 {
   auto vl = analysis_.Find(i.GetLHS());
@@ -716,72 +886,10 @@ void Refinement::VisitMovInst(MovInst &i)
 
   auto varg = analysis_.Find(inst);
   auto vmov = analysis_.Find(i.GetSubValue(0));
-  if (varg.IsAddrInt() && i.GetType() == Type::V64) {
+  if (auto nt = RefineMovTo(vmov, varg, i.GetType())) {
     NumMovsRefined++;
-    Refine(parent, inst, TaggedType::Odd());
+    Refine(parent, inst, *nt);
     return;
-  }
-  if (vmov < varg) {
-    NumMovsRefined++;
-    Refine(parent, inst, vmov);
-    return;
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitPhiInst(PhiInst &phi)
-{
-  auto vphi = analysis_.Find(phi);
-  if (vphi.IsUnknown()) {
-    return;
-  }
-  auto *parent = phi.getParent();
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    auto ref = phi.GetValue(i);
-    auto *block = phi.GetBlock(i);
-    auto vref = analysis_.Find(ref);
-    if (vphi < vref) {
-      Refine(block, parent, ref, vphi);
-      continue;
-    }
-    if (vphi.IsPtrLike() && vref.IsInt()) {
-      auto *mov = new MovInst(ToType(ref.GetType(), vphi), ref, ref->GetAnnots());
-      block->AddInst(mov, block->GetTerminator());
-      phi.SetValue(i, mov);
-      analysis_.Define(mov, vphi);
-      continue;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Refinement::VisitArgInst(ArgInst &arg)
-{
-  auto ty = analysis_.Find(arg);
-  if (ty.IsUnknown()) {
-    return;
-  }
-  Func *f = arg.getParent()->getParent();
-  for (auto *user : f->users()) {
-    auto mov = ::cast_or_null<MovInst>(user);
-    if (!mov) {
-      continue;
-    }
-    for (auto *movUser : mov->users()) {
-      auto call = ::cast_or_null<CallSite>(movUser);
-      if (!call || call->GetCallee() != mov->GetSubValue(0)) {
-        continue;
-      }
-      if (call->arg_size() > arg.GetIndex()) {
-        auto argRef = call->arg(arg.GetIndex());
-        auto argTy = analysis_.Find(argRef);
-        if (ty < argTy) {
-          Refine(call->getParent(), argRef, ty);
-        } else if (ty.IsPtrLike() && argTy.IsPtrUnion()) {
-          RefineAddr(*call, argRef);
-        }
-      }
-    }
   }
 }
 
@@ -794,7 +902,7 @@ void Refinement::VisitCallSite(CallSite &site)
   }
 
   // Refine the callee to a pointer.
-  Refine(site.getParent(), site.GetCallee(), TaggedType::Func());
+  RefineFunc(site, site.GetCallee());
 }
 
 // -----------------------------------------------------------------------------
@@ -838,4 +946,100 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> Refinement::Cast(Ref<Inst> ref, const TaggedType &ty)
+{
+  auto *newMov = new MovInst(ToType(ref.GetType(), ty), ref, ref->GetAnnots());
+  ref->getParent()->insertAfter(newMov, ref->getIterator());
+  return newMov;
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::RefineJoin(
+    Ref<Inst> ref,
+    const TaggedType &ty,
+    Use &use,
+    Type type)
+{
+  assert((*use) == ref && "invalid use");
+
+  auto vref = analysis_.Find(ref);
+  Inst *user = ::cast<Inst>(use.getUser());
+  if (auto nt = RefineJoinTo(vref, ty, type)) {
+    if (nt->second) {
+      auto newRef = Cast(ref, nt->first);
+      use = newRef;
+      analysis_.Define(newRef, ty);
+    } else {
+      Refine(user->getParent(), ref, nt->first);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitPhiInst(PhiInst &phi)
+{
+  auto vphi = analysis_.Find(phi);
+  if (vphi.IsUnknown()) {
+    return;
+  }
+  // Since the PHI can change during the traversal, collect all blocks.
+  llvm::SmallVector<Block *, 8> blocks;
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    blocks.push_back(phi.GetBlock(i));
+  }
+  // Attempt to refine all incoming values.
+  auto *parent = phi.getParent();
+  auto *func = parent->getParent();
+  for (Block *block : blocks) {
+    auto ref = phi.GetValue(block);
+    auto vref = analysis_.Find(ref);
+    if (auto nt = RefineJoinTo(vref, vphi, phi.GetType())) {
+      if (nt->second) {
+        auto newRef = Cast(ref, nt->first);
+        phi.Remove(block);
+        phi.Add(block, newRef);
+        analysis_.Define(newRef, nt->first);
+      } else {
+        Refine(block, parent, ref, nt->first);
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitArgInst(ArgInst &arg)
+{
+  auto ty = analysis_.Find(arg);
+  if (ty.IsUnknown()) {
+    return;
+  }
+  auto i = arg.GetIndex();
+  Func *f = arg.getParent()->getParent();
+  for (auto *user : f->users()) {
+    auto mov = ::cast_or_null<MovInst>(user);
+    if (!mov) {
+      continue;
+    }
+    for (auto *movUser : mov->users()) {
+      auto call = ::cast_or_null<CallSite>(movUser);
+      if (!call || call->GetCallee() != mov->GetSubValue(0)) {
+        continue;
+      }
+      if (call->arg_size() > i) {
+        RefineJoin(call->arg(i), ty, *(call->op_begin() + 1 + i), arg.GetType());
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::VisitSelectInst(SelectInst &i)
+{
+  auto vo = analysis_.Find(i);
+  auto ty = i.GetType();
+  RefineJoin(i.GetTrue(), vo, *(i.op_begin() + 1), ty);
+  RefineJoin(i.GetFalse(), vo, *(i.op_begin() + 2), ty);
 }

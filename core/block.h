@@ -215,6 +215,8 @@ public:
 
   /// Add an instruction to the block.
   void insert(Inst *inst, iterator it);
+  /// Add an instruction after another in the block.
+  void insertAfter(Inst *inst, iterator it);
 
   /// Removes an instruction.
   void remove(iterator it);

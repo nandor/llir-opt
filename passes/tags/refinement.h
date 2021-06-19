@@ -33,28 +33,29 @@ private:
   void PullFrontier();
 
   /// Refine a type to a more precise one.
-  void Refine(
-      Block *parent,
-      Ref<Inst> ref,
-      const TaggedType &type
-  );
+  void Refine(Block *parent, Ref<Inst> ref, const TaggedType &type);
   /// Refine a type to a more precise one, post-dominated by an edge.
-  void Refine(
-      Block *start,
-      Block *end,
-      Ref<Inst> ref,
-      const TaggedType &type
-  );
-  /// Refine a reference to an address.
-  void RefineAddr(Inst &inst, Ref<Inst> addr);
-  /// Refine a reference to an integer.
-  void RefineInt(Inst &inst, Ref<Inst> addr);
+  void Refine(Block *start, Block *end,Ref<Inst> ref,const TaggedType &type);
+  /// Helper to refine a post-dominated definition.
+  void Refine(Ref<Inst> ref, const TaggedType &type);
+  /// Refine an argument to a join point.
+  void RefineJoin(Ref<Inst> ref, const TaggedType &ty, Use &use, Type type);
+  /// Create a mov for a cast.
+  Ref<Inst> Cast(Ref<Inst> ref, const TaggedType &ty);
   /// Specialise a type downstream.
   void Specialise(
       Ref<Inst> ref,
       const Block *from,
       const std::vector<std::pair<TaggedType, Block *>> &branches
   );
+
+private:
+  /// Refine a reference to an address.
+  void RefineAddr(Inst &inst, Ref<Inst> addr);
+  /// Refine a reference to an integer.
+  void RefineInt(Inst &inst, Ref<Inst> addr);
+  /// Refine a reference to a function.
+  void RefineFunc(Inst &inst, Ref<Inst> addr);
 
 private:
   void VisitMemoryLoadInst(MemoryLoadInst &i) override;

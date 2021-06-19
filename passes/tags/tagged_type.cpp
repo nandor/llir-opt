@@ -303,7 +303,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
 {
   switch (k_) {
     case Kind::UNKNOWN: return that;
-    case Kind::UNDEF:   return that;
+    case Kind::UNDEF:   return that.IsUnknown() ? TaggedType::Undef() : that;
     case Kind::INT: {
       switch (that.k_) {
         case Kind::UNDEF:     return *this;

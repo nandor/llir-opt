@@ -69,7 +69,7 @@ private:
   void VisitDivisionRemainderInst(DivisionRemainderInst &i) override { ExactlyInt(i); }
   void VisitByteSwapInst(ByteSwapInst &i) override { ExactlyInt(i); }
   void VisitBitCountInst(BitCountInst &i) override { ExactlyInt(i); }
-  void VisitBitCastInst(BitCastInst &i) override { Equal(i, i.GetArg()); }
+  void VisitBitCastInst(BitCastInst &i) override { Infer(i); }
   void VisitVaStartInst(VaStartInst &i) override { ExactlyPointer(i.GetVAList()); }
   void VisitX86_FPUControlInst(X86_FPUControlInst &i) override { AnyPointer(i.GetAddr()); }
   void VisitSyscallInst(SyscallInst &i) override;
