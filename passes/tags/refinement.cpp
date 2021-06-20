@@ -539,7 +539,8 @@ void Refinement::Specialise(
     bool split = false;
     for (auto it = block->first_non_phi(); it != block->end(); ++it) {
       if (auto *mov = ::cast_or_null<MovInst>(&*it)) {
-        if (analysis_.Find(mov->GetSubValue(0)) == ty) {
+        auto i = mov->GetSubValue(0);
+        if (analysis_.Find(i) == ty && analysis_.IsDefined(i)) {
           split = true;
           break;
         }
@@ -852,49 +853,8 @@ void Refinement::VisitXorInst(XorInst &i)
 void Refinement::VisitMovInst(MovInst &i)
 {
   auto inst = ::cast_or_null<Inst>(i.GetArg());
-  if (!inst) {
+  if (!inst || analysis_.IsDefined(i)) {
     return;
-  }
-
-  auto *parent = i.getParent();
-  if (parent != inst->getParent()) {
-    auto &doms = analysis_.GetDoms(*parent->getParent());
-    auto *node = doms.PDT.getNode(parent);
-    if (!node) {
-      return;
-    }
-    // Split through specialisation.
-    auto *parent = i.getParent();
-    if (parent != inst->getParent()) {
-      for (Block *pred : parent->predecessors()) {
-        if (pred->succ_size() != 1) {
-          return;
-        }
-      }
-    }
-    // Split through refinement.
-    bool isSplit = false;
-    for (auto *front : doms.PDF.calculate(doms.PDT, node)) {
-      if (front == parent) {
-        isSplit = true;
-        break;
-      }
-      for (auto *succ : front->successors()) {
-        if (i.getParent()->getName() == ".L180$local94132") {
-          llvm::errs() << "\t" << succ->getName() << "\n";
-        }
-        if (succ == parent) {
-          isSplit = true;
-          break;
-        }
-      }
-      if (isSplit) {
-        break;
-      }
-    }
-    if (isSplit) {
-      return;
-    }
   }
 
   auto varg = analysis_.Find(inst);
@@ -910,7 +870,7 @@ void Refinement::VisitMovInst(MovInst &i)
       }
     }
 
-    Refine(parent, inst, *nt);
+    Refine(i.getParent(), inst, *nt);
     return;
   }
 }

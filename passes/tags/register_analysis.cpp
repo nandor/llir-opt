@@ -105,8 +105,10 @@ bool RegisterAnalysis::Define(Ref<Inst> inst, const TaggedType &tnew)
 {
 #ifdef NDEBUG
   types_.emplace(inst, tnew);
+  defs_.emplace(inst);
 #else
   assert(types_.emplace(inst, tnew).second);
+  assert(defs_.emplace(inst).second);
 #endif
   BackwardQueue(inst);
   return true;

@@ -84,6 +84,11 @@ private:
   {
     return Refine(inst.GetSubValue(0), type);
   }
+  /// Check whether an instruction was defined by refinement.
+  bool IsDefined(Ref<Inst> inst)
+  {
+    return defs_.count(inst) != 0;
+  }
 
   /// Queue the users of an instruction to be updated.
   void ForwardQueue(Ref<Inst> inst);
@@ -137,6 +142,8 @@ private:
   std::unordered_map<const Func *, std::vector<TaggedType>> rets_;
   /// Cache of dominators for functions.
   std::unordered_map<Func *, std::unique_ptr<DominatorCache>> doms_;
+  /// Set of defined references.
+  std::unordered_set<Ref<Inst>> defs_;
 };
 
 } // end namespace
