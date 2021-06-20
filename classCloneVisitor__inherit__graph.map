@@ -1,7 +1,6 @@
 <map id="CloneVisitor" name="CloneVisitor">
-<area shape="rect" id="node1" title=" " alt="" coords="257,5,359,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="159,5,260,32"/>
 <area shape="rect" id="node2" href="$classInlineHelper.html" title=" " alt="" coords="5,87,107,114"/>
 <area shape="rect" id="node3" href="$classProgramCloneVisitor.html" title=" " alt="" coords="131,87,287,114"/>
 <area shape="rect" id="node4" href="$classSpecialisePass_1_1SpecialiseClone.html" title=" " alt="" coords="311,80,502,121"/>
-<area shape="rect" id="node5" href="$classTypeRewriter.html" title=" " alt="" coords="527,87,633,114"/>
 </map>

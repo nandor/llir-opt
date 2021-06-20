@@ -5,5 +5,6 @@ var searchData=
   ['memorytoregisterpass_1265',['MemoryToRegisterPass',['../classMemoryToRegisterPass.html',1,'']]],
   ['mergestorespass_1266',['MergeStoresPass',['../classMergeStoresPass.html',1,'']]],
   ['moveelimpass_1267',['MoveElimPass',['../classMoveElimPass.html',1,'']]],
-  ['movinst_1268',['MovInst',['../classMovInst.html',1,'']]]
+  ['movepushpass_1268',['MovePushPass',['../classMovePushPass.html',1,'']]],
+  ['movinst_1269',['MovInst',['../classMovInst.html',1,'']]]
 ];
