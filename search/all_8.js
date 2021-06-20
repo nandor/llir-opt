@@ -34,7 +34,7 @@ var searchData=
   ['instvisitor_3c_20bool_20_3e_500',['InstVisitor&lt; bool &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20iterator_3c_20inst_20_3e_20_3e_501',['InstVisitor&lt; Iterator&lt; Inst &gt; &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20void_20_3e_502',['InstVisitor&lt; void &gt;',['../classInstVisitor.html',1,'']]],
-  ['int_503',['Int',['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()']]],
+  ['int_503',['INT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()'],['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()']]],
   ['int16_504',['INT16',['../classItem.html#ac6ba9a81b48ef860d3332a8a62f01356a5f90af42814c0a419d715d43ae54fd7a',1,'Item']]],
   ['int32_505',['INT32',['../classItem.html#ac6ba9a81b48ef860d3332a8a62f01356a6495adba09844fac8eeb0aba86e6f1bf',1,'Item']]],
   ['int64_506',['INT64',['../classItem.html#ac6ba9a81b48ef860d3332a8a62f01356a4e866b275c85fbb439f6484251cfb31c',1,'Item']]],
