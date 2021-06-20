@@ -1,5 +1,5 @@
 <map id="Pass" name="Pass">
-<area shape="rect" id="node1" title=" " alt="" coords="5,1069,56,1096"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,1044,56,1071"/>
 <area shape="rect" id="node2" href="$classAllocSizePass.html" title=" " alt="" coords="139,5,249,32"/>
 <area shape="rect" id="node3" href="$classAnalysis.html" title=" " alt="" coords="155,56,233,83"/>
 <area shape="rect" id="node5" href="$classAtomSimplifyPass.html" title=" " alt="" coords="125,107,263,133"/>
@@ -42,6 +42,5 @@
 <area shape="rect" id="node42" href="$classUndefElimPass.html" title=" " alt="" coords="135,1981,253,2008"/>
 <area shape="rect" id="node43" href="$classUnusedArgPass.html" title=" " alt="" coords="133,2032,255,2059"/>
 <area shape="rect" id="node44" href="$classValueNumberingPass.html" title=" " alt="" coords="115,2083,273,2109"/>
-<area shape="rect" id="node45" href="$classVerifierPass.html" title=" " alt="" coords="145,2133,243,2160"/>
 <area shape="rect" id="node4" href="$classPointsToAnalysis.html" title=" " alt="" coords="332,56,463,83"/>
 </map>
