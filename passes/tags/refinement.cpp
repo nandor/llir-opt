@@ -19,6 +19,7 @@ using namespace tags;
 
 STATISTIC(NumMovsRefined, "Number of movs refined");
 
+//.L180$local94132
 
 
 // -----------------------------------------------------------------------------
@@ -856,13 +857,22 @@ void Refinement::VisitMovInst(MovInst &i)
   }
 
   auto *parent = i.getParent();
-  auto &doms = analysis_.GetDoms(*parent->getParent());
-  auto *node = doms.PDT.getNode(parent);
-  if (!node) {
-    return;
-  }
-
   if (parent != inst->getParent()) {
+    auto &doms = analysis_.GetDoms(*parent->getParent());
+    auto *node = doms.PDT.getNode(parent);
+    if (!node) {
+      return;
+    }
+    // Split through specialisation.
+    auto *parent = i.getParent();
+    if (parent != inst->getParent()) {
+      for (Block *pred : parent->predecessors()) {
+        if (pred->succ_size() != 1) {
+          return;
+        }
+      }
+    }
+    // Split through refinement.
     bool isSplit = false;
     for (auto *front : doms.PDF.calculate(doms.PDT, node)) {
       if (front == parent) {
@@ -870,6 +880,9 @@ void Refinement::VisitMovInst(MovInst &i)
         break;
       }
       for (auto *succ : front->successors()) {
+        if (i.getParent()->getName() == ".L180$local94132") {
+          llvm::errs() << "\t" << succ->getName() << "\n";
+        }
         if (succ == parent) {
           isSplit = true;
           break;
@@ -888,6 +901,15 @@ void Refinement::VisitMovInst(MovInst &i)
   auto vmov = analysis_.Find(i.GetSubValue(0));
   if (auto nt = RefineMovTo(vmov, varg, i.GetType())) {
     NumMovsRefined++;
+
+    if (i.getParent()->getName() == ".L180$local94132") {
+      if (nt->IsOne()) {
+        llvm::errs() << *inst << "\n";
+        analysis_.dump();
+        abort();
+      }
+    }
+
     Refine(parent, inst, *nt);
     return;
   }

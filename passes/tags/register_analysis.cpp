@@ -293,5 +293,6 @@ void RegisterAnalysis::dump(llvm::raw_ostream &os)
     RegisterAnalysis &that_;
   };
 
-  AnalysisPrinter(os, *this).Print(prog_);
+  //AnalysisPrinter(os, *this).Print(prog_);
+  AnalysisPrinter(os, *this).Print(*::cast<Func>(prog_.GetGlobal("camlWhy3__Subst__aux_340")));
 }
