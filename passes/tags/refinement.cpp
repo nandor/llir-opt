@@ -861,15 +861,6 @@ void Refinement::VisitMovInst(MovInst &i)
   auto vmov = analysis_.Find(i.GetSubValue(0));
   if (auto nt = RefineMovTo(vmov, varg, i.GetType())) {
     NumMovsRefined++;
-
-    if (i.getParent()->getName() == ".L180$local94132") {
-      if (nt->IsOne()) {
-        llvm::errs() << *inst << "\n";
-        analysis_.dump();
-        abort();
-      }
-    }
-
     Refine(i.getParent(), inst, *nt);
     return;
   }

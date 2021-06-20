@@ -636,7 +636,9 @@ bool TaggedType::operator<(const TaggedType &that) const
     case Kind::ADDR: {
       return that.k_ == Kind::PTR ||
              that.k_ == Kind::PTR_INT ||
-             that.k_ == Kind::ADDR_INT;
+             that.k_ == Kind::PTR_NULL ||
+             that.k_ == Kind::ADDR_INT ||
+             that.k_ == Kind::ADDR_NULL;
     }
     case Kind::ADDR_NULL: {
       return that.k_ == Kind::PTR ||

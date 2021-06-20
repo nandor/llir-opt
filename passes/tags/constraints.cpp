@@ -261,7 +261,12 @@ ConstraintSolver::Constraint *ConstraintSolver::Map(Ref<Inst> a)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Subset(Ref<Inst> from, Ref<Inst> to)
 {
-  assert(analysis_.Find(from) <= analysis_.Find(to) && "invalid subset");
+  auto vto = analysis_.Find(to);
+  auto vfrom = analysis_.Find(from);
+  if (vfrom.IsUnknown() || vto.IsUnknown()) {
+    return;
+  }
+  assert(vfrom <= vto && "invalid subset");
   Map(to)->Subset.Insert(Find(from));
 }
 

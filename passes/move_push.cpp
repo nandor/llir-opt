@@ -66,13 +66,13 @@ bool MovePushPass::Run(Prog &prog)
         if (!pdt) {
           pdt.reset(new PostDominatorTree(func));
         }
-        if (!pdt->dominates(block,  arg->getParent())) {
+        if (!pdt->dominates(block, arg->getParent())) {
           continue;
         }
         auto newInst = TypeRewriter(arg, Type::V64).Clone(&*arg);
         arg->getParent()->AddInst(newInst, &*arg);
         arg->replaceAllUsesWith(newInst);
-        mov->replaceAllUsesWith(newInst);
+        mov->replaceAllUsesWith(newInst->GetSubValue(arg.Index()));
         arg->eraseFromParent();
         mov->eraseFromParent();
         changed = true;
