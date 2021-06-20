@@ -12,6 +12,7 @@
 #include "core/pass_manager.h"
 #include "core/printer.h"
 #include "core/bitcode.h"
+#include "core/verifier.h"
 
 
 
@@ -21,12 +22,14 @@ PassManager::PassManager(
     const Target *target,
     const std::string &saveBefore,
     bool verbose,
-    bool time)
+    bool time,
+    bool verify)
   : config_(config)
   , target_(target)
   , saveBefore_(saveBefore)
   , verbose_(verbose)
   , time_(time)
+  , verify_(verify)
 {
   if (auto *s = getenv("LLIR_OPT_DISABLED")) {
     llvm::SmallVector<llvm::StringRef, 8> passes;
@@ -130,6 +133,11 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
   // Record the analysis results.
   if (pass.ID) {
     analyses_.emplace(pass.ID, pass.P.get());
+  }
+
+  // Verify if requested.
+  if (verify_) {
+    Verifier(GetTarget()).Run(prog);
   }
 
   // Record running time.

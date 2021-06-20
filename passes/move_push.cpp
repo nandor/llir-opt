@@ -72,6 +72,8 @@ bool MovePushPass::Run(Prog &prog)
         auto newInst = TypeRewriter(arg, Type::V64).Clone(&*arg);
         arg->getParent()->AddInst(newInst, &*arg);
         mov->replaceAllUsesWith(newInst);
+        assert(arg->use_empty() && "arg has uses remaining");
+        arg->eraseFromParent();
         mov->eraseFromParent();
         changed = true;
         ++NumMovsRewritten;

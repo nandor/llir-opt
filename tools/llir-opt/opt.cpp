@@ -68,7 +68,6 @@
 #include "passes/undef_elim.h"
 #include "passes/unused_arg.h"
 #include "passes/value_numbering.h"
-#include "passes/verifier.h"
 #include "stats/alloc_size.h"
 
 namespace cl = llvm::cl;
@@ -169,7 +168,6 @@ static void AddOpt0(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt1(PassManager &mngr)
 {
-  mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
@@ -178,7 +176,6 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<CamlAssignPass>();
-  mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
@@ -189,7 +186,6 @@ static void AddOpt1(PassManager &mngr)
     , DeadDataElimPass
     , DedupBlockPass
     , UnusedArgPass
-    , VerifierPass
     >();
   // Final transformation.
   mngr.Add<MergeStoresPass>();
@@ -201,7 +197,6 @@ static void AddOpt1(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
 {
-  mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
@@ -210,7 +205,6 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<CamlAssignPass>();
-  mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
@@ -230,7 +224,6 @@ static void AddOpt2(PassManager &mngr)
     , CondSimplifyPass
     , DedupBlockPass
     , UnusedArgPass
-    , VerifierPass
     >();
   // Final transformation.
   mngr.Add<MergeStoresPass>();
@@ -242,7 +235,6 @@ static void AddOpt2(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
-  mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
@@ -251,7 +243,6 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<CamlAssignPass>();
-  mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
@@ -271,7 +262,6 @@ static void AddOpt3(PassManager &mngr)
     , CondSimplifyPass
     , DedupBlockPass
     , UnusedArgPass
-    , VerifierPass
     >();
   // Final transformation.
   mngr.Add<MergeStoresPass>();
@@ -283,7 +273,6 @@ static void AddOpt3(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt4(PassManager &mngr)
 {
-  mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
@@ -292,7 +281,6 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<CamlAssignPass>();
-  mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < PeepholePass
@@ -315,7 +303,6 @@ static void AddOpt4(PassManager &mngr)
     , CondSimplifyPass
     , DedupBlockPass
     , UnusedArgPass
-    , VerifierPass
     >();
   // Final transformation.
   mngr.Add<MergeStoresPass>();
@@ -329,7 +316,6 @@ static void AddOpt4(PassManager &mngr)
 static void AddOptS(PassManager &mngr)
 {
   // First round - compact
-  mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Simplify functions and eliminate trivial items.
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
@@ -339,7 +325,6 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
-  mngr.Add<VerifierPass>();
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<AtomSimplifyPass>();
@@ -356,7 +341,6 @@ static void AddOptS(PassManager &mngr)
     , SimplifyCfgPass
     , DedupConstPass
     , BypassPhiPass
-    , VerifierPass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
@@ -364,21 +348,15 @@ static void AddOptS(PassManager &mngr)
     , MovePushPass
     , PhiTautPass
     , EliminateSelectPass
-    , VerifierPass
     , EliminateTagsPass
-    , VerifierPass
     , SpecialisePass
-    , VerifierPass
     , InlinerPass
-    , VerifierPass
     , CondSimplifyPass
-    , VerifierPass
     , ObjectSplitPass
     , StoreToLoadPass
     , DeadStorePass
     , MemoryToRegisterPass
     , UnusedArgPass
-    , VerifierPass
     , GlobalForwardPass
     >();
   // Final simplification.
@@ -513,7 +491,6 @@ int main(int argc, char **argv)
   registry.Register<LibCSimplifyPass>();
   registry.Register<UnusedArgPass>();
   registry.Register<GlobalForwardPass>();
-  registry.Register<VerifierPass>();
   registry.Register<ObjectSplitPass>();
   registry.Register<ValueNumberingPass>();
   registry.Register<LinearisePass>();
@@ -523,8 +500,8 @@ int main(int argc, char **argv)
   registry.Register<EliminateTagsPass>();
 
   // Set up the pipeline.
-  PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
-  PassManager passMngr(cfg, t.get(), optSaveBefore, optVerbose, optTime);
+  PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);
+  PassManager passMngr(cfg, t.get(), optSaveBefore, optVerbose, optTime, optVerify);
   if (!optPasses.empty()) {
     for (auto &passName : optPasses) {
       registry.Add(passMngr, std::string(passName));
@@ -591,7 +568,6 @@ int main(int argc, char **argv)
       break;
     }
   }
-  passMngr.Add<VerifierPass>();
 
   // Run the optimiser.
   passMngr.Run(*prog);

@@ -64,16 +64,17 @@ add_library(core
     ref.cpp
     register.cpp
     symbol_table.cpp
-    type.cpp
     target.cpp
-    target/x86.cpp
     target/aarch64.cpp
     target/ppc.cpp
     target/riscv.cpp
+    target/x86.cpp
+    type.cpp
     use.cpp
     user.cpp
     util.cpp
     value.cpp
+    verifier.cpp
     visibility.cpp
     xtor.cpp
 )

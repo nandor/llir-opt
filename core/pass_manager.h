@@ -49,8 +49,6 @@ struct PassConfig {
   bool Static = false;
   /// Building a shared library.
   bool Shared = false;
-  /// Enable the verifier.
-  bool Verify = false;
   /// Name of the entry point.
   std::string Entry;
 
@@ -60,12 +58,10 @@ struct PassConfig {
       OptLevel opt,
       bool isStatic,
       bool isShared,
-      bool verify,
       std::string entry)
     : Opt(opt)
     , Static(isStatic)
     , Shared(isShared)
-    , Verify(verify)
     , Entry(entry)
   {
   }
@@ -82,7 +78,8 @@ public:
       const Target *target,
       const std::string &saveBefore,
       bool verbose,
-      bool time
+      bool time,
+      bool verify
   );
 
   /// Add an analysis into the pipeline.
@@ -176,6 +173,8 @@ private:
   bool verbose_;
   /// Timing flag.
   bool time_;
+  /// Flag to verify IR after a transformation.
+  bool verify_;
   /// List of passes to run on a program.
   std::vector<GroupInfo> groups_;
   /// Mapping from named passes to IDs.

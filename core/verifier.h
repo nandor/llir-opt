@@ -17,7 +17,7 @@ class MovInst;
 class Verifier final : public ConstInstVisitor<void> {
 public:
   /// Initialises the pass.
-  Verifier(Target *target);
+  Verifier(const Target *target);
 
   /// Runs the pass.
   bool Run(Prog &prog);

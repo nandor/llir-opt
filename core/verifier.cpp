@@ -8,49 +8,37 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include "core/analysis/dominator.h"
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
-#include "core/prog.h"
 #include "core/insts.h"
-#include "core/printer.h"
-#include "core/target.h"
 #include "core/pass_manager.h"
-#include "core/analysis/dominator.h"
-#include "passes/verifier.h"
+#include "core/printer.h"
+#include "core/prog.h"
+#include "core/target.h"
+#include "core/verifier.h"
 
 
 
 // -----------------------------------------------------------------------------
-const char *VerifierPass::kPassID = "verifier";
-
-// -----------------------------------------------------------------------------
-VerifierPass::VerifierPass(PassManager *passManager)
-  : Pass(passManager)
-  , ptrTy_(GetTarget()->GetPointerType())
+Verifier::Verifier(const Target *target)
+  : ptrTy_(target->GetPointerType())
 {
 }
 
 // -----------------------------------------------------------------------------
-bool VerifierPass::Run(Prog &prog)
+bool Verifier::Run(Prog &prog)
 {
-  if (GetConfig().Verify) {
-    for (Func &func : prog) {
-      Verify(func);
-    }
+  for (Func &func : prog) {
+    Verify(func);
   }
   return false;
 }
 
 // -----------------------------------------------------------------------------
-const char *VerifierPass::GetPassName() const
-{
-  return "Verifier";
-}
-
-// -----------------------------------------------------------------------------
-void VerifierPass::Verify(Func &func)
+void Verifier::Verify(Func &func)
 {
   // ensure definitions dominate uses.
   DominatorTree DT(func);
@@ -99,7 +87,13 @@ void VerifierPass::Verify(Func &func)
 
   // Verify properties of instructions.
   for (Block &block : func) {
-    if (!block.GetTerminator()) {
+    if (auto *term = block.GetTerminator()) {
+      for (Inst &inst : block) {
+        if (inst.IsTerminator() && &inst != term) {
+          Error(block, "additional terminator");
+        }
+      }
+    } else {
       Error(block, "invalid terminator");
     }
     std::set<Block *> preds(block.pred_begin(), block.pred_end());
@@ -144,7 +138,7 @@ static bool Compatible(Type vt, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::CheckPointer(
+void Verifier::CheckPointer(
     const Inst &i,
     ConstRef<Inst> ref,
     const char *msg)
@@ -155,7 +149,7 @@ void VerifierPass::CheckPointer(
 };
 
 // -----------------------------------------------------------------------------
-void VerifierPass::CheckInteger(
+void Verifier::CheckInteger(
     const Inst &i,
     ConstRef<Inst> ref,
     const char *msg)
@@ -166,7 +160,7 @@ void VerifierPass::CheckInteger(
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::CheckType(const Inst &i, ConstRef<Inst> ref, Type type)
+void Verifier::CheckType(const Inst &i, ConstRef<Inst> ref, Type type)
 {
   auto it = ref.GetType();
   if (type == Type::I64 && it == Type::V64) {
@@ -181,7 +175,7 @@ void VerifierPass::CheckType(const Inst &i, ConstRef<Inst> ref, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::Error(const Block &block, llvm::Twine msg)
+void Verifier::Error(const Block &block, llvm::Twine msg)
 {
   const Func *func = block.getParent();
   std::string buffer;
@@ -196,7 +190,7 @@ void VerifierPass::Error(const Block &block, llvm::Twine msg)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::Error(const Inst &i, llvm::Twine msg)
+void Verifier::Error(const Inst &i, llvm::Twine msg)
 {
   const Block *block = i.getParent();
   const Func *func = block->getParent();
@@ -212,13 +206,13 @@ void VerifierPass::Error(const Inst &i, llvm::Twine msg)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitConstInst(const ConstInst &i)
+void Verifier::VisitConstInst(const ConstInst &i)
 {
 
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitUnaryInst(const UnaryInst &i)
+void Verifier::VisitUnaryInst(const UnaryInst &i)
 {
   // Argument must match type.
   if (i.GetArg().GetType() != i.GetType()) {
@@ -227,13 +221,13 @@ void VerifierPass::VisitUnaryInst(const UnaryInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitBinaryInst(const BinaryInst &i)
+void Verifier::VisitBinaryInst(const BinaryInst &i)
 {
 
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitOverflowInst(const OverflowInst &i)
+void Verifier::VisitOverflowInst(const OverflowInst &i)
 {
   // LHS must match RHS, return type integral.
   Type type = i.GetType();
@@ -246,7 +240,7 @@ void VerifierPass::VisitOverflowInst(const OverflowInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitShiftRotateInst(const ShiftRotateInst &i)
+void Verifier::VisitShiftRotateInst(const ShiftRotateInst &i)
 {
   Type type = i.GetType();
   if (!IsIntegerType(type)) {
@@ -259,19 +253,19 @@ void VerifierPass::VisitShiftRotateInst(const ShiftRotateInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitMemoryInst(const MemoryInst &i)
+void Verifier::VisitMemoryInst(const MemoryInst &i)
 {
 
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitBarrierInst(const BarrierInst &i)
+void Verifier::VisitBarrierInst(const BarrierInst &i)
 {
 
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitMemoryExchangeInst(const MemoryExchangeInst &i)
+void Verifier::VisitMemoryExchangeInst(const MemoryExchangeInst &i)
 {
   CheckPointer(i, i.GetAddr());
   if (i.GetValue().GetType() != i.GetType()) {
@@ -280,7 +274,7 @@ void VerifierPass::VisitMemoryExchangeInst(const MemoryExchangeInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitMemoryCompareExchangeInst(
+void Verifier::VisitMemoryCompareExchangeInst(
     const MemoryCompareExchangeInst &i)
 {
   CheckPointer(i, i.GetAddr());
@@ -293,32 +287,32 @@ void VerifierPass::VisitMemoryCompareExchangeInst(
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitLoadLinkInst(const LoadLinkInst &i)
+void Verifier::VisitLoadLinkInst(const LoadLinkInst &i)
 {
   CheckPointer(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitStoreCondInst(const StoreCondInst &i)
+void Verifier::VisitStoreCondInst(const StoreCondInst &i)
 {
   CheckPointer(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitCallSite(const CallSite &i)
+void Verifier::VisitCallSite(const CallSite &i)
 {
   CheckPointer(i, i.GetCallee());
   // TODO: check arguments for direct callees.
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitX86_FPUControlInst(const X86_FPUControlInst &i)
+void Verifier::VisitX86_FPUControlInst(const X86_FPUControlInst &i)
 {
   CheckPointer(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitPhiInst(const PhiInst &phi)
+void Verifier::VisitPhiInst(const PhiInst &phi)
 {
   for (Block *predBB : phi.getParent()->predecessors()) {
     if (!phi.HasValue(predBB)) {
@@ -368,7 +362,7 @@ void VerifierPass::VisitPhiInst(const PhiInst &phi)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitMovInst(const MovInst &mi)
+void Verifier::VisitMovInst(const MovInst &mi)
 {
   ConstRef<Value> value = mi.GetArg();
   switch (value->GetKind()) {
@@ -401,7 +395,7 @@ void VerifierPass::VisitMovInst(const MovInst &mi)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitAllocaInst(const AllocaInst &i)
+void Verifier::VisitAllocaInst(const AllocaInst &i)
 {
   if (i.GetType(0) != ptrTy_) {
     Error(i, "pointer type expected");
@@ -409,7 +403,7 @@ void VerifierPass::VisitAllocaInst(const AllocaInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitFrameInst(const FrameInst &i)
+void Verifier::VisitFrameInst(const FrameInst &i)
 {
   if (i.GetType(0) != ptrTy_) {
     Error(i, "pointer type expected");
@@ -417,7 +411,7 @@ void VerifierPass::VisitFrameInst(const FrameInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitSetInst(const SetInst &i)
+void Verifier::VisitSetInst(const SetInst &i)
 {
   switch (i.GetReg()) {
     case Register::X86_CS:
@@ -465,7 +459,7 @@ void VerifierPass::VisitSetInst(const SetInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitGetInst(const GetInst &get)
+void Verifier::VisitGetInst(const GetInst &get)
 {
   switch (get.GetReg()) {
     case Register::X86_CS:
@@ -506,7 +500,7 @@ void VerifierPass::VisitGetInst(const GetInst &get)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitCmpInst(const CmpInst &i)
+void Verifier::VisitCmpInst(const CmpInst &i)
 {
   auto lt = i.GetLHS().GetType();
   auto rt = i.GetRHS().GetType();
@@ -518,7 +512,7 @@ void VerifierPass::VisitCmpInst(const CmpInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitSyscallInst(const SyscallInst &i)
+void Verifier::VisitSyscallInst(const SyscallInst &i)
 {
   for (auto arg : i.args()) {
     CheckInteger(i, arg, "syscall expects integer arguments");
@@ -526,7 +520,7 @@ void VerifierPass::VisitSyscallInst(const SyscallInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitArgInst(const ArgInst &i)
+void Verifier::VisitArgInst(const ArgInst &i)
 {
   unsigned idx = i.GetIndex();
   const auto &params = i.getParent()->getParent()->params();
@@ -539,14 +533,14 @@ void VerifierPass::VisitArgInst(const ArgInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitRaiseInst(const RaiseInst &i)
+void Verifier::VisitRaiseInst(const RaiseInst &i)
 {
   CheckPointer(i, i.GetTarget());
   CheckPointer(i, i.GetStack());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitLandingPadInst(const LandingPadInst &i)
+void Verifier::VisitLandingPadInst(const LandingPadInst &i)
 {
   const Block *block = i.getParent();
   if (&i != &*block->begin()) {
@@ -563,25 +557,25 @@ void VerifierPass::VisitLandingPadInst(const LandingPadInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitLoadInst(const LoadInst &i)
+void Verifier::VisitLoadInst(const LoadInst &i)
 {
   CheckPointer(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitStoreInst(const StoreInst &i)
+void Verifier::VisitStoreInst(const StoreInst &i)
 {
   CheckPointer(i, i.GetAddr());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitVaStartInst(const VaStartInst &i)
+void Verifier::VisitVaStartInst(const VaStartInst &i)
 {
   CheckPointer(i, i.GetVAList());
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitSelectInst(const SelectInst &i)
+void Verifier::VisitSelectInst(const SelectInst &i)
 {
   if (!Compatible(i.GetTrue().GetType(), i.GetType())) {
     Error(i, "mismatched true branch");

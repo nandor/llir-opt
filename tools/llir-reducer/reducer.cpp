@@ -30,7 +30,6 @@
 #include "passes/simplify_cfg.h"
 #include "passes/stack_object_elim.h"
 #include "passes/undef_elim.h"
-#include "passes/verifier.h"
 #include "job_runner.h"
 #include "prog_reducer.h"
 #include "timeout.h"
@@ -437,12 +436,10 @@ GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
 
   /// Simplify the program.
   PassConfig cfg;
-  PassManager mngr(cfg, nullptr, "", false, false);
-  mngr.Add<VerifierPass>();
+  PassManager mngr(cfg, nullptr, "", false, false, false);
   mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
-  mngr.Add<VerifierPass>();
   mngr.Run(*program);
 
   // Run the verifier.

@@ -109,6 +109,5 @@ add_library(passes
     undef_elim.cpp
     unused_arg.cpp
     value_numbering.cpp
-    verifier.cpp
 )
 add_dependencies(passes core)
