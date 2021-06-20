@@ -8,7 +8,7 @@ var searchData=
   ['inlinehelper_1746',['InlineHelper',['../classInlineHelper.html#ae1edd22256fb20cc00c717f47b6f76cc',1,'InlineHelper']]],
   ['inlinerpass_1747',['InlinerPass',['../classInlinerPass.html#aee435a6feb2b6ac05eb2d8bba3dcc364',1,'InlinerPass']]],
   ['insert_1748',['Insert',['../classBitSet.html#ad40503561af33f070604634cdeebb577',1,'BitSet::Insert()'],['../classBlock.html#ae03c5c7e14d4cdc686355ff93eab80d5',1,'Block::insert()'],['../classFunc.html#a0c16e09e03076fb757b3a499052e6311',1,'Func::insert()']]],
-  ['insertafter_1749',['insertAfter',['../classFunc.html#a5ea0e040519f06bb349d70befab88a41',1,'Func']]],
+  ['insertafter_1749',['insertAfter',['../classBlock.html#a5651f3724030565c76018b6b0d1edd58',1,'Block::insertAfter()'],['../classFunc.html#a5ea0e040519f06bb349d70befab88a41',1,'Func::insertAfter()']]],
   ['inst_1750',['Inst',['../classInst.html#a5d12023e1238e86f0d8cfecb35074a8f',1,'Inst::Inst(Kind kind, unsigned numOps, AnnotSet &amp;&amp;annot)'],['../classInst.html#ae0e6c8aaa66f657b720bfb27e276337d',1,'Inst::Inst(Kind kind, unsigned numOps, const AnnotSet &amp;annot)']]],
   ['int_1751',['Int',['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer']]],
   ['intersect_1752',['Intersect',['../classBitSet.html#ab4ee77290fb35bf59ff7a7e05ac996b3',1,'BitSet']]],
