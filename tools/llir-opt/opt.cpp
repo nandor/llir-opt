@@ -52,6 +52,7 @@
 #include "passes/mem_to_reg.h"
 #include "passes/merge_stores.h"
 #include "passes/move_elim.h"
+#include "passes/move_push.h"
 #include "passes/object_split.h"
 #include "passes/phi_taut.h"
 #include "passes/peephole.h"
@@ -223,6 +224,7 @@ static void AddOpt2(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , MovePushPass
     , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
@@ -263,6 +265,7 @@ static void AddOpt3(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , MovePushPass
     , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
@@ -306,6 +309,7 @@ static void AddOpt4(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , MovePushPass
     , PhiTautPass
     , InlinerPass
     , CondSimplifyPass
@@ -331,6 +335,7 @@ static void AddOptS(PassManager &mngr)
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
+  mngr.Add<MovePushPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
@@ -356,6 +361,7 @@ static void AddOptS(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , MovePushPass
     , PhiTautPass
     , EliminateSelectPass
     , VerifierPass
@@ -489,6 +495,7 @@ int main(int argc, char **argv)
   registry.Register<InlinerPass>();
   registry.Register<LinkPass>();
   registry.Register<MoveElimPass>();
+  registry.Register<MovePushPass>();
   registry.Register<PreEvalPass>();
   registry.Register<SCCPPass>();
   registry.Register<SimplifyCfgPass>();

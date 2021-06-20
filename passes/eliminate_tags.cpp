@@ -32,6 +32,7 @@ STATISTIC(NumConstFolded, "Number of instructions folded to zero/one");
 const char *EliminateTagsPass::kPassID = DEBUG_TYPE;
 
 // -----------------------------------------------------------------------------
+namespace {
 class TypeRewriter final : public CloneVisitor {
 public:
   TypeRewriter(llvm::SmallVectorImpl<TaggedType> &types) : types_(types) {}
@@ -50,6 +51,7 @@ public:
 private:
   llvm::SmallVectorImpl<TaggedType> &types_;
 };
+}
 
 // -----------------------------------------------------------------------------
 class EliminateTags final {

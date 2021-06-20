@@ -3,14 +3,19 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/ADT/Statistic.h>
 
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
-#include "core/prog.h"
 #include "core/insts.h"
+#include "core/prog.h"
 #include "passes/move_elim.h"
+
+#define DEBUG_TYPE "move-elim"
+
+STATISTIC(NumMovsForwarded, "Number of movs forwarded");
 
 
 
@@ -45,6 +50,8 @@ bool MoveElimPass::Run(Prog &prog)
               mov->replaceAllUsesWith(arg);
               mov->eraseFromParent();
               changed = true;
+              ++NumMovsForwarded;
+              continue;
             }
           }
         }

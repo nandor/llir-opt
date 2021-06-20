@@ -93,6 +93,7 @@ add_library(passes
     mem_to_reg.cpp
     merge_stores.cpp
     move_elim.cpp
+    move_push.cpp
     object_split.cpp
     peephole.cpp
     phi_taut.cpp
