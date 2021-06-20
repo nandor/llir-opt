@@ -816,6 +816,13 @@ void Refinement::VisitAddInst(AddInst &i)
       RefineInt(i, i.GetSubValue(0));
       RefineInt(i, i.GetRHS());
     }
+    // val + odd = val cannot hold for integers, val is pointer.
+    if (vl.IsVal() && vr.IsOdd()) {
+      RefineAddr(i, i.GetLHS());
+    }
+    if (vl.IsOdd() && vr.IsVal()) {
+      RefineAddr(i, i.GetRHS());
+    }
   }
 }
 
@@ -837,6 +844,18 @@ void Refinement::VisitCmpInst(CmpInst &i)
 // -----------------------------------------------------------------------------
 void Refinement::VisitAndInst(AndInst &i)
 {
+  auto vl = analysis_.Find(i.GetLHS());
+  auto vr = analysis_.Find(i.GetRHS());
+  auto vo = analysis_.Find(i);
+
+  if (vo.IsPtrLike()) {
+    if (vl.IsInt() && vr.IsPtrUnion()) {
+      return RefineAddr(i, i.GetRHS());
+    }
+    if (vl.IsPtrUnion() && vr.IsInt()) {
+      return RefineAddr(i, i.GetLHS());
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
