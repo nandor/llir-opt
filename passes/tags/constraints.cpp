@@ -246,7 +246,7 @@ ID<ConstraintSolver::Constraint> ConstraintSolver::Find(Ref<Inst> a)
   if (auto it = ids_.find(a); it != ids_.end()) {
     return union_.Find(it->second);
   } else {
-    auto id = union_.Emplace();
+    auto id = union_.Emplace(a);
     ids_.emplace(a, id);
     return id;
   }

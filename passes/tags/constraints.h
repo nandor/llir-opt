@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "core/adt/id.h"
 #include "core/adt/bitset.h"
 #include "core/adt/union_find.h"
@@ -94,12 +96,14 @@ private:
     ConstraintType Min;
     ConstraintType Max;
     BitSet<Constraint> Subset;
+    std::unordered_set<Ref<Inst>> Defs;
 
-    Constraint(ID<Constraint> id)
+    Constraint(ID<Constraint> id, Ref<Inst> def)
       : Id(id)
       , Min(ConstraintType::BOT)
       , Max(ConstraintType::PTR_INT)
     {
+      Defs.insert(def);
     }
 
     void Union(Constraint &that);
