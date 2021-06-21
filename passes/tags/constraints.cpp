@@ -27,6 +27,9 @@ void ConstraintSolver::Constraint::Union(Constraint &that)
     assert(that.Min <= Min && "invalid constraint");
   }
   Subset.Union(that.Subset);
+  for (auto def : that.Defs) {
+    Defs.insert(def);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -214,6 +217,14 @@ void ConstraintSolver::CollapseEquivalences()
 }
 
 // -----------------------------------------------------------------------------
+static bool IsPolymorphic(const Inst &inst)
+{
+  return ::isa<ArgInst>(&inst) || ::isa<PhiInst>(&inst) ||
+         ::isa<MovInst>(&inst) || ::isa<SelectInst>(&inst) ||
+         ::isa<MemoryInst>(&inst) || isa<CallSite>(&inst);
+}
+
+// -----------------------------------------------------------------------------
 void ConstraintSolver::RewriteTypes()
 {
   for (Func &func : prog_) {
@@ -223,8 +234,6 @@ void ConstraintSolver::RewriteTypes()
           auto ref = inst.GetSubValue(i);
           auto ty = analysis_.Find(ref);
           auto *c = Map(ref);
-          // TODO: rewrite types if a narrower bound is identified.
-          // llvm::errs() << ty << " " << c->Min << " " << c->Max << "\n";
         }
       }
     }

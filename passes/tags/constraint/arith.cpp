@@ -34,17 +34,6 @@ void ConstraintSolver::VisitOrInst(OrInst &i)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitAndInst(AndInst &i)
 {
-  /*
-  // int ptr|int ptr|int
-  // int val ptr|int
-  // ptr int ptr|int
-  // ptr|int int ptr|int
-  // ptr|int ptr|int ptr|int
-  // val int ptr|int
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-  auto vo = analysis_.Find(i);
-  */
   // TODO:
   Infer(i);
 }
@@ -52,21 +41,6 @@ void ConstraintSolver::VisitAndInst(AndInst &i)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitXorInst(XorInst &i)
 {
-  /*
-  // addr|int val ptr|int
-  // int ptr|int ptr|int
-  // ptr|int int ptr|int
-  // ptr|int ptr ptr|int
-  // ptr|int ptr|int ptr
-  // ptr|int ptr|int ptr|int
-  // val val val
-  // ptr int int
-  // int int int
-
-  auto vl = analysis_.Find(i.GetLHS());
-  auto vr = analysis_.Find(i.GetRHS());
-  auto vo = analysis_.Find(i);
-  */
   // TODO:
   Infer(i);
 }

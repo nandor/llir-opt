@@ -23,6 +23,8 @@ bool ConstraintSolver::IsExtern(const Func &f)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::VisitArgInst(ArgInst &arg)
 {
+  Infer(arg);
+
   auto idx = arg.GetIndex();
   auto &func = *arg.getParent()->getParent();
   for (auto *user : func.users()) {
@@ -35,86 +37,83 @@ void ConstraintSolver::VisitArgInst(ArgInst &arg)
       if (!call || call->GetCallee() != mov->GetSubValue(0)) {
         continue;
       }
-      if (idx < call->arg_size()) {
-        switch (func.GetCallingConv()) {
-          case CallingConv::C:
-          case CallingConv::SETJMP:
-          case CallingConv::XEN:
-          case CallingConv::INTR:
-          case CallingConv::MULTIBOOT:
-          case CallingConv::WIN64: {
-            Infer(arg);
-            if (!IsExtern(func)) {
-              Subset(call->arg(idx), arg);
-            }
-            continue;
+      if (idx >= call->arg_size()) {
+        continue;
+      }
+      switch (func.GetCallingConv()) {
+        case CallingConv::C:
+        case CallingConv::SETJMP:
+        case CallingConv::XEN:
+        case CallingConv::INTR:
+        case CallingConv::MULTIBOOT:
+        case CallingConv::WIN64: {
+          if (!IsExtern(func)) {
+            Subset(call->arg(idx), arg);
           }
-          case CallingConv::CAML: {
-            if (target_) {
-              switch (target_->GetKind()) {
-                case Target::Kind::X86: {
-                  switch (idx) {
-                    case 0: ExactlyPointer(arg); continue;
-                    case 1: ExactlyYoung(arg); continue;
-                    default: {
-                      Infer(arg);
-                      if (!IsExtern(func)) {
-                        Subset(call->arg(idx), arg);
-                      }
-                      continue;
+          continue;
+        }
+        case CallingConv::CAML: {
+          if (target_) {
+            switch (target_->GetKind()) {
+              case Target::Kind::X86: {
+                switch (idx) {
+                  case 0: ExactlyPointer(arg); continue;
+                  case 1: ExactlyYoung(arg); continue;
+                  default: {
+                    if (!IsExtern(func)) {
+                      Subset(call->arg(idx), arg);
                     }
+                    continue;
                   }
-                  llvm_unreachable("invalid argument index");
                 }
-                case Target::Kind::PPC: {
-                  llvm_unreachable("not implemented");
-                }
-                case Target::Kind::AARCH64: {
-                  llvm_unreachable("not implemented");
-                }
-                case Target::Kind::RISCV: {
-                  llvm_unreachable("not implemented");
-                }
+                llvm_unreachable("invalid argument index");
               }
-              llvm_unreachable("invalid target kind");
-            } else {
-              llvm_unreachable("not implemented");
-            }
-          }
-          case CallingConv::CAML_ALLOC: {
-            if (target_) {
-              switch (target_->GetKind()) {
-                case Target::Kind::X86: {
-                  switch (idx) {
-                    case 0: ExactlyPointer(arg); continue;
-                    case 1: ExactlyYoung(arg); continue;
-                    default: llvm_unreachable("invalid argument");
-                  }
-                  llvm_unreachable("invalid argument index");
-                }
-                case Target::Kind::PPC: {
-                  llvm_unreachable("not implemented");
-                }
-                case Target::Kind::AARCH64: {
-                  llvm_unreachable("not implemented");
-                }
-                case Target::Kind::RISCV: {
-                  llvm_unreachable("not implemented");
-                }
+              case Target::Kind::PPC: {
+                llvm_unreachable("not implemented");
               }
-              llvm_unreachable("invalid target kind");
-            } else {
-              llvm_unreachable("not implemented");
+              case Target::Kind::AARCH64: {
+                llvm_unreachable("not implemented");
+              }
+              case Target::Kind::RISCV: {
+                llvm_unreachable("not implemented");
+              }
             }
-          }
-          case CallingConv::CAML_GC: {
+            llvm_unreachable("invalid target kind");
+          } else {
             llvm_unreachable("not implemented");
           }
         }
-        llvm_unreachable("invalid calling convention");
-      } else {
-        Infer(arg);
+        case CallingConv::CAML_ALLOC: {
+          if (target_) {
+            switch (target_->GetKind()) {
+              case Target::Kind::X86: {
+                switch (idx) {
+                  case 0: ExactlyPointer(arg); continue;
+                  case 1: ExactlyYoung(arg); continue;
+                  default: llvm_unreachable("invalid argument");
+                }
+                llvm_unreachable("invalid argument index");
+              }
+              case Target::Kind::PPC: {
+                llvm_unreachable("not implemented");
+              }
+              case Target::Kind::AARCH64: {
+                llvm_unreachable("not implemented");
+              }
+              case Target::Kind::RISCV: {
+                llvm_unreachable("not implemented");
+              }
+            }
+            llvm_unreachable("invalid target kind");
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
+        case CallingConv::CAML_GC: {
+          llvm_unreachable("not implemented");
+        }
       }
+      llvm_unreachable("invalid calling convention");
     }
   }
 }
@@ -208,6 +207,7 @@ void ConstraintSolver::VisitCallSite(CallSite &site)
     }
   } else {
     for (unsigned i = 0, n = site.GetNumRets(); i < n; ++i) {
+      Infer(site.GetSubValue(i));
       for (auto *ret : subsets) {
         if (i < ret->arg_size()) {
           Subset(ret->arg(i), site.GetSubValue(i));

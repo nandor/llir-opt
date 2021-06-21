@@ -816,6 +816,11 @@ void Refinement::VisitSubInst(SubInst &i)
     RefineAddr(i, i.GetLHS());
     return;
   }
+  if (vo.IsPtrLike() && vl.IsPtrLike() && vr.IsPtrUnion()) {
+    // ptr - ptr = int, so ptr - ptr|int can be refined to ptr - int
+    RefineInt(i, i.GetRHS());
+    return;
+  }
 }
 
 // -----------------------------------------------------------------------------
