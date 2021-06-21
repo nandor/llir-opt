@@ -42,6 +42,8 @@ private:
   void RefineJoin(Ref<Inst> ref, const TaggedType &ty, Use &use, Type type);
   /// Create a mov for a cast.
   Ref<Inst> Cast(Ref<Inst> ref, const TaggedType &ty);
+  /// Check if the refinement clarifies a monomorphic operator.
+  bool IsMonomorphic(Ref<Inst> ref, const TaggedType &ty);
   /// Specialise a type downstream.
   void Specialise(
       Ref<Inst> ref,

@@ -108,8 +108,9 @@ private:
   /// Rebuild cached dominance info.
   DominatorCache &RebuildDoms(Func &func)
   {
-    doms_.erase(&func);
-    return GetDoms(func);
+    auto it = doms_.emplace(&func, nullptr);
+    it.first->second.reset(new DominatorCache(func));
+    return *it.first->second;
   }
 
 private:

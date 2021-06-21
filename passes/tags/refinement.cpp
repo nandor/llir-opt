@@ -213,6 +213,39 @@ void Refinement::Run()
 }
 
 // -----------------------------------------------------------------------------
+static bool IsPolymorphic(Inst &i)
+{
+  // Memory loads are polymorphic.
+  if (isa<MemoryInst>(&i)) {
+    return true;
+  }
+  // Join points.
+  if (isa<ArgInst>(&i)) {
+    return true;
+  }
+  if (isa<PhiInst>(&i)) {
+    return true;
+  }
+  if (isa<SelectInst>(&i)) {
+    return true;
+  }
+  if (isa<CallSite>(&i)) {
+    return true;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool Refinement::IsMonomorphic(Ref<Inst> ref, const TaggedType &nt)
+{
+  if (IsPolymorphic(*ref)) {
+    return false;
+  }
+  auto ot = analysis_.Find(ref);
+  return ot.IsPtrUnion() && (nt.IsInt() || nt.IsPtrLike());
+}
+
+// -----------------------------------------------------------------------------
 void Refinement::Refine(
     Block *parent,
     Ref<Inst> ref,
@@ -223,7 +256,7 @@ void Refinement::Refine(
   assert(analysis_.Find(ref) != nt && "no refinement");
 
   auto &doms = analysis_.GetDoms(*func);
-  if (doms.PDT.dominates(parent, ref->getParent())) {
+  if (doms.PDT.dominates(parent, ref->getParent()) || IsMonomorphic(ref, nt)) {
     Refine(ref, nt);
   } else {
     // Find the post-dominated nodes which are successors of the frontier.
@@ -243,50 +276,50 @@ void Refinement::Refine(
 
 // -----------------------------------------------------------------------------
 void Refinement::Refine(
-    Block *start,
-    Block *end,
+    Block *st,
+    Block *en,
     Ref<Inst> ref,
     const TaggedType &nt)
 {
   auto *func = ref->getParent()->getParent();
-  assert(start->getParent() == func && "invalid block");
-  assert(end->getParent() == func && "invalid block");
+  assert(st->getParent() == func && "invalid block");
+  assert(en->getParent() == func && "invalid block");
   assert(analysis_.Find(ref) != nt && "no refinement");
 
   // Refine the value.
   auto &doms = analysis_.GetDoms(*func);
-  if (doms.PDT.Dominates(start, end, ref->getParent())) {
+  if (doms.PDT.Dominates(st, en, ref->getParent()) || IsMonomorphic(ref, nt)) {
     Refine(ref, nt);
-  } else if (auto *node = doms.PDT.getNode(start)) {
+  } else if (auto *node = doms.PDT.getNode(st)) {
     // Find the post-dominated nodes which are successors of the frontier.
     std::unordered_map<const Block *, TaggedType> splits;
     for (auto *front : doms.PDF.calculate(doms.PDT, node)) {
       for (auto *succ : front->successors()) {
-        if (doms.PDT.Dominates(start, end, succ)) {
+        if (doms.PDT.Dominates(st, en, succ)) {
           splits.emplace(succ, nt);
         }
       }
     }
     if (splits.empty()) {
       // Create a block along the edge.
-      auto *split = new Block(start->getName());
-      func->insertAfter(start->getIterator(), split);
-      split->AddInst(new JumpInst(end, {}));
+      auto *split = new Block(st->getName());
+      func->insertAfter(st->getIterator(), split);
+      split->AddInst(new JumpInst(en, {}));
 
       // Rewrite the terminator of the start.
       {
-        auto *term = start->GetTerminator();
+        auto *term = st->GetTerminator();
         for (auto it = term->op_begin(); it != term->op_end(); ) {
           Use &use = *it++;
-          if ((*use).Get() == end) {
+          if ((*use).Get() == en) {
             use = split;
           }
         }
       }
       // Rewrite PHIs of end.
-      for (auto &phi : end->phis()) {
-        auto v = phi.GetValue(start);
-        phi.Remove(start);
+      for (auto &phi : en->phis()) {
+        auto v = phi.GetValue(st);
+        phi.Remove(st);
         phi.Add(split, v);
       }
       // Add a mov along this edge.

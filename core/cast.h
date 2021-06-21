@@ -233,3 +233,12 @@ ConstRef<T> cast(ConstRef<U> from)
 {
   return ConstRef(::cast<const T>(from.Get()), from.Index());
 }
+
+/**
+ * Checks whether a reference is of a particular type.
+ */
+template <typename T, typename U>
+bool isa(U *from)
+{
+  return ::cast_or_null<const T>(from);
+}

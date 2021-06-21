@@ -79,8 +79,8 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::INT:       return TaggedType::PtrInt();
         case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
         case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
-        case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
-        case TaggedType::Kind::HEAP_OFF: llvm_unreachable("not implemented");
+        case TaggedType::Kind::HEAP:      return TaggedType::Int();
+        case TaggedType::Kind::HEAP_OFF:  llvm_unreachable("not implemented");
         case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");

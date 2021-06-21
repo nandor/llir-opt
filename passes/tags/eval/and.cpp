@@ -29,7 +29,7 @@ TaggedType Step::And(Type ty, TaggedType vl, TaggedType vr)
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
         case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP_OFF:  llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR:       return ClearsPage(l) ? TaggedType::Int() : TaggedType::AddrInt();
         case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
         case TaggedType::Kind::INT:       return TaggedType::Mask(vl.GetInt() & vr.GetInt());
