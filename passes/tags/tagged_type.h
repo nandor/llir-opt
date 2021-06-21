@@ -66,7 +66,7 @@ public:
   bool IsOne() const;
   bool IsOddLike() const { return IsOdd() || IsOne(); }
   bool IsEvenLike() const { return IsEven() || IsZero(); }
-  bool IsPtrLike() const { return IsHeap() || IsPtr() || IsAddr(); }
+  bool IsPtrLike() const { return IsYoung() || IsHeap() || IsPtr() || IsAddr(); }
   bool IsPtrUnion() const;
   bool IsZeroOrOne() const;
   bool IsNonZero() const;

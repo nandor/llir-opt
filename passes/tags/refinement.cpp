@@ -19,7 +19,7 @@ using namespace tags;
 
 STATISTIC(NumMovsRefined, "Number of movs refined");
 
-//.L180$local94132
+
 
 
 // -----------------------------------------------------------------------------
@@ -38,10 +38,7 @@ static std::optional<TaggedType> RefineMovTo(
     const TaggedType &varg,
     Type type)
 {
-  if (vmov < varg) {
-    return vmov;
-  }
-  if (varg.IsAddrInt() && type == Type::V64) {
+  if (varg.IsAddrInt() && (vmov.IsVal() || type == Type::V64)) {
     return TaggedType::Odd();
   }
   return std::nullopt;
@@ -812,14 +809,22 @@ void Refinement::VisitSubInst(SubInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
-  if (vo.IsPtrLike() && vl.IsPtrUnion() && vr.IsInt()) {
-    RefineAddr(i, i.GetLHS());
-    return;
-  }
-  if (vo.IsPtrLike() && vl.IsPtrLike() && vr.IsPtrUnion()) {
-    // ptr - ptr = int, so ptr - ptr|int can be refined to ptr - int
-    RefineInt(i, i.GetRHS());
-    return;
+  if (vo.IsPtrLike()) {
+    if (vl.IsPtrUnion() && vr.IsInt()) {
+      RefineAddr(i, i.GetLHS());
+      return;
+    }
+    if (vl.IsPtrLike() && vr.IsPtrUnion()) {
+      // ptr - ptr = int, so ptr - ptr|int can be refined to ptr - int
+      RefineInt(i, i.GetRHS());
+      return;
+    }
+    if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
+      // ptr|int - ptr|int = ptr means ptr - int = ptr
+      RefineAddr(i, i.GetLHS());
+      RefineInt(i, i.GetRHS());
+      return;
+    }
   }
 }
 

@@ -227,17 +227,6 @@ static bool IsPolymorphic(const Inst &inst)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::RewriteTypes()
 {
-  for (Func &func : prog_) {
-    for (Block &block : func) {
-      for (Inst &inst : block) {
-        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-          auto ref = inst.GetSubValue(i);
-          auto ty = analysis_.Find(ref);
-          auto *c = Map(ref);
-        }
-      }
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
