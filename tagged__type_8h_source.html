@@ -136,7 +136,7 @@ $(function() {
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">bool</span> IsOne() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">bool</span> IsOddLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsOdd() || IsOne(); }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">bool</span> IsEvenLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsEven() || IsZero(); }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">bool</span> IsPtrLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsHeap() || IsPtr() || IsAddr(); }</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">bool</span> IsPtrLike()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> IsYoung() || IsHeap() || IsPtr() || IsAddr(); }</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">bool</span> IsPtrUnion() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">bool</span> IsZeroOrOne() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">bool</span> IsNonZero() <span class="keyword">const</span>;</div>
