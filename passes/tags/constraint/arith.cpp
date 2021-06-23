@@ -18,6 +18,7 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  auto sl = Find(i.GetLHS()), sr = Find(i.GetRHS()), so = Find(i);
 
   switch (vo.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -36,12 +37,11 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
         return;
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vl == ptr && vr == int
-        //  OR
-        // vl == int && vr == ptr
-        //  OR
-        // vl == ptr|int && vr == ptr|int
         return;
+        return Alternatives(i, {
+            { IsPtr(sl), { IsInt(sr) } },
+            { IsInt(sl), { IsInt(sr) } }
+        });
       }
       llvm_unreachable("invalid add type");
     }
@@ -52,46 +52,39 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT: {
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        //  OR
-        // vo == ptr|int && vl == ptr|int
         return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl) } }
+        });
       }
       if (vl.IsInt() && vr.IsPtrUnion()) {
-        // vo == int && (vr == ptr|int)
-        //  OR
-        // vo == ptr && vr == ptr && vl == int
-        //  OR
-        // vo == ptr|int && vr == ptr|int
         return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrLike()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == int
-        //  OR
-        // vo == ptr|int && vl == ptr|int
         return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sl) } }
+        });
       }
       if (vl.IsPtrLike() && vr.IsPtrUnion()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == int
-        //  OR
-        // vo == ptr|int && vr == ptr|int
         return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vo == int && vr == ptr|int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        //  OR
-        // vo == ptr|int && vl == ptr|int && vr == ptr|int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl), IsInt(sr) } },
+            { IsPtr(so), { IsInt(sl), IsPtr(sr) } }
+        });
       }
       llvm_unreachable("invalid add type");
     }
@@ -103,10 +96,12 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
 void ConstraintSolver::VisitSubInst(SubInst &i)
 {
   Infer(i);
+  return;
 
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  auto sl = Find(i.GetLHS()), sr = Find(i.GetRHS()), so = Find(i);
 
   switch (vo.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -133,22 +128,22 @@ void ConstraintSolver::VisitSubInst(SubInst &i)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT: {
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl), IsInt(sr) } }
+        });
       }
       if (vl.IsPtrLike() && vr.IsPtrUnion()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sr) } }
+        });
       }
       llvm_unreachable("invalid sub type");
     }
@@ -160,10 +155,12 @@ void ConstraintSolver::VisitSubInst(SubInst &i)
 void ConstraintSolver::VisitOrInst(OrInst &i)
 {
   Infer(i);
+  return;
 
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  auto sl = Find(i.GetLHS()), sr = Find(i.GetRHS()), so = Find(i);
 
   switch (vo.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -194,36 +191,35 @@ void ConstraintSolver::VisitOrInst(OrInst &i)
         return;
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl), IsInt(sr), } },
+            { IsPtr(so), { IsInt(sl), IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl) } }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsInt()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrLike()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sl) } }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsPtrLike()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sr) } }
+        });
       }
       llvm_unreachable("invalid or kind");
     }
@@ -235,10 +231,11 @@ void ConstraintSolver::VisitOrInst(OrInst &i)
 void ConstraintSolver::VisitAndInst(AndInst &i)
 {
   Infer(i);
-
+  return;
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  auto sl = Find(i.GetLHS()), sr = Find(i.GetRHS()), so = Find(i);
 
   switch (vo.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -268,36 +265,35 @@ void ConstraintSolver::VisitAndInst(AndInst &i)
         return;
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr|int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl), } },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl) } }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsInt()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrLike()) {
-        // vo == int && vl == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr|int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), {} }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsPtrLike()) {
-        // vo == int && vr == ptr|int
-        //  OR
-        // vo == ptr && vr == ptr|int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), {} }
+        });
       }
       llvm_unreachable("invalid and kind");
     }
@@ -309,10 +305,12 @@ void ConstraintSolver::VisitAndInst(AndInst &i)
 void ConstraintSolver::VisitXorInst(XorInst &i)
 {
   Infer(i);
+  return;
 
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  auto sl = Find(i.GetLHS()), sr = Find(i.GetRHS()), so = Find(i);
 
   switch (vo.GetKind()) {
     case TaggedType::Kind::UNKNOWN:
@@ -327,10 +325,10 @@ void ConstraintSolver::VisitXorInst(XorInst &i)
     case TaggedType::Kind::ADDR:
     case TaggedType::Kind::PTR: {
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vl == ptr && vr == int
-        //  OR
-        // vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsPtr(sl), { IsInt(sr) } },
+            { IsInt(sl), { IsPtr(sr) } }
+        });
       }
       llvm_unreachable("invalid xor kind");
     }
@@ -341,48 +339,47 @@ void ConstraintSolver::VisitXorInst(XorInst &i)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT: {
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl), IsInt(sr) } },
+            { IsPtr(so), { IsInt(sl), IsPtr(sr) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sl) } }
+        });
       }
       if (vl.IsPtrUnion() && vr.IsPtrLike()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sl) } }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsInt()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       if (vr.IsPtrUnion() && vl.IsPtrLike()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sr) } }
+        });
       }
       if (vl.IsPtrLike() && vr.IsInt()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == ptr && vr == int
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsInt(sr) } }
+        });
       }
       if (vr.IsPtrLike() && vl.IsInt()) {
-        // vo == int && vl == ptr|int && vr == ptr|int
-        //  OR
-        // vo == ptr && vl == int && vr == ptr
-        return;
+        return Alternatives(i, {
+            { IsInt(so), {} },
+            { IsPtr(so), { IsPtr(sr) } }
+        });
       }
       llvm_unreachable("invalid and kind");
     }

@@ -54,6 +54,7 @@ void ConstraintSolver::Solve()
 {
   BuildConstraints();
   CollapseEquivalences();
+  SolveConstraints();
 
   for (auto *c : union_) {
     if (c->Min == c->Max) {
@@ -245,6 +246,15 @@ ID<ConstraintSolver::Constraint> ConstraintSolver::Find(Ref<Inst> a)
     return union_.Find(it->second);
   } else {
     auto id = union_.Emplace(a);
+    // if (id == 1073) {
+    //   analysis_.dump();
+    //   a->getParent()->dump();
+    //   llvm::errs() << "\n" << *a << "\n\n";
+    // }
+    // if (id == 1076) {
+    //   a->getParent()->dump();
+    //   llvm::errs() << "\n" << *a << "\n\n";
+    // }
     ids_.emplace(a, id);
     return id;
   }
@@ -392,3 +402,189 @@ void ConstraintSolver::Infer(Ref<Inst> arg)
    AtMostInfer(arg, ty);
 }
 
+// -----------------------------------------------------------------------------
+void ConstraintSolver::Alternatives(
+    Ref<Inst> i,
+    llvm::ArrayRef<Alternative> alternatives)
+{
+  using Group = llvm::SmallVector<Lit, 3>;
+
+  llvm::SmallVector<Group, 3> groups;
+  for (const auto &alt : alternatives) {
+    auto &group = groups.emplace_back();
+    group.emplace_back(alt.Disc);
+    for (auto &[id, ip, tf] : alt.Conj) {
+      group.emplace_back(id, ip, tf);
+      group.emplace_back(id, !ip, !tf);
+    }
+  }
+
+  Group g;
+  std::function<void(int)> convert = [&](int n)
+  {
+    if (n == groups.size()) {
+      conj_.push_back(g);
+    } else {
+      for (auto c : groups[n]) {
+        g.push_back(c);
+        convert(n + 1);
+        g.pop_back();
+      }
+    }
+  };
+  convert(0);
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::SolveConstraints()
+{
+  // Build constraints from types.
+  BitSet<Constraint> ambiguous;
+  for (auto *c : union_) {
+    switch (c->Max) {
+      case ConstraintType::BOT: {
+        continue;
+      }
+      case ConstraintType::INT: {
+        conj_.push_back({ IsInt(c->Id) });
+        conj_.push_back({ NotPtr(c->Id) });
+        continue;
+      }
+      case ConstraintType::PTR_BOT:
+      case ConstraintType::YOUNG:
+      case ConstraintType::HEAP:
+      case ConstraintType::ADDR:
+      case ConstraintType::PTR:
+      case ConstraintType::FUNC: {
+        conj_.push_back({ IsPtr(c->Id) });
+        conj_.push_back({ NotInt(c->Id) });
+        continue;
+      }
+      case ConstraintType::ADDR_INT:
+      case ConstraintType::PTR_INT:
+      case ConstraintType::HEAP_INT: {
+        conj_.push_back({ IsInt(c->Id), IsPtr(c->Id) });
+        ambiguous.Insert(c->Id);
+        continue;
+      }
+    }
+    llvm_unreachable("invalid constraint kind");
+  }
+
+  // Build subset constraints.
+  for (auto *c : union_) {
+    for (auto sub : c->Subset) {
+      // exists p = int -> c = int <=> forall p, (p <> int \/ c = int)
+      // exists p = ptr -> c = ptr <=> forlal p, (p <> ptr \/ c = ptr)
+      conj_.push_back({ NotInt(sub), IsInt(c->Id) });
+      conj_.push_back({ NotPtr(sub), IsPtr(c->Id) });
+    }
+  }
+
+  // Eliminate trivial redundancies due to unification.
+  std::unordered_set<std::vector<Lit>> dedup;
+  {
+    for (unsigned i = 0; i < conj_.size(); ) {
+      std::set<Lit> terms;
+      for (auto [id, ip, tf] : conj_[i]) {
+        terms.emplace(union_.Find(id), ip, tf);
+      }
+      if (dedup.emplace(terms.begin(), terms.end()).second) {
+        conj_[i++].assign(terms.begin(), terms.end());
+      } else {
+        std::swap(conj_[i], *conj_.rbegin());
+        conj_.pop_back();
+      }
+    }
+  }
+
+  // Find trivially true clauses and eliminate redundancies.
+  BitSet<Constraint> isPtr, isInt, notPtr, notInt;
+  {
+    std::unordered_set<Lit> trues;
+    bool changed;
+    do {
+      changed = false;
+
+      // Register true clauses, remove them from the set of conjunctions.
+      for (unsigned i = 0; i < conj_.size(); ) {
+        if (conj_[i].size() == 1) {
+          trues.insert(conj_[i][0]);
+          std::swap(conj_[i], *conj_.rbegin());
+          conj_.pop_back();
+        } else {
+          ++i;
+        }
+      }
+
+      // Eliminate clauses with at least one lement known to be true.
+      for (unsigned i = 0; i < conj_.size(); ) {
+        llvm::SmallVector<Lit, 4> lits;
+
+        bool hasTrueLiteral = false;
+        for (auto &lit : conj_[i]) {
+          if (trues.count(lit)) {
+            hasTrueLiteral = true;
+            break;
+          } else {
+            auto [id, intOrPtr, negated] = lit;
+            if (!trues.count({ id, intOrPtr, !negated })) {
+              lits.push_back(lit);
+            } else {
+              changed = true;
+            }
+          }
+        }
+
+        if (hasTrueLiteral) {
+          std::swap(conj_[i], *conj_.rbegin());
+          conj_.pop_back();
+        } else {
+          assert(!lits.empty() && "false constraint");
+          conj_[i++].assign(lits.begin(), lits.end());
+        }
+      }
+      for (auto &conj : conj_) {
+        if (conj.size() != 2) {
+          continue;
+        }
+        auto a = conj[0], b = conj[1];
+        if (dedup.count({ a, Conj(b) })) {
+          trues.insert(a);
+          changed = true;
+        }
+        if (dedup.count({ Conj(a), b })) {
+          trues.insert(b);
+          changed = true;
+        }
+      }
+    } while (changed);
+
+    // (A \/ B) /\ (A \/ ~B) implies A
+    for (auto [id, intOrPtr, trueOrFalse] : trues) {
+      if (intOrPtr) {
+        if (trueOrFalse) {
+          isInt.Insert(id);
+        } else {
+          notInt.Insert(id);
+        }
+      } else {
+        if (trueOrFalse) {
+          isPtr.Insert(id);
+        } else {
+          notPtr.Insert(id);
+        }
+      }
+    }
+  }
+
+  for (auto id : ambiguous) {
+    if (isInt.Contains(id) && notPtr.Contains(id)) {
+      llvm_unreachable("not implemented");
+    }
+    if (isPtr.Contains(id) && notPtr.Contains(id)) {
+      llvm_unreachable("not implemented");
+    }
+    //llvm::errs() << id << "\n";
+  }
+}

@@ -33,6 +33,7 @@ public:
 private:
   void BuildConstraints();
   void CollapseEquivalences();
+  void SolveConstraints();
   void RewriteTypes();
 
 private:
@@ -90,6 +91,9 @@ private:
   void VisitInst(Inst &i) override;
 
 private:
+  /// Dummy type for conjunction IDs.
+  struct Conj;
+
   /// Bounds for a single variable.
   struct Constraint {
     ID<Constraint> Id;
@@ -113,6 +117,29 @@ private:
 
   ID<Constraint> Find(Ref<Inst> a);
   Constraint *Map(Ref<Inst> a);
+
+private:
+  /// A literal, asserting a constraint is an integer or a pointer.
+  using Lit = std::tuple<ID<Constraint>, bool, bool>;
+
+  static Lit IsInt(ID<Constraint> id) { return { id, false, true }; }
+  static Lit IsPtr(ID<Constraint> id) { return { id, true, true }; }
+  static Lit NotInt(ID<Constraint> id) { return { id, false, false }; }
+  static Lit NotPtr(ID<Constraint> id) { return { id, true, false }; }
+
+  static Lit Conj(const Lit &l)
+  {
+    return { std::get<0>(l), std::get<1>(l), !std::get<2>(l) };
+  }
+
+  /// Conjunction clause.
+  struct Alternative {
+    Lit Disc;
+    llvm::SmallVector<Lit, 2> Conj;
+  };
+
+  /// Register alternatives for an operation.
+  void Alternatives(Ref<Inst> i, llvm::ArrayRef<Alternative> alternatives);
 
 private:
   void Subset(Ref<Inst> from, Ref<Inst> to);
@@ -176,6 +203,8 @@ private:
   UnionFind<Constraint> union_;
   /// Cache of functions which have their address taken.
   std::unordered_map<const Func *, bool> externs_;
+  /// ID of the next conjunction.
+  std::vector<llvm::SmallVector<Lit, 3>> conj_;
 };
 
 }
