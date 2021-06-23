@@ -101,7 +101,7 @@ var searchData=
   ['gettoken_408',['GetToken',['../classLexer.html#a5c091b6121ae8f2aa54e529e11031521',1,'Lexer']]],
   ['gettriple_409',['GetTriple',['../classTarget.html#a71003d113745ffb4d5558758d32e9c54',1,'Target']]],
   ['gettruetarget_410',['GetTrueTarget',['../classJumpCondInst.html#aa6fb8e2c12cf442ec692f84b94610845',1,'JumpCondInst::GetTrueTarget() const'],['../classJumpCondInst.html#a79b9a0357aacdba26420e1ae3f891c3d',1,'JumpCondInst::GetTrueTarget()']]],
-  ['gettunecpu_411',['GetTuneCPU',['../classFunc.html#a0187214698f0312490d684aacf6b28c1',1,'Func::GetTuneCPU()'],['../classTarget.html#adfaf7f5d886ffeb68dc542a5feb45a98',1,'Target::getTuneCPU()']]],
+  ['gettunecpu_411',['getTuneCPU',['../classTarget.html#adfaf7f5d886ffeb68dc542a5feb45a98',1,'Target::getTuneCPU()'],['../classFunc.html#a0187214698f0312490d684aacf6b28c1',1,'Func::GetTuneCPU()']]],
   ['gettype_412',['GetType',['../classInst.html#a622296a39356cbd06f77206f534f37e1',1,'Inst::GetType()'],['../classCallSite.html#ac1956ba77b4c364afb9486949468b8ad',1,'CallSite::GetType()'],['../classPhiInst.html#a4a280710192b251bd9600c36a0cfa036',1,'PhiInst::GetType(unsigned i) const override'],['../classPhiInst.html#aaaea419c75b1ae5668015da4d73ded53',1,'PhiInst::GetType() const']]],
   ['gettypes_413',['GetTypes',['../classCallSite.html#a1bf9591bb436ba47e7a9b7653d12a79c',1,'CallSite']]],
   ['getunusedfprs_414',['GetUnusedFPRs',['../classAArch64Call.html#a64577e5f9f28fdd90a727b40e0d35eff',1,'AArch64Call::GetUnusedFPRs()'],['../classPPCCall.html#a77c285d4a193fe480d6ce6ce60d35b4b',1,'PPCCall::GetUnusedFPRs()'],['../classRISCVCall.html#a7cd0ff8ac090ab3362980a1d9dc2e85d',1,'RISCVCall::GetUnusedFPRs()']]],

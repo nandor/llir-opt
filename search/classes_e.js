@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['object_1275',['Object',['../classObject.html',1,'Object'],['../structLinker_1_1Unit_1_1Object.html',1,'Linker::Unit::Object']]],
+  ['object_1275',['Object',['../structLinker_1_1Unit_1_1Object.html',1,'Linker::Unit::Object'],['../classObject.html',1,'Object']]],
   ['object_5fiterator_1276',['object_iterator',['../structSymbolicContext_1_1object__iterator.html',1,'SymbolicContext::object_iterator'],['../structSymbolicFrame_1_1object__iterator.html',1,'SymbolicFrame::object_iterator']]],
   ['objectclosure_1277',['ObjectClosure',['../structObjectClosure.html',1,'']]],
   ['objectgraph_1278',['ObjectGraph',['../classObjectGraph.html',1,'']]],
