@@ -65,6 +65,7 @@ add_library(passes
     tags/masked_type.cpp
     tags/refinement.cpp
     tags/register_analysis.cpp
+    tags/sat.cpp
     tags/step.cpp
     tags/tagged_type.cpp
 

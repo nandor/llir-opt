@@ -6,8 +6,9 @@
 
 #include "core/prog.h"
 #include "passes/tags/constraints.h"
-#include "passes/tags/tagged_type.h"
 #include "passes/tags/register_analysis.h"
+#include "passes/tags/sat.h"
+#include "passes/tags/tagged_type.h"
 
 using namespace tags;
 
@@ -246,15 +247,6 @@ ID<ConstraintSolver::Constraint> ConstraintSolver::Find(Ref<Inst> a)
     return union_.Find(it->second);
   } else {
     auto id = union_.Emplace(a);
-    // if (id == 1073) {
-    //   analysis_.dump();
-    //   a->getParent()->dump();
-    //   llvm::errs() << "\n" << *a << "\n\n";
-    // }
-    // if (id == 1076) {
-    //   a->getParent()->dump();
-    //   llvm::errs() << "\n" << *a << "\n\n";
-    // }
     ids_.emplace(a, id);
     return id;
   }
@@ -544,6 +536,7 @@ void ConstraintSolver::SolveConstraints()
           conj_[i++].assign(lits.begin(), lits.end());
         }
       }
+      // (A \/ B) /\ (A \/ ~B) implies A
       for (auto &conj : conj_) {
         if (conj.size() != 2) {
           continue;
@@ -560,7 +553,7 @@ void ConstraintSolver::SolveConstraints()
       }
     } while (changed);
 
-    // (A \/ B) /\ (A \/ ~B) implies A
+    // Save the truth/falsity information.
     for (auto [id, intOrPtr, trueOrFalse] : trues) {
       if (intOrPtr) {
         if (trueOrFalse) {
@@ -578,13 +571,131 @@ void ConstraintSolver::SolveConstraints()
     }
   }
 
+  // Find groups of independent constraints.
+  class Problem {
+  public:
+    void Add(llvm::ArrayRef<Lit> conj)
+    {
+      BitSet<SATProblem::Lit> pos, neg;
+      for (auto lit : conj) {
+        auto id = Map(lit);
+        if (std::get<2>(lit)) {
+          pos.Insert(id);
+        } else {
+          neg.Insert(id);
+        }
+      }
+      p_.Add(pos, neg);
+    }
+
+    bool IsSatisfiable() { return p_.IsSatisfiable(); }
+
+    bool IsSatisfiableWith(const Lit &lit)
+    {
+      return p_.IsSatisfiableWith(Map(lit));
+    }
+
+
+  private:
+    ID<SATProblem::Lit> Map(const Lit &lit)
+    {
+      auto key = std::make_pair(std::get<0>(lit), std::get<1>(lit));
+      return lits_.emplace(key, lits_.size()).first->second;
+    }
+
+  private:
+    SATProblem p_;
+
+    std::unordered_map
+      < std::pair<ID<Constraint>, bool>
+      , ID<SATProblem::Lit>
+      > lits_;
+  };
+
+  std::vector<Problem> problems;
+  std::unordered_map<ID<Constraint>, ID<Problem>> problemIDs;
+  {
+    struct Group {
+      Group(ID<Group> id) {}
+      void Union(const Group &that) {}
+    };
+    UnionFind<Group> groups;
+    std::unordered_map<ID<Constraint>, ID<Group>> idToGroup;
+    std::unordered_map<ID<Group>, ID<Problem>> groupToProblem;
+
+    auto find = [&] (ID<Constraint> id)
+    {
+      if (auto it = idToGroup.find(id); it != idToGroup.end()) {
+        return groups.Find(it->second);
+      } else {
+        return idToGroup.emplace(id, groups.Emplace()).first->second;
+      }
+    };
+
+    for (auto &conj : conj_) {
+      auto base = std::get<0>(conj[0]);
+      for (auto [id, intOrPtr, trueOrFalse] : conj) {
+        groups.Union(find(base), find(id));
+      }
+    }
+
+    for (auto &conj : conj_) {
+      auto id = std::get<0>(conj[0]);
+      auto it = idToGroup.find(id);
+      assert(it != idToGroup.end() && "invalid mapping");
+      auto group = groups.Find(it->second);
+
+      auto jt = groupToProblem.find(group);
+      Problem *p;
+      if (jt == groupToProblem.end()) {
+        auto pid = problems.size();
+        groupToProblem.emplace(group, pid);
+        p = &problems.emplace_back();
+      } else {
+        auto pid = jt->second;
+        p = &problems[pid];
+      }
+
+      p->Add(conj);
+    }
+
+    for (auto [cid, gid] : idToGroup) {
+      auto it = idToGroup.find(cid);
+      assert(it != idToGroup.end() && "invalid mapping");
+      auto jt = groupToProblem.find(groups.Find(it->second));
+      assert(jt != groupToProblem.end() && "invalid mapping");
+      problemIDs.emplace(cid, jt->second);
+    }
+  }
+
+  // Ensure all constraint systems are satisfiable.
+  #ifndef NDEBUG
+  for (auto &p : problems) {
+    assert(p.IsSatisfiable() && "system not satisfiable");
+  }
+  #endif
+
   for (auto id : ambiguous) {
     if (isInt.Contains(id) && notPtr.Contains(id)) {
       llvm_unreachable("not implemented");
+      continue;
     }
     if (isPtr.Contains(id) && notPtr.Contains(id)) {
       llvm_unreachable("not implemented");
+      continue;
     }
-    //llvm::errs() << id << "\n";
+
+    if (auto it = problemIDs.find(id); it != problemIDs.end()) {
+      auto &p = problems[it->second];
+
+      if (!p.IsSatisfiableWith(IsInt(id))) {
+        llvm_unreachable("not implemented");
+        continue;
+      }
+      if (!p.IsSatisfiableWith(IsPtr(id))) {
+        llvm_unreachable("not implemented");
+        continue;
+      }
+    }
   }
 }
