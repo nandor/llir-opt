@@ -112,7 +112,7 @@ TaggedType Step::And(Type ty, TaggedType vl, TaggedType vr)
     case TaggedType::Kind::PTR: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-        case TaggedType::Kind::PTR_INT:   llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_INT:   return TaggedType::PtrInt();
         case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP_OFF:  llvm_unreachable("not implemented");

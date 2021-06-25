@@ -299,6 +299,86 @@ bool TaggedType::IsNonZero() const
 }
 
 // -----------------------------------------------------------------------------
+TaggedType TaggedType::ToInteger() const
+{
+  switch (GetKind()) {
+    case TaggedType::Kind::UNKNOWN:
+    case TaggedType::Kind::UNDEF: {
+      return *this;
+    }
+    case TaggedType::Kind::INT: {
+      // Already an integer, nothing to refine.
+      return *this;
+    }
+    case TaggedType::Kind::YOUNG:
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
+    case TaggedType::Kind::PTR:
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::FUNC: {
+      // Add an explicit pointer-to-integer cast.
+      return TaggedType::Int();
+    }
+    case TaggedType::Kind::VAL: {
+      // Refine to ODD.
+      return TaggedType::Odd();
+    }
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::ADDR_NULL: {
+      // Refine to ZERO.
+      return TaggedType::Zero();
+    }
+    case TaggedType::Kind::PTR_INT:
+    case TaggedType::Kind::ADDR_INT: {
+      // Refine to INT.
+      return TaggedType::Int();
+    }
+  }
+  llvm_unreachable("unknown type kind");
+}
+
+// -----------------------------------------------------------------------------
+TaggedType TaggedType::ToPointer() const
+{
+  switch (GetKind()) {
+    case TaggedType::Kind::UNKNOWN:
+    case TaggedType::Kind::UNDEF: {
+      // Should trap, nothing to refine.
+      return *this;
+    }
+    case TaggedType::Kind::INT: {
+      // Integer-to-pointer cast, results in UB.
+      // Insert a move performing an explicit integer-to-pointer cast.
+      return TaggedType::Ptr();
+    }
+    case TaggedType::Kind::YOUNG:
+    case TaggedType::Kind::HEAP:
+    case TaggedType::Kind::HEAP_OFF:
+    case TaggedType::Kind::PTR:
+    case TaggedType::Kind::ADDR:
+    case TaggedType::Kind::FUNC: {
+      // Already a pointer, nothing to refine.
+      return *this;
+    }
+    case TaggedType::Kind::VAL: {
+      // Refine to HEAP.
+      return TaggedType::Heap();
+    }
+    case TaggedType::Kind::ADDR_NULL:
+    case TaggedType::Kind::ADDR_INT: {
+      // Refine to ADDR.
+      return TaggedType::Addr();
+    }
+    case TaggedType::Kind::PTR_NULL:
+    case TaggedType::Kind::PTR_INT: {
+      // Refine to PTR.
+      return TaggedType::Ptr();
+    }
+  }
+  llvm_unreachable("unknown type kind");
+}
+
+// -----------------------------------------------------------------------------
 TaggedType TaggedType::operator|(const TaggedType &that) const
 {
   switch (k_) {
@@ -466,7 +546,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::PTR_INT:   return TaggedType::PtrInt();
         case Kind::HEAP:      return TaggedType::Heap();
         case Kind::VAL:       return TaggedType::Val();
-        case Kind::INT:       llvm_unreachable("not implemented");
+        case Kind::INT:       return TaggedType::PtrInt();
         case Kind::UNDEF:     llvm_unreachable("not implemented");
         case Kind::PTR_NULL:  llvm_unreachable("not implemented");
         case Kind::ADDR:      return TaggedType::Ptr();

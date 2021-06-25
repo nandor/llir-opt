@@ -74,6 +74,10 @@ public:
   MaskedType GetInt() const { assert(IsInt()); return u_.MaskVal; }
 
 public:
+  TaggedType ToPointer() const;
+
+  TaggedType ToInteger() const;
+
   TaggedType &operator|=(const TaggedType &that)
   {
     *this = *this | that;

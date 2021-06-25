@@ -66,6 +66,7 @@ private:
   friend class Init;
   friend class Step;
   friend class Refinement;
+  friend class ConstraintSolver;
 
   /// Mark an instruction with a type.
   bool Mark(Ref<Inst> inst, const TaggedType &type);

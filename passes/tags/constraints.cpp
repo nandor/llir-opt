@@ -467,7 +467,7 @@ void ConstraintSolver::SolveConstraints()
   for (auto *c : union_) {
     for (auto sub : c->Subset) {
       // exists p = int -> c = int <=> forall p, (p <> int \/ c = int)
-      // exists p = ptr -> c = ptr <=> forlal p, (p <> ptr \/ c = ptr)
+      // exists p = ptr -> c = ptr <=> forall p, (p <> ptr \/ c = ptr)
       conj_.push_back({ NotInt(sub), IsInt(c->Id) });
       conj_.push_back({ NotPtr(sub), IsPtr(c->Id) });
     }
@@ -576,13 +576,13 @@ void ConstraintSolver::SolveConstraints()
   public:
     void Add(llvm::ArrayRef<Lit> conj)
     {
-      BitSet<SATProblem::Lit> pos, neg;
+      llvm::SmallVector<ID<SATProblem::Lit>, 2> pos, neg;
       for (auto lit : conj) {
         auto id = Map(lit);
         if (std::get<2>(lit)) {
-          pos.Insert(id);
+          pos.push_back(id);
         } else {
-          neg.Insert(id);
+          neg.push_back(id);
         }
       }
       p_.Add(pos, neg);
@@ -689,11 +689,26 @@ void ConstraintSolver::SolveConstraints()
       auto &p = problems[it->second];
 
       if (!p.IsSatisfiableWith(IsInt(id))) {
-        llvm_unreachable("not implemented");
+        for (auto def : union_.Map(id)->Defs) {
+          llvm_unreachable("X");
+          auto oldTy = analysis_.Find(def);
+          auto newTy = oldTy.ToPointer();
+          if (oldTy != newTy) {
+            analysis_.Refine(def, newTy);
+          }
+        }
         continue;
       }
+
       if (!p.IsSatisfiableWith(IsPtr(id))) {
-        llvm_unreachable("not implemented");
+        for (auto def : union_.Map(id)->Defs) {
+          llvm_unreachable("Y");
+          auto oldTy = analysis_.Find(def);
+          auto newTy = oldTy.ToInteger();
+          if (oldTy != newTy) {
+            analysis_.Refine(def, newTy);
+          }
+        }
         continue;
       }
     }

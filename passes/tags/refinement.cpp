@@ -7,11 +7,12 @@
 #include <llvm/ADT/PostOrderIterator.h>
 
 #include "core/atom.h"
-#include "core/object.h"
+#include "core/clone.h"
 #include "core/data.h"
+#include "core/object.h"
 #include "passes/tags/refinement.h"
-#include "passes/tags/tagged_type.h"
 #include "passes/tags/register_analysis.h"
+#include "passes/tags/tagged_type.h"
 
 using namespace tags;
 
@@ -315,9 +316,11 @@ void Refinement::Refine(
       }
       // Rewrite PHIs of end.
       for (auto &phi : en->phis()) {
-        auto v = phi.GetValue(st);
-        phi.Remove(st);
-        phi.Add(split, v);
+        for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+          if (phi.GetBlock(i) == st) {
+            phi.SetBlock(i, split);
+          }
+        }
       }
       // Add a mov along this edge.
       DefineSplits(analysis_.RebuildDoms(*func), ref, { { split, nt } });
@@ -344,101 +347,34 @@ void Refinement::Refine(Ref<Inst> ref, const TaggedType &nt)
       queue_.push(source);
     }
   } else {
-    auto *newMov = new MovInst(ToType(ref.GetType(), nt), ref, ref->GetAnnots());
-    block->insert(newMov, std::next(ref->getIterator()));
+    auto newCast = Cast(ref, nt);
     for (auto ut = ref->use_begin(); ut != ref->use_end(); ) {
       Use &use = *ut++;
-      if (use.getUser() != newMov) {
-        use = newMov->GetSubValue(0);
+      if (use.getUser() != &*newCast) {
+        use = newCast->GetSubValue(0);
       }
     }
-    analysis_.Define(newMov->GetSubValue(0), nt);
+    analysis_.Define(newCast->GetSubValue(0), nt);
   }
 }
 
 // -----------------------------------------------------------------------------
 void Refinement::RefineAddr(Inst &inst, Ref<Inst> addr)
 {
-  switch (analysis_.Find(addr).GetKind()) {
-    case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::UNDEF: {
-      // Should trap, nothing to refine.
-      return;
-    }
-    case TaggedType::Kind::INT: {
-      // Integer-to-pointer cast, results in UB.
-      // Insert a move performing an explicit integer-to-pointer cast.
-      Refine(inst.getParent(), addr, TaggedType::Ptr());
-      return;
-    }
-    case TaggedType::Kind::YOUNG:
-    case TaggedType::Kind::HEAP:
-    case TaggedType::Kind::HEAP_OFF:
-    case TaggedType::Kind::PTR:
-    case TaggedType::Kind::ADDR:
-    case TaggedType::Kind::FUNC: {
-      // Already a pointer, nothing to refine.
-      return;
-    }
-    case TaggedType::Kind::VAL: {
-      // Refine to HEAP.
-      Refine(inst.getParent(), addr, TaggedType::Heap());
-      return;
-    }
-    case TaggedType::Kind::ADDR_NULL:
-    case TaggedType::Kind::ADDR_INT: {
-      // Refine to ADDR.
-      Refine(inst.getParent(), addr, TaggedType::Addr());
-      return;
-    }
-    case TaggedType::Kind::PTR_NULL:
-    case TaggedType::Kind::PTR_INT: {
-      // Refine to PTR.
-      Refine(inst.getParent(), addr, TaggedType::Ptr());
-      return;
-    }
+  auto oldTy = analysis_.Find(addr);
+  auto newTy = oldTy.ToPointer();
+  if (oldTy != newTy) {
+    Refine(inst.getParent(), addr, newTy);
   }
 }
 
 // -----------------------------------------------------------------------------
 void Refinement::RefineInt(Inst &inst, Ref<Inst> addr)
 {
-  switch (analysis_.Find(addr).GetKind()) {
-    case TaggedType::Kind::UNKNOWN:
-    case TaggedType::Kind::UNDEF: {
-      // Should trap, nothing to refine.
-    }
-    case TaggedType::Kind::INT: {
-      // Already an integer, nothing to refine.
-      return;
-    }
-    case TaggedType::Kind::YOUNG:
-    case TaggedType::Kind::HEAP:
-    case TaggedType::Kind::HEAP_OFF:
-    case TaggedType::Kind::PTR:
-    case TaggedType::Kind::ADDR:
-    case TaggedType::Kind::FUNC: {
-      // Add an explicit pointer-to-integer cast.
-      Refine(inst.getParent(), addr, TaggedType::Int());
-      return;
-    }
-    case TaggedType::Kind::VAL: {
-      // Refine to ODD.
-      Refine(inst.getParent(), addr, TaggedType::Odd());
-      return;
-    }
-    case TaggedType::Kind::PTR_NULL:
-    case TaggedType::Kind::ADDR_NULL: {
-      // Refine to ZERO.
-      Refine(inst.getParent(), addr, TaggedType::Zero());
-      return;
-    }
-    case TaggedType::Kind::PTR_INT:
-    case TaggedType::Kind::ADDR_INT: {
-      // Refine to INT.
-      Refine(inst.getParent(), addr, TaggedType::Int());
-      return;
-    }
+  auto oldTy = analysis_.Find(addr);
+  auto newTy = oldTy.ToInteger();
+  if (oldTy != newTy) {
+    Refine(inst.getParent(), addr, newTy);
   }
 }
 
@@ -651,25 +587,29 @@ void Refinement::DefineSplits(
     while (!q.empty()) {
       const Block *block = q.front();
       q.pop();
-      for (auto front : doms.DF.calculate(doms.DT, doms.DT.getNode(block))) {
-        if (livePhi.count(front) && !phis.count(front)) {
-          auto *phi = new PhiInst(ref.GetType(), {});
-          front->AddPhi(phi);
-          TaggedType ty = TaggedType::Unknown();
-          for (Block *pred : front->predecessors()) {
-            phi->Add(pred, ref);
-            TaggedType predTy = TaggedType::Unknown();
-            for (auto &[block, ty] : splits) {
-              if (doms.DT.dominates(block, pred)) {
-                predTy |= ty;
+      if (auto *node = doms.DT.getNode(block)) {
+        for (auto front : doms.DF.calculate(doms.DT, node)) {
+          if (livePhi.count(front) && !phis.count(front)) {
+            auto *phi = new PhiInst(ref.GetType(), {});
+            front->AddPhi(phi);
+            TaggedType ty = TaggedType::Unknown();
+            for (Block *pred : front->predecessors()) {
+              phi->Add(pred, ref);
+              TaggedType predTy = TaggedType::Unknown();
+              for (auto &[block, ty] : splits) {
+                if (doms.DT.dominates(block, pred)) {
+                  predTy |= ty;
+                }
               }
+              ty |= predTy.IsUnknown() ? refTy : predTy;
             }
-            ty |= predTy.IsUnknown() ? refTy : predTy;
+            phis.emplace(front, phi);
+            newPhis.emplace(phi, ty);
+            q.push(front);
           }
-          phis.emplace(front, phi);
-          newPhis.emplace(phi, ty);
-          q.push(front);
         }
+      } else {
+        llvm_unreachable("malformed function");
       }
     }
   }
@@ -715,9 +655,10 @@ void Refinement::DefineSplits(
         }
         for (Block *succ : block->successors()) {
           for (PhiInst &phi : succ->phis()) {
-            if (phi.GetValue(block) == ref) {
-              phi.Remove(block);
-              phi.Add(block, mov);
+            for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+              if (phi.GetBlock(i) == block && phi.GetValue(i) == ref) {
+                phi.SetValue(i, mov);
+              }
             }
           }
         }
@@ -984,10 +925,72 @@ void Refinement::VisitJumpCondInst(JumpCondInst &jcc)
 }
 
 // -----------------------------------------------------------------------------
+namespace {
+class BlockRewriter final : public CloneVisitor {
+public:
+  BlockRewriter(Block *from, Block *to) : from_(from), to_(to) {}
+
+  Block *Map(Block *block)
+  {
+    return block == from_ ? to_ : block;
+  }
+
+private:
+  /// Original block.
+  Block *from_;
+  /// Block to rewrite with.
+  Block *to_;
+};
+} // namespace
+
+// -----------------------------------------------------------------------------
 Ref<Inst> Refinement::Cast(Ref<Inst> ref, const TaggedType &ty)
 {
-  auto *newMov = new MovInst(ToType(ref.GetType(), ty), ref, ref->GetAnnots());
-  ref->getParent()->insertAfter(newMov, ref->getIterator());
+  Block *block = ref->getParent();
+  Func *func = block->getParent();
+
+  auto *newMov = new MovInst(ToType(ref.GetType(), ty), ref, {});
+
+  if (auto *call = ::cast_or_null<CallInst>(&*ref)) {
+    auto *cont = call->GetCont();
+
+    if (cont->pred_size() == 1) {
+      cont->insertAfter(newMov, cont->first_non_phi());
+    } else {
+      auto *split = new Block(cont->getName());
+      func->insertAfter(block->getIterator(), split);
+      split->AddInst(newMov);
+      split->AddInst(new JumpInst(cont, {}));
+
+      for (PhiInst &phi : cont->phis()) {
+        for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+          if (phi.GetBlock(i) == block) {
+            phi.SetBlock(i, split);
+          }
+        }
+      }
+
+      auto *newCall = BlockRewriter(cont, split).Clone(call);
+      block->AddInst(newCall, call);
+      call->replaceAllUsesWith(newCall);
+      call->eraseFromParent();
+
+      analysis_.RebuildDoms(*func);
+    }
+  } else if (auto invoke = ::cast_or_null<InvokeInst>(&*ref)) {
+    auto *cont = invoke->GetCont();
+
+    if (cont->pred_size() == 1) {
+      cont->insertAfter(newMov, cont->first_non_phi());
+    } else {
+      llvm_unreachable("not implemented");
+    }
+  } else if (auto *phi = ::cast_or_null<PhiInst>(&*ref)) {
+    block->insertAfter(newMov, phi->getParent()->first_non_phi());
+  } else {
+    block->insertAfter(newMov, ref->getIterator());
+  }
+
   return newMov;
 }
 
@@ -1020,25 +1023,20 @@ void Refinement::VisitPhiInst(PhiInst &phi)
   if (vphi.IsUnknown()) {
     return;
   }
-  // Since the PHI can change during the traversal, collect all blocks.
-  llvm::SmallVector<Block *, 8> blocks;
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    blocks.push_back(phi.GetBlock(i));
-  }
+
   // Attempt to refine all incoming values.
   auto *parent = phi.getParent();
   auto *func = parent->getParent();
-  for (Block *block : blocks) {
-    auto ref = phi.GetValue(block);
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    auto ref = phi.GetValue(phi.GetBlock(i));
     auto vref = analysis_.Find(ref);
     if (auto nt = RefineJoinTo(vref, vphi, phi.GetType())) {
       if (nt->second) {
         auto newRef = Cast(ref, nt->first);
-        phi.Remove(block);
-        phi.Add(block, newRef);
+        phi.SetValue(i, newRef);
         analysis_.Define(newRef, nt->first);
       } else {
-        Refine(block, parent, ref, nt->first);
+        Refine(phi.GetBlock(i), parent, ref, nt->first);
       }
     }
   }

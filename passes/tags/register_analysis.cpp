@@ -215,22 +215,24 @@ void RegisterAnalysis::Solve()
     }
   }
   // Propagate types through the queued instructions.
-  while (!refineQueue_.empty() || !backwardQueue_.empty()) {
-    while (!backwardQueue_.empty()) {
-      auto *f = backwardQueue_.front();
-      Refinement(*this, target_, *f).Run();
-      inBackwardQueue_.erase(f);
-      backwardQueue_.pop();
+  do {
+    while (!refineQueue_.empty() || !backwardQueue_.empty()) {
+      while (!backwardQueue_.empty()) {
+        auto *f = backwardQueue_.front();
+        Refinement(*this, target_, *f).Run();
+        inBackwardQueue_.erase(f);
+        backwardQueue_.pop();
+      }
+      while (!refineQueue_.empty()) {
+        auto *inst = refineQueue_.front();
+        Step(*this, target_, Step::Kind::REFINE).Dispatch(*inst);
+        inRefineQueue_.erase(inst);
+        refineQueue_.pop();
+      }
     }
-    while (!refineQueue_.empty()) {
-      auto *inst = refineQueue_.front();
-      Step(*this, target_, Step::Kind::REFINE).Dispatch(*inst);
-      inRefineQueue_.erase(inst);
-      refineQueue_.pop();
-    }
-  }
-  // Refine based on constraints.
-  ConstraintSolver(*this, target_, prog_).Solve();
+    // Refine based on constraints.
+    ConstraintSolver(*this, target_, prog_).Solve();
+  } while (!refineQueue_.empty() || !backwardQueue_.empty());
 }
 
 // -----------------------------------------------------------------------------
