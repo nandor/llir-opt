@@ -26,7 +26,7 @@ var searchData=
   ['blockiter_134',['BlockIter',['../classLoopNesting_1_1Loop.html#a1019e56964ec5ffe2492705140679603',1,'LoopNesting::Loop']]],
   ['blocklisttype_135',['BlockListType',['../classFunc.html#aa3ceec336181f958d3810cabdef2ecf0',1,'Func']]],
   ['blockreducer_136',['BlockReducer',['../classBlockReducer.html',1,'']]],
-  ['blocks_137',['Blocks',['../structReferenceGraph_1_1Node.html#a3cf63a88e34561cd7f47dad559dd1269',1,'ReferenceGraph::Node::Blocks()'],['../structDAGBlock.html#ac4618f5eb3ac1e6d4b060451e6046e3c',1,'DAGBlock::Blocks()'],['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst::blocks()']]],
+  ['blocks_137',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst::blocks()'],['../structReferenceGraph_1_1Node.html#a3cf63a88e34561cd7f47dad559dd1269',1,'ReferenceGraph::Node::Blocks()'],['../structDAGBlock.html#ac4618f5eb3ac1e6d4b060451e6046e3c',1,'DAGBlock::Blocks()']]],
   ['blocks_5f_138',['blocks_',['../classLoopNesting_1_1Loop.html#ac64fcb987837366e6a4897b1cf26bc8f',1,'LoopNesting::Loop']]],
   ['build_139',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]],
   ['buildtaint_140',['BuildTaint',['../classPointerClosure.html#a9311de533ea899287895e663155773da',1,'PointerClosure']]],

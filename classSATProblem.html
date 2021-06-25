@@ -64,7 +64,9 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classSATProblem-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">SATProblem Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
@@ -75,17 +77,57 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3214eb3fba87e4dff47cb94b8c1346e4"><td class="memItemLeft" align="right" valign="top"><a id="a3214eb3fba87e4dff47cb94b8c1346e4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Add</b> (const <a class="el" href="classBitSet.html">BitSet</a>&lt; Lit &gt; &amp;pos, const <a class="el" href="classBitSet.html">BitSet</a>&lt; Lit &gt; &amp;neg)</td></tr>
-<tr class="separator:a3214eb3fba87e4dff47cb94b8c1346e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb826da99fa71861d33a9dbffb99b71f"><td class="memItemLeft" align="right" valign="top"><a id="aeb826da99fa71861d33a9dbffb99b71f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Add</b> (llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; Lit &gt;&gt; pos, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; Lit &gt;&gt; neg)</td></tr>
+<tr class="separator:aeb826da99fa71861d33a9dbffb99b71f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac745de589566d70ac4daae68e82cc397"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#ac745de589566d70ac4daae68e82cc397">IsSatisfiable</a> ()</td></tr>
 <tr class="separator:ac745de589566d70ac4daae68e82cc397"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a426ea4e80504a7ecd76d35b669f8a3ab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#a426ea4e80504a7ecd76d35b669f8a3ab">IsSatisfiableWith</a> (<a class="el" href="classID.html">ID</a>&lt; Lit &gt; id)</td></tr>
 <tr class="separator:a426ea4e80504a7ecd76d35b669f8a3ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a704b7fcba81eace9241b3e830c9e2301"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#a704b7fcba81eace9241b3e830c9e2301">dump</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
+<tr class="separator:a704b7fcba81eace9241b3e830c9e2301"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a963d05bf4a0ca69b4e68ccd8172e97df"><td class="memItemLeft" align="right" valign="top"><a id="a963d05bf4a0ca69b4e68ccd8172e97df"></a>
+ClauseList&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#a963d05bf4a0ca69b4e68ccd8172e97df">clauses_</a></td></tr>
+<tr class="memdesc:a963d05bf4a0ca69b4e68ccd8172e97df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of constraints. <br /></td></tr>
+<tr class="separator:a963d05bf4a0ca69b4e68ccd8172e97df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc38bc82cedeaa049f5a9b2abcd80e70"><td class="memItemLeft" align="right" valign="top"><a id="adc38bc82cedeaa049f5a9b2abcd80e70"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#adc38bc82cedeaa049f5a9b2abcd80e70">is2SAT_</a></td></tr>
+<tr class="memdesc:adc38bc82cedeaa049f5a9b2abcd80e70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag to indicate whether the problem is 2-SAT. <br /></td></tr>
+<tr class="separator:adc38bc82cedeaa049f5a9b2abcd80e70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e986c80843724800193a7cabf591176"><td class="memItemLeft" align="right" valign="top"><a id="a4e986c80843724800193a7cabf591176"></a>
+std::unique_ptr&lt; SAT2Solver &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#a4e986c80843724800193a7cabf591176">solver2SAT_</a></td></tr>
+<tr class="memdesc:a4e986c80843724800193a7cabf591176"><td class="mdescLeft">&#160;</td><td class="mdescRight">SAT-2 Solver instance. <br /></td></tr>
+<tr class="separator:a4e986c80843724800193a7cabf591176"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49da55f2f0597f65ed1ca852a87db0e5"><td class="memItemLeft" align="right" valign="top"><a id="a49da55f2f0597f65ed1ca852a87db0e5"></a>
+std::unique_ptr&lt; SATNSolver &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSATProblem.html#a49da55f2f0597f65ed1ca852a87db0e5">solverNSAT_</a></td></tr>
+<tr class="memdesc:a49da55f2f0597f65ed1ca852a87db0e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">sAT-N Solver instance. <br /></td></tr>
+<tr class="separator:a49da55f2f0597f65ed1ca852a87db0e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>n-SAT solver based on DPLL. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a704b7fcba81eace9241b3e830c9e2301"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a704b7fcba81eace9241b3e830c9e2301">&#9670;&nbsp;</a></span>dump()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SATProblem::dump </td>
+          <td>(</td>
+          <td class="paramtype">llvm::raw_ostream &amp;&#160;</td>
+          <td class="paramname"><em>os</em> = <code>llvm::errs()</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Print the constraint system. </p>
+
+</div>
+</div>
 <a id="ac745de589566d70ac4daae68e82cc397"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac745de589566d70ac4daae68e82cc397">&#9670;&nbsp;</a></span>IsSatisfiable()</h2>
 
