@@ -219,7 +219,7 @@ void RegisterAnalysis::Solve()
     while (!refineQueue_.empty() || !backwardQueue_.empty()) {
       while (!backwardQueue_.empty()) {
         auto *f = backwardQueue_.front();
-        Refinement(*this, target_, *f).Run();
+        Refinement(*this, target_, banPolymorphism_, *f).Run();
         inBackwardQueue_.erase(f);
         backwardQueue_.pop();
       }
@@ -231,7 +231,7 @@ void RegisterAnalysis::Solve()
       }
     }
     // Refine based on constraints.
-    ConstraintSolver(*this, target_, prog_).Solve();
+    ConstraintSolver(*this, target_, banPolymorphism_, prog_).Solve();
   } while (!refineQueue_.empty() || !backwardQueue_.empty());
 }
 

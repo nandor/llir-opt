@@ -36,9 +36,10 @@ struct DominatorCache {
 
 class RegisterAnalysis {
 public:
-  RegisterAnalysis(Prog &prog, const Target *target)
+  RegisterAnalysis(Prog &prog, const Target *target, bool banPolymorphism)
     : prog_(prog)
     , target_(target)
+    , banPolymorphism_(banPolymorphism)
   {
     Solve();
   }
@@ -122,6 +123,8 @@ private:
   Prog &prog_;
   /// Reference to the target arch.
   const Target *target_;
+  /// Ban polymorphic arithmetic operators.
+  bool banPolymorphism_;
   /// Queue of instructions to propagate information from.
   std::queue<Inst *> forwardQueue_;
   /// Queue of PHI nodes, evaluated after other instructions.

@@ -5,6 +5,7 @@
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/Statistic.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/CommandLine.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -27,6 +28,14 @@ STATISTIC(NumAddCmp, "Number of add-cmp pairs rewritten");
 STATISTIC(NumConstFolded, "Number of instructions folded to zero/one");
 
 
+// -----------------------------------------------------------------------------
+static llvm::cl::opt<bool>
+optBanPolymorphism(
+    "eliminate-tags-ban-polymorphism",
+    llvm::cl::desc("Assume arithmetic operations are not polymorphic"),
+    llvm::cl::init(true),
+    llvm::cl::Hidden
+);
 
 // -----------------------------------------------------------------------------
 const char *EliminateTagsPass::kPassID = DEBUG_TYPE;
@@ -58,7 +67,7 @@ class EliminateTags final {
 public:
   EliminateTags(Prog &prog, const Target *target)
     : prog_(prog)
-    , types_(prog, target)
+    , types_(prog, target, optBanPolymorphism)
   {
     LLVM_DEBUG(types_.dump(llvm::dbgs()));
   }

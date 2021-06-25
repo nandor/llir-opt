@@ -24,7 +24,12 @@ struct DominatorCache;
  */
 class Refinement : public InstVisitor<void> {
 public:
-  Refinement(RegisterAnalysis &analysis, const Target *target, Func &func);
+  Refinement(
+      RegisterAnalysis &analysis,
+      const Target *target,
+      bool banPolymorphism,
+      Func &func
+  );
 
   void Run();
 
@@ -35,7 +40,7 @@ private:
   /// Refine a type to a more precise one.
   void Refine(Block *parent, Ref<Inst> ref, const TaggedType &type);
   /// Refine a type to a more precise one, post-dominated by an edge.
-  void Refine(Block *start, Block *end,Ref<Inst> ref,const TaggedType &type);
+  void Refine(Block *start, Block *end, Ref<Inst> ref, const TaggedType &type);
   /// Helper to refine a post-dominated definition.
   void Refine(Ref<Inst> ref, const TaggedType &type);
   /// Refine an argument to a join point.
@@ -43,13 +48,21 @@ private:
   /// Create a mov for a cast.
   Ref<Inst> Cast(Ref<Inst> ref, const TaggedType &ty);
   /// Check if the refinement clarifies a monomorphic operator.
-  bool IsMonomorphic(Ref<Inst> ref, const TaggedType &ty);
+  bool IsNonPolymorphic(Ref<Inst> ref, const TaggedType &ty);
   /// Specialise a type downstream.
   void Specialise(
       Ref<Inst> ref,
       const Block *from,
       const std::vector<std::pair<TaggedType, Block *>> &branches
   );
+
+private:
+  /// Update the type and queue dependant.
+  void RefineUpdate(Ref<Inst> inst, const TaggedType &type);
+  /// Register a new split and queue dependants.
+  void DefineUpdate(Ref<Inst> inst, const TaggedType &type);
+  /// Queue the users of an instruction.
+  void Queue(Ref<Inst> inst);
 
 private:
   /// Refine a reference to an address.
@@ -115,6 +128,8 @@ private:
   RegisterAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
+  /// Ban polymorphic arithmetic operators.
+  bool banPolymorphism_;
   /// Function to optimise.
   Func &func_;
   /// Queue of instructions to simplify.

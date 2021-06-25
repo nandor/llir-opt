@@ -73,16 +73,30 @@ SATProblem::SAT2Solver::SAT2Solver(const ClauseList &list)
   std::vector<Node> nodes;
 
   for (auto &clause : list) {
-    assert(clause.size() == 2 && "invalid clause");
-    auto a = clause[0], b = clause[1];
-
-    auto size = std::max(std::max(a, b), std::max(a ^ 1, b ^ 1)) + 1;
-    if (nodes.size() < size) {
-      nodes.resize(size);
+    switch (clause.size()) {
+      case 1: {
+        auto a = clause[0];
+        auto size = std::max(a, a ^ 1) + 1;
+        if (nodes.size() < size) {
+          nodes.resize(size);
+        }
+        nodes[a ^ 1].Next.insert(a);
+        break;
+      }
+      case 2: {
+        auto a = clause[0], b = clause[1];
+        auto size = std::max(std::max(a, b), std::max(a ^ 1, b ^ 1)) + 1;
+        if (nodes.size() < size) {
+          nodes.resize(size);
+        }
+        nodes[a ^ 1].Next.insert(b);
+        nodes[b ^ 1].Next.insert(a);
+        break;
+      }
+      default: {
+        break;
+      }
     }
-
-    nodes[a ^ 1].Next.insert(b);
-    nodes[b ^ 1].Next.insert(a);
   }
 
   unsigned index = 0;

@@ -112,7 +112,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::FUNC:      return ConstraintType::HEAP_INT;
         case ConstraintType::PTR:       return ConstraintType::PTR_INT;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
-        case ConstraintType::ADDR:      llvm_unreachable("not implemented");
+        case ConstraintType::ADDR:      return ConstraintType::ADDR_INT;
         case ConstraintType::ADDR_INT:  return ConstraintType::ADDR_INT;
       }
       llvm_unreachable("invalid kind");
@@ -204,7 +204,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
     case ConstraintType::ADDR: {
       switch (b) {
         case ConstraintType::BOT:       llvm_unreachable("not implemented");
-        case ConstraintType::INT:       llvm_unreachable("not implemented");
+        case ConstraintType::INT:       return ConstraintType::ADDR_INT;
         case ConstraintType::HEAP_INT:  return ConstraintType::ADDR_INT;
         case ConstraintType::HEAP:      return ConstraintType::ADDR;
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");

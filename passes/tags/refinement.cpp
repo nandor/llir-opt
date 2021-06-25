@@ -183,9 +183,14 @@ RefineJoinTo(const TaggedType &orig, const TaggedType &ty, Type type)
 }
 
 // -----------------------------------------------------------------------------
-Refinement::Refinement(RegisterAnalysis &analysis, const Target *target, Func &func)
+Refinement::Refinement(
+    RegisterAnalysis &analysis,
+    const Target *target,
+    bool banPolymorphism,
+    Func &func)
   : analysis_(analysis)
   , target_(target)
+  , banPolymorphism_(banPolymorphism)
   , func_(func)
 {
 }
@@ -211,8 +216,11 @@ void Refinement::Run()
 }
 
 // -----------------------------------------------------------------------------
-bool Refinement::IsMonomorphic(Ref<Inst> ref, const TaggedType &nt)
+bool Refinement::IsNonPolymorphic(Ref<Inst> ref, const TaggedType &nt)
 {
+  if (banPolymorphism_) {
+    return false;
+  }
   if (RegisterAnalysis::IsPolymorphic(*ref)) {
     return false;
   }
@@ -231,7 +239,7 @@ void Refinement::Refine(
   assert(analysis_.Find(ref) != nt && "no refinement");
 
   auto &doms = analysis_.GetDoms(*func);
-  if (doms.PDT.dominates(parent, ref->getParent()) || IsMonomorphic(ref, nt)) {
+  if (doms.PDT.dominates(parent, ref->getParent()) || IsNonPolymorphic(ref, nt)) {
     Refine(ref, nt);
   } else {
     // Find the post-dominated nodes which are successors of the frontier.
@@ -263,7 +271,7 @@ void Refinement::Refine(
 
   // Refine the value.
   auto &doms = analysis_.GetDoms(*func);
-  if (doms.PDT.Dominates(st, en, ref->getParent()) || IsMonomorphic(ref, nt)) {
+  if (doms.PDT.Dominates(st, en, ref->getParent()) || IsNonPolymorphic(ref, nt)) {
     Refine(ref, nt);
   } else if (auto *node = doms.PDT.getNode(st)) {
     // Find the post-dominated nodes which are successors of the frontier.
@@ -318,7 +326,7 @@ void Refinement::Refine(Ref<Inst> ref, const TaggedType &nt)
   auto ot = analysis_.Find(ref);
   if (nt < ot) {
     // If the definition is post-dominated by the use, change its type.
-    analysis_.Refine(ref, nt);
+    RefineUpdate(ref, nt);
     auto *source = &*ref;
     if (inQueue_.insert(source).second) {
       queue_.push(source);
@@ -331,7 +339,7 @@ void Refinement::Refine(Ref<Inst> ref, const TaggedType &nt)
         use = newCast->GetSubValue(0);
       }
     }
-    analysis_.Define(newCast->GetSubValue(0), nt);
+    DefineUpdate(newCast->GetSubValue(0), nt);
   }
 }
 
@@ -497,6 +505,33 @@ void Refinement::Specialise(
 }
 
 // -----------------------------------------------------------------------------
+void Refinement::RefineUpdate(Ref<Inst> inst, const TaggedType &type)
+{
+  if (analysis_.Refine(inst, type)) {
+    Queue(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::DefineUpdate(Ref<Inst> inst, const TaggedType &type)
+{
+  if (analysis_.Define(inst, type)) {
+    Queue(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Refinement::Queue(Ref<Inst> inst)
+{
+  for (Use &use : inst->uses()) {
+    if ((*use).Index() != inst.Index()) {
+      continue;
+    }
+    queue_.push(::cast<Inst>(use.getUser()));
+  }
+}
+
+// -----------------------------------------------------------------------------
 std::pair<std::set<Block *>, std::set<Block *>>
 Refinement::Liveness(
     Ref<Inst> ref,
@@ -654,15 +689,15 @@ void Refinement::DefineSplits(
   // Recompute the types of the users of the refined instructions.
   for (auto &[mov, type] : newMovs) {
     assert(mov->use_size() > 0 && "dead mov");
-    analysis_.Define(mov->GetSubValue(0), type);
+    DefineUpdate(mov->GetSubValue(0), type);
   }
   // Schedule the PHIs to be recomputed.
   for (auto &[phi, type] : newPhis) {
     assert(phi->use_size() > 0 && "dead phi");
-    analysis_.Define(phi->GetSubValue(0), type);
+    DefineUpdate(phi->GetSubValue(0), type);
   }
   // Trigger an update of anything relying on the reference.
-  analysis_.Refine(ref, analysis_.Find(ref));
+  RefineUpdate(ref, analysis_.Find(ref));
 }
 
 // -----------------------------------------------------------------------------
@@ -986,7 +1021,7 @@ void Refinement::RefineJoin(
     if (nt->second) {
       auto newRef = Cast(ref, nt->first);
       use = newRef;
-      analysis_.Define(newRef, ty);
+      DefineUpdate(newRef, ty);
     } else {
       Refine(user->getParent(), ref, nt->first);
     }
@@ -1011,7 +1046,7 @@ void Refinement::VisitPhiInst(PhiInst &phi)
       if (nt->second) {
         auto newRef = Cast(ref, nt->first);
         phi.SetValue(i, newRef);
-        analysis_.Define(newRef, nt->first);
+        DefineUpdate(newRef, nt->first);
       } else {
         Refine(phi.GetBlock(i), parent, ref, nt->first);
       }

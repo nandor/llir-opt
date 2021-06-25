@@ -37,7 +37,6 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
         return;
       }
       if (vl.IsPtrUnion() && vr.IsPtrUnion()) {
-        return;
         return Alternatives(i, {
             { IsPtr(sl), { IsInt(sr) } },
             { IsInt(sl), { IsInt(sr) } }
@@ -52,28 +51,24 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
     case TaggedType::Kind::PTR_NULL:
     case TaggedType::Kind::PTR_INT: {
       if (vl.IsPtrUnion() && vr.IsInt()) {
-        return;
         return Alternatives(i, {
             { IsInt(so), {} },
             { IsPtr(so), { IsPtr(sl) } }
         });
       }
       if (vl.IsInt() && vr.IsPtrUnion()) {
-        return;
         return Alternatives(i, {
             { IsInt(so), {} },
             { IsPtr(so), { IsPtr(sr) } }
         });
       }
       if (vl.IsPtrUnion() && vr.IsPtrLike()) {
-        return;
         return Alternatives(i, {
             { IsInt(so), {} },
             { IsPtr(so), { IsInt(sl) } }
         });
       }
       if (vl.IsPtrLike() && vr.IsPtrUnion()) {
-        return;
         return Alternatives(i, {
             { IsInt(so), {} },
             { IsPtr(so), { IsInt(sr) } }

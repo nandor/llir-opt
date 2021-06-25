@@ -43,9 +43,11 @@ void ConstraintSolver::Constraint::dump(llvm::raw_ostream &os)
 ConstraintSolver::ConstraintSolver(
     RegisterAnalysis &analysis,
     const Target *target,
+    bool banPolymorphism,
     Prog &prog)
   : analysis_(analysis)
   , target_(target)
+  , banPolymorphism_(banPolymorphism)
   , prog_(prog)
 {
 }
@@ -462,7 +464,7 @@ void ConstraintSolver::SolveConstraints()
             break;
           }
         }
-        if (nonPolymorphic) {
+        if (banPolymorphism_ && nonPolymorphic) {
           conj_.push_back({ IsInt(c->Id), IsPtr(c->Id) });
           conj_.push_back({ NotInt(c->Id), NotPtr(c->Id) });
         } else {
@@ -602,15 +604,15 @@ void ConstraintSolver::SolveConstraints()
     for (auto [id, intOrPtr, trueOrFalse] : trues) {
       if (intOrPtr) {
         if (trueOrFalse) {
-          isInt.Insert(id);
-        } else {
-          notInt.Insert(id);
-        }
-      } else {
-        if (trueOrFalse) {
           isPtr.Insert(id);
         } else {
           notPtr.Insert(id);
+        }
+      } else {
+        if (trueOrFalse) {
+          isInt.Insert(id);
+        } else {
+          notInt.Insert(id);
         }
       }
     }
@@ -649,6 +651,7 @@ void ConstraintSolver::SolveConstraints()
     }
 
   private:
+  public:
     SATProblem p_;
 
     std::unordered_map
@@ -722,13 +725,16 @@ void ConstraintSolver::SolveConstraints()
 
   for (auto id : ambiguous) {
     bool toInt = false;
+    Problem *p = nullptr;
+    if (auto it = problemIDs.find(id); it != problemIDs.end()) {
+      p = &problems[it->second];
+    }
+
     if (isInt.Contains(id) && notPtr.Contains(id)) {
       toInt = true;
     } else {
-      if (auto it = problemIDs.find(id); it != problemIDs.end()) {
-        if (!problems[it->second].IsSatisfiableWith(IsPtr(id))) {
-          toInt = true;
-        }
+      if (p && !p->IsSatisfiableWith(IsPtr(id))) {
+        toInt = true;
       }
     }
 
@@ -736,10 +742,8 @@ void ConstraintSolver::SolveConstraints()
     if (isPtr.Contains(id) && notInt.Contains(id)) {
       toPtr = true;
     } else {
-      if (auto it = problemIDs.find(id); it != problemIDs.end()) {
-        if (!problems[it->second].IsSatisfiableWith(IsInt(id))) {
-          toPtr = true;
-        }
+      if (p && !p->IsSatisfiableWith(IsInt(id))) {
+        toPtr = true;
       }
     }
 

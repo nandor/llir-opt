@@ -26,7 +26,12 @@ class RegisterAnalysis;
  */
 class ConstraintSolver : private InstVisitor<void> {
 public:
-  ConstraintSolver(RegisterAnalysis &analysis, const Target *target, Prog &prog);
+  ConstraintSolver(
+      RegisterAnalysis &analysis,
+      const Target *target,
+      bool banPolymorphism,
+      Prog &prog
+  );
 
   void Solve();
 
@@ -194,6 +199,8 @@ private:
   RegisterAnalysis &analysis_;
   /// Reference to target info.
   const Target *target_;
+  /// Ban polymorphic arithmetic operators.
+  bool banPolymorphism_;
   /// Program to analyse.
   Prog &prog_;
 

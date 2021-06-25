@@ -507,7 +507,7 @@ TaggedType TaggedType::operator|(const TaggedType &that) const
         case Kind::UNDEF:     llvm_unreachable("not implemented");
         case Kind::YOUNG:     llvm_unreachable("not implemented");
         case Kind::HEAP_OFF:  return TaggedType::Addr();
-        case Kind::INT:       llvm_unreachable("not implemented");
+        case Kind::INT:       return TaggedType::AddrInt();
         case Kind::ADDR:      return TaggedType::Addr();
         case Kind::ADDR_INT:  return TaggedType::AddrInt();
         case Kind::ADDR_NULL: return TaggedType::AddrNull();
