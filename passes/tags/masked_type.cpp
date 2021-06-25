@@ -73,7 +73,6 @@ MaskedType MaskedType::operator~() const
 // -----------------------------------------------------------------------------
 void MaskedType::dump(llvm::raw_ostream &os) const
 {
-  /*
   for (unsigned i = 0, n = CHAR_BIT * sizeof(uint64_t); i < n; ++i) {
     uint64_t bit = (1ull << static_cast<uint64_t>(n - i - 1));
     if (known_ & bit) {
@@ -82,6 +81,4 @@ void MaskedType::dump(llvm::raw_ostream &os) const
       os << "x";
     }
   }
-  */
-  os << "int";
 }

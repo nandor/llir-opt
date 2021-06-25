@@ -81,6 +81,9 @@ void ConstraintSolver::VisitAddInst(AddInst &i)
             { IsPtr(so), { IsInt(sl), IsPtr(sr) } }
         });
       }
+
+      i.getParent()->dump();
+      llvm::errs() << "\n" << i << "\n\n";
       llvm_unreachable("invalid add type");
     }
   }

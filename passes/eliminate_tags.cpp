@@ -33,7 +33,7 @@ static llvm::cl::opt<bool>
 optBanPolymorphism(
     "eliminate-tags-ban-polymorphism",
     llvm::cl::desc("Assume arithmetic operations are not polymorphic"),
-    llvm::cl::init(true),
+    llvm::cl::init(false),
     llvm::cl::Hidden
 );
 

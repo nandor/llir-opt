@@ -651,7 +651,6 @@ void ConstraintSolver::SolveConstraints()
     }
 
   private:
-  public:
     SATProblem p_;
 
     std::unordered_map

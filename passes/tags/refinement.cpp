@@ -787,18 +787,28 @@ void Refinement::VisitAddInst(AddInst &i)
   auto vl = analysis_.Find(i.GetLHS());
   auto vr = analysis_.Find(i.GetRHS());
   auto vo = analysis_.Find(i);
+  if (vo.IsVal()) {
+    if (vl.IsInt() && vr.IsInt()) {
+      RefineInt(i, i.GetSubValue(0));
+      return;
+    }
+  }
   if (vo.IsPtrLike()) {
     if (vl.IsInt() && vr.IsPtrUnion()) {
       RefineAddr(i, i.GetRHS());
+      return;
     }
     if (vr.IsInt() && vl.IsPtrUnion()) {
       RefineAddr(i, i.GetLHS());
+      return;
     }
     if (vl.IsPtrLike() && vr.IsPtrUnion()) {
       RefineInt(i, i.GetRHS());
+      return;
     }
     if (vr.IsPtrLike() && vl.IsPtrUnion()) {
       RefineInt(i, i.GetLHS());
+      return;
     }
   }
   if (vo.IsVal()) {
@@ -807,17 +817,21 @@ void Refinement::VisitAddInst(AddInst &i)
     if (vl.IsAddrInt() && vr.IsInt()) {
       RefineInt(i, i.GetSubValue(0));
       RefineInt(i, i.GetLHS());
+      return;
     }
     if (vr.IsAddrInt() && vl.IsInt()) {
       RefineInt(i, i.GetSubValue(0));
       RefineInt(i, i.GetRHS());
+      return;
     }
     // val + odd = val cannot hold for integers, val is pointer.
     if (vl.IsVal() && vr.IsOdd()) {
       RefineAddr(i, i.GetLHS());
+      return;
     }
     if (vl.IsOdd() && vr.IsVal()) {
       RefineAddr(i, i.GetRHS());
+      return;
     }
   }
 }
