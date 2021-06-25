@@ -88,7 +88,7 @@ $(function() {
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;  <span class="keyword">struct </span>Lit;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  <a class="code" href="classSATProblem.html">SATProblem</a>() : <a class="code" href="classSATProblem.html#adc38bc82cedeaa049f5a9b2abcd80e70">is2SAT_</a>(<span class="keyword">true</span>) {}</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  <a class="code" href="classSATProblem.html">SATProblem</a>() : is2SAT_(<span class="keyword">true</span>) {}</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  <span class="keywordtype">void</span> Add(llvm::ArrayRef&lt;<a class="code" href="classID.html">ID&lt;Lit&gt;</a>&gt; pos, llvm::ArrayRef&lt;<a class="code" href="classID.html">ID&lt;Lit&gt;</a>&gt; neg);</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
@@ -126,22 +126,17 @@ $(function() {
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  };</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classSATProblem.html#a963d05bf4a0ca69b4e68ccd8172e97df">   77</a></span>&#160;  ClauseList <a class="code" href="classSATProblem.html#a963d05bf4a0ca69b4e68ccd8172e97df">clauses_</a>;</div>
-<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="classSATProblem.html#adc38bc82cedeaa049f5a9b2abcd80e70">   79</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classSATProblem.html#adc38bc82cedeaa049f5a9b2abcd80e70">is2SAT_</a>;</div>
-<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classSATProblem.html#a4e986c80843724800193a7cabf591176">   81</a></span>&#160;  std::unique_ptr&lt;SAT2Solver&gt; <a class="code" href="classSATProblem.html#a4e986c80843724800193a7cabf591176">solver2SAT_</a>;</div>
-<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classSATProblem.html#a49da55f2f0597f65ed1ca852a87db0e5">   83</a></span>&#160;  std::unique_ptr&lt;SATNSolver&gt; <a class="code" href="classSATProblem.html#a49da55f2f0597f65ed1ca852a87db0e5">solverNSAT_</a>;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  ClauseList clauses_;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keywordtype">bool</span> is2SAT_;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  std::unique_ptr&lt;SAT2Solver&gt; solver2SAT_;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  std::unique_ptr&lt;SATNSolver&gt; solverNSAT_;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassSATProblem_html_a963d05bf4a0ca69b4e68ccd8172e97df"><div class="ttname"><a href="classSATProblem.html#a963d05bf4a0ca69b4e68ccd8172e97df">SATProblem::clauses_</a></div><div class="ttdeci">ClauseList clauses_</div><div class="ttdoc">Set of constraints.</div><div class="ttdef"><b>Definition:</b> sat.h:77</div></div>
 <div class="ttc" id="aclassSATProblem_html_a426ea4e80504a7ecd76d35b669f8a3ab"><div class="ttname"><a href="classSATProblem.html#a426ea4e80504a7ecd76d35b669f8a3ab">SATProblem::IsSatisfiableWith</a></div><div class="ttdeci">bool IsSatisfiableWith(ID&lt; Lit &gt; id)</div><div class="ttdef"><b>Definition:</b> sat.cpp:45</div></div>
-<div class="ttc" id="aclassSATProblem_html_adc38bc82cedeaa049f5a9b2abcd80e70"><div class="ttname"><a href="classSATProblem.html#adc38bc82cedeaa049f5a9b2abcd80e70">SATProblem::is2SAT_</a></div><div class="ttdeci">bool is2SAT_</div><div class="ttdoc">Flag to indicate whether the problem is 2-SAT.</div><div class="ttdef"><b>Definition:</b> sat.h:79</div></div>
 <div class="ttc" id="aclassID_html"><div class="ttname"><a href="classID.html">ID</a></div><div class="ttdef"><b>Definition:</b> id.h:19</div></div>
 <div class="ttc" id="aclassSATProblem_html_a704b7fcba81eace9241b3e830c9e2301"><div class="ttname"><a href="classSATProblem.html#a704b7fcba81eace9241b3e830c9e2301">SATProblem::dump</a></div><div class="ttdeci">void dump(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdef"><b>Definition:</b> sat.cpp:193</div></div>
 <div class="ttc" id="aclassSATProblem_html"><div class="ttname"><a href="classSATProblem.html">SATProblem</a></div><div class="ttdef"><b>Definition:</b> sat.h:17</div></div>
-<div class="ttc" id="aclassSATProblem_html_a49da55f2f0597f65ed1ca852a87db0e5"><div class="ttname"><a href="classSATProblem.html#a49da55f2f0597f65ed1ca852a87db0e5">SATProblem::solverNSAT_</a></div><div class="ttdeci">std::unique_ptr&lt; SATNSolver &gt; solverNSAT_</div><div class="ttdoc">sAT-N Solver instance.</div><div class="ttdef"><b>Definition:</b> sat.h:83</div></div>
 <div class="ttc" id="aclassSATProblem_html_ac745de589566d70ac4daae68e82cc397"><div class="ttname"><a href="classSATProblem.html#ac745de589566d70ac4daae68e82cc397">SATProblem::IsSatisfiable</a></div><div class="ttdeci">bool IsSatisfiable()</div><div class="ttdef"><b>Definition:</b> sat.cpp:29</div></div>
-<div class="ttc" id="aclassSATProblem_html_a4e986c80843724800193a7cabf591176"><div class="ttname"><a href="classSATProblem.html#a4e986c80843724800193a7cabf591176">SATProblem::solver2SAT_</a></div><div class="ttdeci">std::unique_ptr&lt; SAT2Solver &gt; solver2SAT_</div><div class="ttdoc">SAT-2 Solver instance.</div><div class="ttdef"><b>Definition:</b> sat.h:81</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
