@@ -455,7 +455,19 @@ void ConstraintSolver::SolveConstraints()
       case ConstraintType::ADDR_INT:
       case ConstraintType::PTR_INT:
       case ConstraintType::HEAP_INT: {
-        conj_.push_back({ IsInt(c->Id), IsPtr(c->Id) });
+        bool nonPolymorphic = true;
+        for (auto def : c->Defs) {
+          if (RegisterAnalysis::IsPolymorphic(*def)) {
+            nonPolymorphic = false;
+            break;
+          }
+        }
+        if (nonPolymorphic) {
+          conj_.push_back({ IsInt(c->Id), IsPtr(c->Id) });
+          conj_.push_back({ NotInt(c->Id), NotPtr(c->Id) });
+        } else {
+          conj_.push_back({ IsInt(c->Id), IsPtr(c->Id) });
+        }
         ambiguous.Insert(c->Id);
         continue;
       }
@@ -477,12 +489,13 @@ void ConstraintSolver::SolveConstraints()
   std::unordered_set<std::vector<Lit>> dedup;
   {
     for (unsigned i = 0; i < conj_.size(); ) {
-      std::set<Lit> terms;
-      for (auto [id, ip, tf] : conj_[i]) {
-        terms.emplace(union_.Find(id), ip, tf);
-      }
-      if (dedup.emplace(terms.begin(), terms.end()).second) {
-        conj_[i++].assign(terms.begin(), terms.end());
+      // Keep terms sorted.
+      auto &conj = conj_[i];
+      std::sort(conj.begin(), conj.end());
+      conj.erase(std::unique(conj.begin(), conj.end()), conj.end());
+
+      if (dedup.emplace(conj.begin(), conj.end()).second) {
+        conj_[i++].assign(conj.begin(), conj.end());
       } else {
         std::swap(conj_[i], *conj_.rbegin());
         conj_.pop_back();
@@ -509,26 +522,58 @@ void ConstraintSolver::SolveConstraints()
         }
       }
 
-      // Eliminate clauses with at least one lement known to be true.
+      // Eliminate clauses with at least one element known to be true.
       for (unsigned i = 0; i < conj_.size(); ) {
         llvm::SmallVector<Lit, 4> lits;
+        std::unordered_set<Lit> otherLits;
 
-        bool hasTrueLiteral = false;
+        bool isRedundant = false;
+        bool wasSimplified = false;
         for (auto &lit : conj_[i]) {
           if (trues.count(lit)) {
-            hasTrueLiteral = true;
+            isRedundant = true;
             break;
+          }
+          if (otherLits.count(Conj(lit))) {
+            isRedundant = true;
+            wasSimplified = true;
+            break;
+          }
+          otherLits.insert(lit);
+
+          auto [id, intOrPtr, negated] = lit;
+          if (!trues.count({ id, intOrPtr, !negated })) {
+            lits.push_back(lit);
           } else {
-            auto [id, intOrPtr, negated] = lit;
-            if (!trues.count({ id, intOrPtr, !negated })) {
-              lits.push_back(lit);
-            } else {
-              changed = true;
+            wasSimplified = true;
+          }
+        }
+
+        if (wasSimplified) {
+          if (dedup.count({ lits.begin(), lits.end() })) {
+            isRedundant = true;
+          } else {
+            changed = true;
+            dedup.emplace(lits.begin(), lits.end());
+          }
+        }
+
+        if (!isRedundant) {
+          if (lits.size() == 3) {
+            auto a = lits[0], b = lits[1], c = lits[2];
+            if (dedup.count({ a, b })) {
+              isRedundant = true;
+            }
+            if (dedup.count({ a, c })) {
+              isRedundant = true;
+            }
+            if (dedup.count({ b, c })) {
+              isRedundant = true;
             }
           }
         }
 
-        if (hasTrueLiteral) {
+        if (isRedundant) {
           std::swap(conj_[i], *conj_.rbegin());
           conj_.pop_back();
         } else {
@@ -676,40 +721,45 @@ void ConstraintSolver::SolveConstraints()
   #endif
 
   for (auto id : ambiguous) {
+    bool toInt = false;
     if (isInt.Contains(id) && notPtr.Contains(id)) {
-      llvm_unreachable("not implemented");
-      continue;
-    }
-    if (isPtr.Contains(id) && notPtr.Contains(id)) {
-      llvm_unreachable("not implemented");
-      continue;
-    }
-
-    if (auto it = problemIDs.find(id); it != problemIDs.end()) {
-      auto &p = problems[it->second];
-
-      if (!p.IsSatisfiableWith(IsInt(id))) {
-        for (auto def : union_.Map(id)->Defs) {
-          llvm_unreachable("X");
-          auto oldTy = analysis_.Find(def);
-          auto newTy = oldTy.ToPointer();
-          if (oldTy != newTy) {
-            analysis_.Refine(def, newTy);
-          }
+      toInt = true;
+    } else {
+      if (auto it = problemIDs.find(id); it != problemIDs.end()) {
+        if (!problems[it->second].IsSatisfiableWith(IsPtr(id))) {
+          toInt = true;
         }
-        continue;
       }
+    }
 
-      if (!p.IsSatisfiableWith(IsPtr(id))) {
-        for (auto def : union_.Map(id)->Defs) {
-          llvm_unreachable("Y");
-          auto oldTy = analysis_.Find(def);
-          auto newTy = oldTy.ToInteger();
-          if (oldTy != newTy) {
-            analysis_.Refine(def, newTy);
-          }
+    bool toPtr = false;
+    if (isPtr.Contains(id) && notInt.Contains(id)) {
+      toPtr = true;
+    } else {
+      if (auto it = problemIDs.find(id); it != problemIDs.end()) {
+        if (!problems[it->second].IsSatisfiableWith(IsInt(id))) {
+          toPtr = true;
         }
-        continue;
+      }
+    }
+
+    assert(((!toInt && !toPtr) || toInt != toPtr) && "invalid refinement");
+    if (toPtr) {
+      for (auto def : union_.Map(id)->Defs) {
+        auto oldTy = analysis_.Find(def);
+        auto newTy = oldTy.ToPointer();
+        if (oldTy != newTy) {
+          analysis_.Refine(def, newTy);
+        }
+      }
+    }
+    if (toInt) {
+      for (auto def : union_.Map(id)->Defs) {
+        auto oldTy = analysis_.Find(def);
+        auto newTy = oldTy.ToInteger();
+        if (oldTy != newTy) {
+          analysis_.Refine(def, newTy);
+        }
       }
     }
   }

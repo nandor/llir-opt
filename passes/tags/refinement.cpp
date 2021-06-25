@@ -211,32 +211,9 @@ void Refinement::Run()
 }
 
 // -----------------------------------------------------------------------------
-static bool IsPolymorphic(Inst &i)
-{
-  // Memory loads are polymorphic.
-  if (isa<MemoryInst>(&i)) {
-    return true;
-  }
-  // Join points.
-  if (isa<ArgInst>(&i)) {
-    return true;
-  }
-  if (isa<PhiInst>(&i)) {
-    return true;
-  }
-  if (isa<SelectInst>(&i)) {
-    return true;
-  }
-  if (isa<CallSite>(&i)) {
-    return true;
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 bool Refinement::IsMonomorphic(Ref<Inst> ref, const TaggedType &nt)
 {
-  if (IsPolymorphic(*ref)) {
+  if (RegisterAnalysis::IsPolymorphic(*ref)) {
     return false;
   }
   auto ot = analysis_.Find(ref);

@@ -299,3 +299,33 @@ void RegisterAnalysis::dump(llvm::raw_ostream &os)
 
   AnalysisPrinter(os, *this).Print(prog_);
 }
+
+// -----------------------------------------------------------------------------
+bool RegisterAnalysis::IsPolymorphic(const Inst &i)
+{
+  if (isa<MemoryInst>(&i)) {
+    return true;
+  }
+  if (isa<ArgInst>(&i)) {
+    return true;
+  }
+  if (isa<PhiInst>(&i)) {
+    return true;
+  }
+  if (isa<SelectInst>(&i)) {
+    return true;
+  }
+  if (isa<CallSite>(&i)) {
+    return true;
+  }
+  if (isa<LandingPadInst>(&i)) {
+    return true;
+  }
+  if (isa<UndefInst>(&i)) {
+    return true;
+  }
+  if (isa<MovInst>(&i)) {
+    return true;
+  }
+  return false;
+}

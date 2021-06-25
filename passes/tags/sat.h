@@ -72,7 +72,6 @@ private:
   };
 
 private:
-public:
   /// Set of constraints.
   ClauseList clauses_;
   /// Flag to indicate whether the problem is 2-SAT.

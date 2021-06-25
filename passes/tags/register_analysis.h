@@ -96,6 +96,9 @@ private:
   /// Queue for the backward pass.
   void BackwardQueue(Ref<Inst > inst);
 
+  /// Check whether an instruction can be polymorphic.
+  static bool IsPolymorphic(const Inst &inst);
+
 private:
   /// Return cached dominance information.
   DominatorCache &GetDoms(Func &func)
