@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <list>
+#include <set>
+
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -64,11 +67,78 @@ private:
   /// Specialised n-SAT solver.
   class SATNSolver {
   public:
-    SATNSolver(const ClauseList &list) {}
+    SATNSolver(const ClauseList &list);
 
-    bool IsSatisfiable() { return true; }
+    bool IsSatisfiable();
 
-    bool IsSatisfiableWith(ID<Lit> id) { return true; }
+    bool IsSatisfiableWith(ID<Lit> id);
+
+  private:
+    struct Clause {
+      /// Literals in the clause.
+      llvm::SmallVector<unsigned, 4> Lits;
+    };
+
+    /// Description of a literal.
+    class Literal {
+    public:
+      /// Value of the literal.
+      enum class State {
+        FALSE,
+        TRUE,
+        UNDEF,
+      };
+
+      /// Set up the literal.
+      Literal(unsigned id)
+        : id_(id)
+        , state_(State::UNDEF)
+      {
+      }
+
+      /// Return the ID of the literal.
+      unsigned GetId() const { return id_; }
+      /// Return the state of the value.
+      State GetState() const { return state_; }
+      /// Check whether the literal was assigned.
+      bool IsAssigned() const { return state_ != State::UNDEF; }
+      /// Check whether the literal was assigned true.
+      bool IsTrue() const { return state_ != State::TRUE; }
+      /// Check whether the literal was assigned false.
+      bool IsFalse() const { return state_ != State::FALSE; }
+      /// Assign a value to the lit.
+      void Assign(bool v)
+      {
+        state_ = v ? State::TRUE : State::FALSE;
+      }
+      /// Set the state to undef.
+      void Unassign() { state_ = State::UNDEF; }
+
+    private:
+      /// ID of the literal.
+      unsigned id_;
+      /// State of the literal.
+      State state_;
+    };
+
+  private:
+    Literal *PickBranchingVariable();
+
+    bool FindConflict();
+
+    void Backtrack();
+
+  private:
+    /// Clauses of the system.
+    std::vector<Clause> clauses_;
+    /// Watch list for each variable.
+    std::vector<Literal> lits_;
+    /// Trail of assignments.
+    std::vector<Literal *> trail_;
+    /// Current decision level.
+    unsigned decisionLevel_;
+    /// Number of satisfied literals.
+    unsigned satisfied_;
   };
 
 private:

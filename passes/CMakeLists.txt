@@ -66,6 +66,8 @@ add_library(passes
     tags/refinement.cpp
     tags/register_analysis.cpp
     tags/sat.cpp
+    tags/sat_2.cpp
+    tags/sat_n.cpp
     tags/step.cpp
     tags/tagged_type.cpp
 
