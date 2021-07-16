@@ -173,130 +173,128 @@ bool BypassPhiPass::Bypass(
     }
   }
 
-  if (!block.phi_empty()) {
-    std::vector<std::pair<PhiInst *, PhiInst *>> phis;
-    for (PhiInst &phi : block.phis()) {
-      auto value = phi.GetValue(pred);
-      phi.Remove(pred);
+  std::vector<std::pair<PhiInst *, PhiInst *>> phis;
+  for (PhiInst &phi : block.phis()) {
+    auto value = phi.GetValue(pred);
+    phi.Remove(pred);
 
-      auto *newPhi = new PhiInst(phi.GetType(), phi.GetAnnots());
-      newPhi->Add(&block, &phi);
-      newPhi->Add(pred, value);
-      phiPlace->AddPhi(newPhi);
+    auto *newPhi = new PhiInst(phi.GetType(), phi.GetAnnots());
+    newPhi->Add(&block, &phi);
+    newPhi->Add(pred, value);
+    phiPlace->AddPhi(newPhi);
 
-      phis.emplace_back(&phi, newPhi);
-    }
+    phis.emplace_back(&phi, newPhi);
+  }
 
-    DominatorTree DT(f);
-    DominanceFrontier DF;
-    DF.analyze(DT);
+  DominatorTree DT(f);
+  DominanceFrontier DF;
+  DF.analyze(DT);
 
-    std::unordered_map<PhiInst *, PhiInst *> newPhis;
-    for (auto [oldPhi, newPhi] : phis) {
-      newPhis.emplace(newPhi, oldPhi);
-      newPhis.emplace(oldPhi, oldPhi);
-    }
+  std::unordered_map<PhiInst *, PhiInst *> newPhis;
+  for (auto [oldPhi, newPhi] : phis) {
+    newPhis.emplace(newPhi, oldPhi);
+    newPhis.emplace(oldPhi, oldPhi);
+  }
 
-    std::queue<Block *> q;
-    q.emplace(target);
-    while (!q.empty()) {
-      Block *b = q.front();
-      q.pop();
+  std::queue<Block *> q;
+  q.emplace(target);
+  while (!q.empty()) {
+    Block *b = q.front();
+    q.pop();
 
-      bool found = false;
-      for (PhiInst &phi : b->phis()) {
-        if (newPhis.count(&phi)) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        for (auto [oldPhi, tgtPhi] : phis) {
-          auto *newPhi = new PhiInst(oldPhi->GetType(), {});
-          b->AddPhi(newPhi);
-          newPhis.emplace(newPhi, oldPhi);
-        }
-        for (auto *front : DF.calculate(DT, DT.getNode(b))) {
-          if (!dominatedByBlock.count(front)) {
-            continue;
-          }
-          q.push(front);
-        }
+    bool found = false;
+    for (PhiInst &phi : b->phis()) {
+      if (newPhis.count(&phi)) {
+        found = true;
+        break;
       }
     }
-
-    std::unordered_map<PhiInst *, std::stack<PhiInst *>> defs;
-    std::function<void(Block *)> rename = [&](Block *b)
-    {
-      // Register the names of incoming PHIs.
-      for (PhiInst &phi : b->phis()) {
-        if (b == &block) {
-          defs[&phi].push(&phi);
-        } else {
-          auto it = newPhis.find(&phi);
-          if (it != newPhis.end()) {
-            defs[it->second].push(&phi);
-          }
-        }
+    if (!found) {
+      for (auto [oldPhi, tgtPhi] : phis) {
+        auto *newPhi = new PhiInst(oldPhi->GetType(), {});
+        b->AddPhi(newPhi);
+        newPhis.emplace(newPhi, oldPhi);
       }
-      // Rewrite all uses in this block.
-      for (Inst &inst : *b) {
-        if (inst.Is(Inst::Kind::PHI)) {
+      for (auto *front : DF.calculate(DT, DT.getNode(b))) {
+        if (!dominatedByBlock.count(front)) {
           continue;
         }
-        for (Use &use : inst.operands()) {
-          if (auto *phiUse = ::cast_or_null<PhiInst>(use.get().Get())) {
-            auto it = defs.find(phiUse);
+        q.push(front);
+      }
+    }
+  }
+
+  std::unordered_map<PhiInst *, std::stack<PhiInst *>> defs;
+  std::function<void(Block *)> rename = [&](Block *b)
+  {
+    // Register the names of incoming PHIs.
+    for (PhiInst &phi : b->phis()) {
+      if (b == &block) {
+        defs[&phi].push(&phi);
+      } else {
+        auto it = newPhis.find(&phi);
+        if (it != newPhis.end()) {
+          defs[it->second].push(&phi);
+        }
+      }
+    }
+    // Rewrite all uses in this block.
+    for (Inst &inst : *b) {
+      if (inst.Is(Inst::Kind::PHI)) {
+        continue;
+      }
+      for (Use &use : inst.operands()) {
+        if (auto *phiUse = ::cast_or_null<PhiInst>(use.get().Get())) {
+          auto it = defs.find(phiUse);
+          if (it != defs.end()) {
+            assert(!it->second.empty());
+            use = it->second.top();
+          }
+        }
+      }
+    }
+    // Handle PHI nodes in successors.
+    for (Block *succ : b->successors()) {
+      if (succ == phiPlace || succ == &block) {
+        continue;
+      }
+      for (PhiInst &phi : succ->phis()) {
+        auto phiIt = newPhis.find(&phi);
+        if (phiIt != newPhis.end()) {
+          auto defIt = defs.find(phiIt->second);
+          assert(defIt != defs.end());
+          assert(!defIt->second.empty());
+          phi.Add(b, defIt->second.top());
+        } else {
+          if (auto phiUse = ::cast_or_null<PhiInst>(phi.GetValue(b))) {
+            auto it = defs.find(phiUse.Get());
             if (it != defs.end()) {
               assert(!it->second.empty());
-              use = it->second.top();
+              phi.Remove(b);
+              phi.Add(b, it->second.top());
             }
           }
         }
       }
-      // Handle PHI nodes in successors.
-      for (Block *succ : b->successors()) {
-        if (succ == phiPlace || succ == &block) {
-          continue;
-        }
-        for (PhiInst &phi : succ->phis()) {
-          auto phiIt = newPhis.find(&phi);
-          if (phiIt != newPhis.end()) {
-            auto defIt = defs.find(phiIt->second);
-            assert(defIt != defs.end());
-            assert(!defIt->second.empty());
-            phi.Add(b, defIt->second.top());
-          } else {
-            if (auto phiUse = ::cast_or_null<PhiInst>(phi.GetValue(b))) {
-              auto it = defs.find(phiUse.Get());
-              if (it != defs.end()) {
-                assert(!it->second.empty());
-                phi.Remove(b);
-                phi.Add(b, it->second.top());
-              }
-            }
-          }
-        }
-      }
-      // Recursively rename child nodes.
-      for (const auto *child : *DT[b]) {
-        rename(child->getBlock());
-      }
+    }
+    // Recursively rename child nodes.
+    for (const auto *child : *DT[b]) {
+      rename(child->getBlock());
+    }
 
-      // Pop definitions of this block from the stack.
-      for (PhiInst &phi : b->phis()) {
-        if (b == &block) {
-          defs[&phi].pop();
-        } else {
-          auto it = newPhis.find(&phi);
-          if (it != newPhis.end()) {
-            defs[it->second].pop();
-          }
+    // Pop definitions of this block from the stack.
+    for (PhiInst &phi : b->phis()) {
+      if (b == &block) {
+        defs[&phi].pop();
+      } else {
+        auto it = newPhis.find(&phi);
+        if (it != newPhis.end()) {
+          defs[it->second].pop();
         }
       }
-    };
-    rename(&f.getEntryBlock());
-  }
+    }
+  };
+  rename(&f.getEntryBlock());
 
   NumPhisBypassed++;
   return true;
