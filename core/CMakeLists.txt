@@ -91,3 +91,7 @@ install(
     DESTINATION include/llir
     FILES_MATCHING PATTERN "*.h"
 )
+install(
+    FILES ${CMAKE_BINARY_DIR}/instructions.def
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/llir/core
+)
