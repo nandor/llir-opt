@@ -12,9 +12,9 @@ target_link_libraries(llir-opt
     ppc_emitter
     riscv_emitter
     x86_emitter
-    core
-    adt
-    analysis
+    llir-core
+    llir-adt
+    llir-analysis
     ${LLVM_LIBS}
 )
 install(

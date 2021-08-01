@@ -5,9 +5,9 @@
 ## llir-as executable.
 add_executable(llir-as as.cpp)
 target_link_libraries(llir-as
-    core
-    analysis
-    adt
+    llir-core
+    llir-analysis
+    llir-adt
     ${LLVM_LIBS}
 )
 install(

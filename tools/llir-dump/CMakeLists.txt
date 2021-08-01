@@ -5,9 +5,9 @@
 ## llir-dump executable.
 add_executable(llir-dump dump.cpp)
 target_link_libraries(llir-dump
-    core
-    analysis
-    adt
+    llir-core
+    llir-analysis
+    llir-adt
     ${LLVM_LIBS}
 )
 install(

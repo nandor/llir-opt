@@ -23,7 +23,7 @@ set_property(
         ${CMAKE_BINARY_DIR}/instructions.def
 )
 
-add_library(core
+add_library(llir-core
     ${CMAKE_BINARY_DIR}/instructions.def
     analysis.cpp
     annot.cpp
@@ -78,6 +78,6 @@ add_library(core
     visibility.cpp
     xtor.cpp
 )
-add_dependencies(core adt)
+add_dependencies(llir-core llir-adt)
 
 add_subdirectory(analysis)

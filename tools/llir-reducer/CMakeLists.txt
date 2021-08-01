@@ -10,9 +10,9 @@ add_executable(llir-reducer
 )
 target_link_libraries(llir-reducer
     passes
-    core
-    analysis
-    adt
+    llir-core
+    llir-analysis
+    llir-adt
     ${LLVM_LIBS}
 )
 install(

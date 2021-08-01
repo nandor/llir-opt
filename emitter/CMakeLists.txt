@@ -11,7 +11,7 @@ add_library(emitter
   isel_mapping.cpp
   runtime_printer.cpp
 )
-add_dependencies(emitter core)
+add_dependencies(emitter llir-core)
 
 add_subdirectory(aarch64)
 add_subdirectory(coq)

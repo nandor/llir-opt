@@ -11,4 +11,4 @@ add_library(ppc_emitter
   ppcruntime_printer.cpp
 )
 target_link_libraries(ppc_emitter emitter)
-add_dependencies(ppc_emitter core)
+add_dependencies(ppc_emitter llir-core)

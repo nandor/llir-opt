@@ -33,9 +33,9 @@ add_executable(llir-ld
     options.cpp
 )
 target_link_libraries(llir-ld
-    core
-    analysis
-    adt
+    llir-core
+    llir-analysis
+    llir-adt
     ${LLVM_LIBS}
     ${LLVM_LTO_LIBS}
 )

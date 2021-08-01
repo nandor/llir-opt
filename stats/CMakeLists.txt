@@ -5,4 +5,4 @@
 add_library(stats
     alloc_size.cpp
 )
-add_dependencies(stats core)
+add_dependencies(stats llir-core)

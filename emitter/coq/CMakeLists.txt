@@ -7,4 +7,4 @@ add_library(coq_emitter
   coqemitter.cpp
 )
 target_link_libraries(coq_emitter emitter)
-add_dependencies(coq_emitter core)
+add_dependencies(coq_emitter llir-core)

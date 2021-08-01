@@ -113,4 +113,4 @@ add_library(passes
     unused_arg.cpp
     value_numbering.cpp
 )
-add_dependencies(passes core)
+add_dependencies(passes llir-core)

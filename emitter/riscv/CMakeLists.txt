@@ -11,4 +11,4 @@ add_library(riscv_emitter
   riscvruntime_printer.cpp
 )
 target_link_libraries(riscv_emitter emitter)
-add_dependencies(riscv_emitter core)
+add_dependencies(riscv_emitter llir-core)

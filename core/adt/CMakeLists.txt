@@ -3,7 +3,7 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 
-add_library(adt
+add_library(llir-adt
   sexp.cpp
 )
 
@@ -28,7 +28,7 @@ if (GTest_FOUND)
   target_link_libraries(sexp_test
       ${GTEST_BOTH_LIBRARIES}
       pthread
-      adt
+      llir-adt
       ${LLVM_LIBS}
   )
   add_test(sexp_test sexp_test)

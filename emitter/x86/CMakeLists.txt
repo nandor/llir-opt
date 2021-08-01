@@ -11,4 +11,4 @@ add_library(x86_emitter
   x86runtime_printer.cpp
 )
 target_link_libraries(x86_emitter emitter)
-add_dependencies(x86_emitter core)
+add_dependencies(x86_emitter llir-core)
