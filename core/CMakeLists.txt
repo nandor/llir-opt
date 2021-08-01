@@ -88,6 +88,6 @@ install(TARGETS llir-analysis)
 
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DESTINATION llir
+    DESTINATION include/llir
     FILES_MATCHING PATTERN "*.h"
 )
