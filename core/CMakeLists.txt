@@ -81,3 +81,13 @@ add_library(llir-core
 add_dependencies(llir-core llir-adt)
 
 add_subdirectory(analysis)
+
+install(TARGETS llir-core)
+install(TARGETS llir-adt)
+install(TARGETS llir-analysis)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DESTINATION llir
+    FILES_MATCHING PATTERN "*.h"
+)
