@@ -459,6 +459,7 @@ void ISel::PrepareGlobals()
         GV->setVisibility(visibility);
         GV->setDSOLocal(dso);
         GV->setThreadLocal(object.IsThreadLocal());
+        GV->setAlignment(atom.GetAlignment().value_or(llvm::Align(1)));
       }
     }
   }
