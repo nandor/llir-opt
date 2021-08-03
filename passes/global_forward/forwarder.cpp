@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/ADT/Statistic.h>
 #include <llvm/Support/Debug.h>
 
 #include "core/insts.h"
@@ -18,6 +19,11 @@
 #include "passes/global_forward/forwarder.h"
 
 #define DEBUG_TYPE "global-forward"
+
+STATISTIC(NumInstsEvaluated, "Evaluated instructions");
+STATISTIC(NumLoadsEvaluated, "Evaluated loads");
+STATISTIC(NumStoresEvaluated, "Evaluated stores");
+
 
 
 // -----------------------------------------------------------------------------
@@ -263,9 +269,12 @@ bool GlobalForwarder::Forward()
       auto *block = *dag.Blocks.begin();
       LLVM_DEBUG(llvm::dbgs() << "\tEvaluating " << block->getName() << "\n");
 
+      NumInstsEvaluated += block->size();
       for (auto it = block->begin(); std::next(it) != block->end(); ) {
         auto &inst = *it++;
         LLVM_DEBUG(llvm::dbgs() << "\t" << inst << "\n");
+        NumLoadsEvaluated += ::isa<MemoryLoadInst>(&inst);
+        NumStoresEvaluated += ::isa<MemoryStoreInst>(&inst);
         changed = Simplifier(*this, node, reverse).Dispatch(inst) || changed;
       }
 
