@@ -245,20 +245,20 @@ bool GlobalForwarder::Simplifier::VisitMemoryLoadInst(MemoryLoadInst &load)
       if (it != stores.end()) {
         // Forwarding a previous store to load from.
         auto [storeTy, storeValue] = it->second;
-        if (IsCompatible(ty, storeTy)) {
-          if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
-            auto movArg = mov->GetArg();
-            if (movArg->IsConstant()) {
+        if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
+          auto movArg = mov->GetArg();
+          if (movArg->IsConstant()) {
+            if (IsCompatible(ty, storeTy)) {
               auto *mov = new MovInst(ty, movArg, load.GetAnnots());
               LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
               load.getParent()->AddInst(mov, &load);
               load.replaceAllUsesWith(mov);
               load.eraseFromParent();
               return true;
+            } else {
+              llvm_unreachable("not implemented");
             }
           }
-        } else {
-          llvm_unreachable("not implemented");
         }
       } else if (!node_.Stored.Contains(id)) {
         // Value not yet mutated, load from static data.

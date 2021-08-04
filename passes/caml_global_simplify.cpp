@@ -278,7 +278,13 @@ void CamlGlobalSimplifier::SimplifyObjects()
         Simplify(*obj);
       }
     } else {
-      llvm_unreachable("not implemented");
+      for (auto *node : *it) {
+        auto *obj = node->GetObject();
+        if (obj->getParent() != root_->getParent()) {
+          continue;
+        }
+        pinned_.emplace(obj, true);
+      }
     }
   }
 }

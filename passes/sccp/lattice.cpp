@@ -260,6 +260,12 @@ Lattice Lattice::LUB(const Lattice &that) const
   if (IsUnknown()) {
     return that;
   }
+  if (that.IsUndefined()) {
+    return *this;
+  }
+  if (IsUndefined()) {
+    return that;
+  }
   if (IsInt() && that.IsInt()) {
     auto lhs = GetInt();
     auto rhs = that.GetInt();
