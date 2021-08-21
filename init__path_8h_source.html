@@ -95,12 +95,16 @@ $(function() {
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  }</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  std::unordered_set&lt;Block *&gt; executedAtMostOnce_;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;};</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">bool</span> IsSingleUse(<span class="keyword">const</span> <a class="code" href="classFunc.html">Func</a> *f);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  std::unordered_set&lt;Block *&gt; executedAtMostOnce_;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  std::unordered_map&lt;const Func *, bool&gt; singleUse_;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
 <div class="ttc" id="aclassCallGraph_html"><div class="ttname"><a href="classCallGraph.html">CallGraph</a></div><div class="ttdef"><b>Definition:</b> call_graph.h:20</div></div>
-<div class="ttc" id="aclassInitPath_html_a1ad614c6ffcc03facd25f20aebfb3eca"><div class="ttname"><a href="classInitPath.html#a1ad614c6ffcc03facd25f20aebfb3eca">InitPath::InitPath</a></div><div class="ttdeci">InitPath(Prog &amp;prog, Func *entry)</div><div class="ttdoc">Build the path from the entry node.</div><div class="ttdef"><b>Definition:</b> init_path.cpp:39</div></div>
+<div class="ttc" id="aclassInitPath_html_a1ad614c6ffcc03facd25f20aebfb3eca"><div class="ttname"><a href="classInitPath.html#a1ad614c6ffcc03facd25f20aebfb3eca">InitPath::InitPath</a></div><div class="ttdeci">InitPath(Prog &amp;prog, Func *entry)</div><div class="ttdoc">Build the path from the entry node.</div><div class="ttdef"><b>Definition:</b> init_path.cpp:20</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclassInitPath_html_adf9115e483c58bc2847f1b401b833a07"><div class="ttname"><a href="classInitPath.html#adf9115e483c58bc2847f1b401b833a07">InitPath::operator[]</a></div><div class="ttdeci">bool operator[](Block &amp;block) const</div><div class="ttdoc">Check if a block is on the init path.</div><div class="ttdef"><b>Definition:</b> init_path.h:24</div></div>
 <div class="ttc" id="aclassInitPath_html"><div class="ttname"><a href="classInitPath.html">InitPath</a></div><div class="ttdef"><b>Definition:</b> init_path.h:18</div></div>
