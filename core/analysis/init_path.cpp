@@ -17,25 +17,6 @@
 
 
 // -----------------------------------------------------------------------------
-static bool IsSingleUse(const Func &func)
-{
-  if (!func.IsLocal()) {
-    return false;
-  }
-  unsigned codeUses = 0;
-  for (const User *user : func.users()) {
-    if (auto *inst = ::cast_or_null<const MovInst>(user)) {
-      for (const User *movUsers : inst->users()) {
-        codeUses++;
-      }
-    } else {
-      return false;
-    }
-  }
-  return codeUses == 1;
-}
-
-// -----------------------------------------------------------------------------
 InitPath::InitPath(Prog &prog, Func *entry)
 {
   std::stack<std::pair<std::unique_ptr<DAGFunc>, DAGFunc::reverse_node_iterator>> stk;
@@ -56,7 +37,7 @@ InitPath::InitPath(Prog &prog, Func *entry)
       auto *block = *node->Blocks.begin();
       executedAtMostOnce_.insert(block);
       if (auto *call = ::cast_or_null<CallSite>(block->GetTerminator())) {
-        if (auto *f = call->GetDirectCallee(); f && IsSingleUse(*f)) {
+        if (auto *f = call->GetDirectCallee(); f && IsSingleUse(f)) {
           auto *dag = new DAGFunc(*f);
           stk.emplace(dag, dag->rbegin());
           continue;
@@ -65,3 +46,31 @@ InitPath::InitPath(Prog &prog, Func *entry)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+bool InitPath::IsSingleUse(const Func *func)
+{
+  if (!func->IsLocal()) {
+    return false;
+  }
+
+  auto it = singleUse_.emplace(func, false);
+  if (!it.second) {
+    return it.first->second;
+  }
+
+  unsigned codeUses = 0;
+  for (const User *user : func->users()) {
+    if (auto *inst = ::cast_or_null<const MovInst>(user)) {
+      for (const User *movUsers : inst->users()) {
+        codeUses++;
+      }
+    } else {
+      it.first->second = false;
+      return false;
+    }
+  }
+  it.first->second = codeUses == 1;
+  return it.first->second;
+}
+

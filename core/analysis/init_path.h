@@ -27,6 +27,12 @@ public:
   }
 
 private:
+  /// Returns true if the function has a unique use site.
+  bool IsSingleUse(const Func *f);
+
+private:
   /// Set of unknown/looping blocks.
   std::unordered_set<Block *> executedAtMostOnce_;
+  /// Cache of single-use functions.
+  std::unordered_map<const Func *, bool> singleUse_;
 };
