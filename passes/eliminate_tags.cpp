@@ -180,7 +180,11 @@ bool EliminateTags::NarrowTypes()
             mov->replaceAllUsesWith(arg);
             mov->eraseFromParent();
           } else if (rewrite) {
-            auto *newInst = new MovInst(Type::I64, ref, mov->GetAnnots());
+            auto *newInst = new MovInst(
+                Type::I64,
+                ref,
+                mov->GetAnnots().Without<CamlFrame>()
+            );
             types_.Replace(
                 inst->GetSubValue(0),
                 newInst->GetSubValue(0),
@@ -331,7 +335,11 @@ bool EliminateTags::RewriteConst()
             if (type.IsInt() && IsIntegerType(ty)) {
               if (auto v = type.GetInt().AsConst()) {
                 auto *value = new ConstantInt(*v);
-                auto *mov = new MovInst(ty, value, inst->GetAnnots());
+                auto *mov = new MovInst(
+                    ty,
+                    value,
+                    inst->GetAnnots().Without<CamlFrame>()
+                );
                 auto insert = inst->getIterator();
                 while (insert->Is(Inst::Kind::PHI)) {
                   ++insert;

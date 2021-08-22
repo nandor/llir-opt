@@ -124,6 +124,21 @@ public:
   }
 
   /**
+   * Returns the set without an annotation.
+   */
+  template<typename T>
+  AnnotSet Without() const
+  {
+    AnnotSet that;
+    for (auto &annot : annots_) {
+      if (!annot.Is(T::kAnnotKind)) {
+        that.Add(annot);
+      }
+    }
+    return that;
+  }
+
+  /**
    * Adds an annotation to this set.
    */
   bool Add(const Annot &annot);

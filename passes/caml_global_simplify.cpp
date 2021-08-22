@@ -415,21 +415,33 @@ void CamlGlobalSimplifier::Simplify(Object &object)
   LoadMap loads;
   {
     std::set<std::pair<MovInst *, int64_t>> instUsers;
+    uint64_t offset = 0;
+    auto base = object.begin()->GetAlignment();
     for (Atom &atom : object) {
+      if (auto align = atom.GetAlignment()) {
+        if (align == 1 || (base && align <= *base)) {
+          offset = llvm::alignTo(offset, *align);
+        } else {
+          break;
+        }
+      }
+
       for (User *user : atom.users()) {
         if (auto *inst = ::cast_or_null<MovInst>(user)) {
-          instUsers.emplace(inst, 0);
+          instUsers.emplace(inst, offset);
           continue;
         }
         if (auto *expr = ::cast_or_null<SymbolOffsetExpr>(user)) {
           for (auto *exprUser : expr->users()) {
             if (auto *inst = ::cast_or_null<MovInst>(exprUser)) {
-              instUsers.emplace(inst, expr->GetOffset());
+              instUsers.emplace(inst, offset + expr->GetOffset());
             }
           }
           continue;
         }
       }
+
+      offset += atom.GetByteSize();
     }
 
     for (auto [inst, offset] : instUsers) {

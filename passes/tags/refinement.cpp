@@ -981,7 +981,7 @@ Ref<Inst> Refinement::Cast(Ref<Inst> ref, const TaggedType &ty)
     auto *cont = call->GetCont();
 
     if (cont->pred_size() == 1) {
-      cont->insertAfter(newMov, cont->first_non_phi());
+      cont->insert(newMov, cont->first_non_phi());
     } else {
       auto *split = new Block(cont->getName());
       func->insertAfter(block->getIterator(), split);
@@ -1007,12 +1007,12 @@ Ref<Inst> Refinement::Cast(Ref<Inst> ref, const TaggedType &ty)
     auto *cont = invoke->GetCont();
 
     if (cont->pred_size() == 1) {
-      cont->insertAfter(newMov, cont->first_non_phi());
+      cont->insert(newMov, cont->first_non_phi());
     } else {
       llvm_unreachable("not implemented");
     }
   } else if (auto *phi = ::cast_or_null<PhiInst>(&*ref)) {
-    block->insertAfter(newMov, phi->getParent()->first_non_phi());
+    block->insert(newMov, phi->getParent()->first_non_phi());
   } else {
     block->insertAfter(newMov, ref->getIterator());
   }
