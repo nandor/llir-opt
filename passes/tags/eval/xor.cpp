@@ -134,7 +134,7 @@ TaggedType Step::Xor(TaggedType vl, TaggedType vr)
     case TaggedType::Kind::PTR_NULL: {
       switch (vr.GetKind()) {
         case TaggedType::Kind::UNKNOWN:   return TaggedType::Unknown();
-        case TaggedType::Kind::INT:       llvm_unreachable("not implemented");
+        case TaggedType::Kind::INT:       return TaggedType::PtrInt();
         case TaggedType::Kind::PTR_INT:   llvm_unreachable("not implemented");
         case TaggedType::Kind::VAL:       llvm_unreachable("not implemented");
         case TaggedType::Kind::HEAP:      llvm_unreachable("not implemented");

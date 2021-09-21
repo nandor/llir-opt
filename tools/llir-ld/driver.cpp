@@ -706,6 +706,36 @@ llvm::Error Driver::RunOpt(
     case OutputType::LLIR: args.push_back("llir"); break;
     case OutputType::LLBC: args.push_back("llbc"); break;
   }
+
+  // Save the IR blob and arguments if requested.
+  if (auto *savePath = getenv("LLIR_LD_SAVE")) {
+    for (unsigned i = 0; ; ++i) {
+      std::string name(llvm::sys::path::filename(input));
+      llvm::raw_string_ostream os(name);
+      os << "." << i << ".llbc";
+
+      llvm::SmallString<256> path(savePath);
+      llvm::sys::path::append(path, name);
+
+      {
+        std::error_code ec;
+        llvm::raw_fd_ostream os(path, ec, llvm::sys::fs::CD_CreateNew);
+        if (ec) {
+          if (ec != std::errc::file_exists) {
+            return llvm::errorCodeToError(ec);
+          } else {
+            continue;
+          }
+        }
+      }
+
+      auto ec = llvm::sys::fs::copy_file(input, path);
+      if (ec) {
+        return llvm::errorCodeToError(ec);
+      }
+      break;
+    }
+  }
   return RunExecutable(toolName, args);
 }
 

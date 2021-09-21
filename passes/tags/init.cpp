@@ -204,22 +204,31 @@ void Init::VisitGetInst(GetInst &i)
     case Register::X86_CR0:
     case Register::X86_CR2:
     case Register::X86_CR3:
-    case Register::X86_CR4:
+    case Register::X86_CR4: {
+      llvm_unreachable("not implemented");
+    }
     case Register::X86_DS:
     case Register::X86_ES:
     case Register::X86_SS:
     case Register::X86_FS:
     case Register::X86_GS:
-    case Register::X86_CS:
+    case Register::X86_CS: {
+      analysis_.Mark(i, TaggedType::Int());
+      return;
+    }
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::AARCH64_CNTVCT:
     case Register::AARCH64_CNTFRQ:
     case Register::AARCH64_FAR:
-    case Register::AARCH64_VBAR:
+    case Register::AARCH64_VBAR: {
+      llvm_unreachable("not implemented");
+    }
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
-    case Register::RISCV_FCSR:
+    case Register::RISCV_FCSR: {
+      llvm_unreachable("not implemented");
+    }
     case Register::PPC_FPSCR: {
       llvm_unreachable("not implemented");
     }
