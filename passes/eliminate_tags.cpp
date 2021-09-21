@@ -23,7 +23,10 @@ using namespace tags;
 
 #define DEBUG_TYPE "eliminate-tags"
 
-STATISTIC(NumTypesRewritten, "Number of v64 replaced with i64");
+STATISTIC(NumValToInt, "Number of v64 replaced with i64");
+STATISTIC(NumValToPtr, "Number of v64 demoted to heap");
+STATISTIC(NumPtrToInt, "Number of ptr|int demoted to int");
+STATISTIC(NumPtrToPtr, "Number of ptr|int demoted to ptr");
 STATISTIC(NumAddCmp, "Number of add-cmp pairs rewritten");
 STATISTIC(NumConstFolded, "Number of instructions folded to zero/one");
 
@@ -167,8 +170,21 @@ bool EliminateTags::NarrowTypes()
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto type = inst->GetType(i);
           auto val = types_.Find(inst->GetSubValue(i));
-          if (type == Type::V64 && val.IsOddLike()) {
-            rewrite = true;
+          if (type == Type::I64) {
+            if (val.IsInt()) {
+              NumPtrToInt++;
+            }
+            if (val.IsPtr()) {
+              NumPtrToPtr++;
+            }
+          }
+          if (type == Type::V64) {
+            if (val.IsOddLike()) {
+              rewrite = true;
+            }
+            if (val.IsHeap() || val.IsPtr()) {
+              NumValToPtr++;
+            }
           }
           types.push_back(val);
         }
@@ -221,7 +237,7 @@ bool EliminateTags::NarrowTypes()
           inst->eraseFromParent();
         }
         if (rewrite) {
-          NumTypesRewritten++;
+          NumValToInt++;
           changed = true;
         }
       }
