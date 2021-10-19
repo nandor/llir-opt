@@ -128,8 +128,10 @@ std::unique_ptr<Prog> Parser::Parse()
         vis = isHidden ? Visibility::GLOBAL_HIDDEN : Visibility::GLOBAL_DEFAULT;
       } else if (isWeak) {
         vis = isHidden ? Visibility::WEAK_HIDDEN : Visibility::WEAK_DEFAULT;
+      } else if (isHidden) {
+        vis = Visibility::GLOBAL_HIDDEN;
       } else {
-        vis =  Visibility::LOCAL;
+        vis = Visibility::LOCAL;
       }
 
       // Register the attribute.
