@@ -167,6 +167,7 @@ def:
 def Bsymbolic: Flag<["-", "--"], "Bsymbolic">;
 
 def as_needed: Flag<["--"], "as-needed">;
+def no_as_needed: Flag<["--"], "no-as-needed">;
 def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
 def d: Flag<["-"], "d">;
 
