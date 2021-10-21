@@ -170,6 +170,7 @@ def as_needed: Flag<["--"], "as-needed">;
 def no_as_needed: Flag<["--"], "no-as-needed">;
 def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
 def d: Flag<["-"], "d">;
+def fatal_warnings: Flag<["--"], "fatal-warnings">;
 
 def build_id: Flag<["--"], "build-id">;
 def build_id_eq: Joined<["--"], "build-id=">;
