@@ -77,67 +77,72 @@ $(function() {
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160; </div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160; </div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;llvm/Pass.h&gt;</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;llvm/IR/DataLayout.h&gt;</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;llvm/MC/MCObjectFileInfo.h&gt;</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;llvm/MC/MCStreamer.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;core/visibility.h&quot;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;llvm/Pass.h&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;llvm/IR/DataLayout.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;llvm/MC/MCObjectFileInfo.h&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;llvm/MC/MCStreamer.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">class </span><a class="code" href="classData.html">Data</a>;</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">class </span><a class="code" href="classAtom.html">Atom</a>;</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">class </span><a class="code" href="classObject.html">Object</a>;</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span><a class="code" href="classISelMapping.html">ISelMapping</a>;</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;core/visibility.h&quot;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">class </span><a class="code" href="classData.html">Data</a>;</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span><a class="code" href="classAtom.html">Atom</a>;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">class </span><a class="code" href="classObject.html">Object</a>;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">class </span><a class="code" href="classISelMapping.html">ISelMapping</a>;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classDataPrinter.html">   25</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDataPrinter.html">DataPrinter</a> final : <span class="keyword">public</span> llvm::ModulePass {</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">char</span> <a class="code" href="classID.html">ID</a>;</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <a class="code" href="classDataPrinter.html#a4963acce03994b1e24e69912e933c991">DataPrinter</a>(</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;<a class="code" href="classProg.html">Prog</a>,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;      <a class="code" href="classISelMapping.html">ISelMapping</a> *isel,</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      llvm::MCContext *ctx,</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      llvm::MCStreamer *os,</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo,</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      <span class="keyword">const</span> llvm::DataLayout &amp;layout,</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      <span class="keywordtype">bool</span> shared</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  );</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">bool</span> runOnModule(llvm::Module &amp;M) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  llvm::StringRef getPassName() <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">void</span> getAnalysisUsage(llvm::AnalysisUsage &amp;AU) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span> LowerExtern(<span class="keyword">const</span> <a class="code" href="classExtern.html">Extern</a> &amp;ext);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> LowerSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> LowerObject(<span class="keyword">const</span> <a class="code" href="classObject.html">Object</a> &amp;<span class="keywordtype">object</span>);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> LowerAtom(<span class="keyword">const</span> <a class="code" href="classAtom.html">Atom</a> &amp;atom);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  llvm::MCSymbol *LowerSymbol(<span class="keyword">const</span> std::string_view name);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span> EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  llvm::MCSection *GetSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <a class="code" href="classISelMapping.html">ISelMapping</a> *isel_;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  llvm::MCContext *ctx_;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  llvm::MCStreamer *os_;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo_;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">const</span> llvm::DataLayout &amp;layout_;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;};</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="classDataPrinter.html">   27</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDataPrinter.html">DataPrinter</a> final : <span class="keyword">public</span> llvm::ModulePass {</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">char</span> <a class="code" href="classID.html">ID</a>;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <a class="code" href="classDataPrinter.html#a4963acce03994b1e24e69912e933c991">DataPrinter</a>(</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;<a class="code" href="classProg.html">Prog</a>,</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      <a class="code" href="classISelMapping.html">ISelMapping</a> *isel,</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      llvm::MCContext *ctx,</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      llvm::MCStreamer *os,</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo,</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      <span class="keyword">const</span> llvm::DataLayout &amp;layout,</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      <span class="keywordtype">bool</span> shared</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  );</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">bool</span> runOnModule(llvm::Module &amp;M) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  llvm::StringRef getPassName() <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">void</span> getAnalysisUsage(llvm::AnalysisUsage &amp;AU) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">void</span> LowerExtern(<span class="keyword">const</span> <a class="code" href="classExtern.html">Extern</a> &amp;ext);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> LowerSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> LowerObject(<span class="keyword">const</span> <a class="code" href="classObject.html">Object</a> &amp;<span class="keywordtype">object</span>);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> LowerAtom(<span class="keyword">const</span> <a class="code" href="classAtom.html">Atom</a> &amp;atom);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  llvm::MCSymbol *LowerSymbol(<span class="keyword">const</span> std::string_view name);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span> EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keyword">using</span> XtorMap = std::map&lt;int, std::vector&lt;const Func *&gt;&gt;;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span> LowerXtors(<span class="keyword">const</span> XtorMap &amp;map, <span class="keyword">const</span> std::string &amp;name);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  llvm::MCSection *GetSection(<span class="keyword">const</span> <a class="code" href="classData.html">Data</a> &amp;data);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">const</span> <a class="code" href="classProg.html">Prog</a> &amp;prog_;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <a class="code" href="classISelMapping.html">ISelMapping</a> *isel_;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  llvm::MCContext *ctx_;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  llvm::MCStreamer *os_;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keyword">const</span> llvm::MCObjectFileInfo *objInfo_;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">const</span> llvm::DataLayout &amp;layout_;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassAtom_html"><div class="ttname"><a href="classAtom.html">Atom</a></div><div class="ttdef"><b>Definition:</b> atom.h:23</div></div>
 <div class="ttc" id="aclassISelMapping_html"><div class="ttname"><a href="classISelMapping.html">ISelMapping</a></div><div class="ttdef"><b>Definition:</b> isel_mapping.h:22</div></div>
 <div class="ttc" id="aclassData_html"><div class="ttname"><a href="classData.html">Data</a></div><div class="ttdef"><b>Definition:</b> data.h:47</div></div>
 <div class="ttc" id="aclassID_html"><div class="ttname"><a href="classID.html">ID</a></div><div class="ttdef"><b>Definition:</b> id.h:19</div></div>
 <div class="ttc" id="aclassObject_html"><div class="ttname"><a href="classObject.html">Object</a></div><div class="ttdef"><b>Definition:</b> object.h:43</div></div>
-<div class="ttc" id="aclassDataPrinter_html"><div class="ttname"><a href="classDataPrinter.html">DataPrinter</a></div><div class="ttdef"><b>Definition:</b> data_printer.h:25</div></div>
+<div class="ttc" id="aclassDataPrinter_html"><div class="ttname"><a href="classDataPrinter.html">DataPrinter</a></div><div class="ttdef"><b>Definition:</b> data_printer.h:27</div></div>
 <div class="ttc" id="aclassDataPrinter_html_a4963acce03994b1e24e69912e933c991"><div class="ttname"><a href="classDataPrinter.html#a4963acce03994b1e24e69912e933c991">DataPrinter::DataPrinter</a></div><div class="ttdeci">DataPrinter(const Prog &amp;Prog, ISelMapping *isel, llvm::MCContext *ctx, llvm::MCStreamer *os, const llvm::MCObjectFileInfo *objInfo, const llvm::DataLayout &amp;layout, bool shared)</div><div class="ttdoc">Initialises the pass which prints data sections.</div><div class="ttdef"><b>Definition:</b> data_printer.cpp:27</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclassExtern_html"><div class="ttname"><a href="classExtern.html">Extern</a></div><div class="ttdef"><b>Definition:</b> extern.h:20</div></div>
