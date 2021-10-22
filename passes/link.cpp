@@ -43,7 +43,7 @@ bool LinkPass::Run(Prog &prog)
   Xtor *dtor = nullptr;
   for (auto it = prog.xtor_begin(); it != prog.xtor_end(); ) {
     Xtor *xtor = &*it++;
-    switch (xtor->getKind()) {
+    switch (xtor->GetKind()) {
       case Xtor::Kind::CTOR: {
         if (ctor) {
           llvm::report_fatal_error("duplicate ctor");

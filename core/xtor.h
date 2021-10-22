@@ -29,11 +29,11 @@ public:
   Xtor(int priority, Global *g, Kind k);
 
   /// Returns the priority.
-  int getPriority() const { return priority_; }
+  int GetPriority() const { return priority_; }
   /// Return the function.
-  Func *getFunc() const;
+  Func *GetFunc() const;
   /// Return the kind.
-  Kind getKind() const { return kind_; }
+  Kind GetKind() const { return kind_; }
 
   /// Removes an atom from the data section.
   void removeFromParent();

@@ -331,9 +331,9 @@ void BitcodeWriter::Write(const Annot &annot)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Xtor &xtor)
 {
-  Emit<uint8_t>(static_cast<uint8_t>(xtor.getKind()));
-  Emit<int32_t>(xtor.getPriority());
-  auto it = symbols_.find(xtor.getFunc());
+  Emit<uint8_t>(static_cast<uint8_t>(xtor.GetKind()));
+  Emit<int32_t>(xtor.GetPriority());
+  auto it = symbols_.find(xtor.GetFunc());
   assert(it != symbols_.end() && "missing symbol");
   Emit<uint32_t>(it->second);
 }

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <map>
+
 #include <llvm/Pass.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/MC/MCObjectFileInfo.h>
@@ -58,6 +60,11 @@ private:
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
   /// Emits visibility attributes.
   void EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);
+
+  /// Helper classifying ctors/dtors by priority.
+  using XtorMap = std::map<int, std::vector<const Func *>>;
+  /// Lowers the xtors into the appropriate section.
+  void LowerXtors(const XtorMap &map, const std::string &name);
 
 private:
   /// Section for .data caml

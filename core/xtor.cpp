@@ -19,7 +19,7 @@ Xtor::Xtor(int priority, Global *g, Kind k)
 }
 
 // -----------------------------------------------------------------------------
-Func *Xtor::getFunc() const
+Func *Xtor::GetFunc() const
 {
   return ::cast<Func>(func_->get()).Get();
 }

@@ -46,10 +46,33 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
+  // Lower external references.
   for (const Extern &ext : prog_.externs()) {
     LowerExtern(ext);
   }
 
+  // Lower constructors and destructors.
+  {
+    XtorMap ctors;
+    XtorMap dtors;
+    for (auto it = prog_.xtor_begin(); it != prog_.xtor_end(); ) {
+      const Xtor *xtor = &*it++;
+      switch (xtor->GetKind()) {
+        case Xtor::Kind::CTOR: {
+          ctors[xtor->GetPriority()].push_back(xtor->GetFunc());
+          break;
+        }
+        case Xtor::Kind::DTOR: {
+          dtors[xtor->GetPriority()].push_back(xtor->GetFunc());
+          break;
+        }
+      }
+    }
+    LowerXtors(ctors, ".init_array");
+    LowerXtors(dtors, ".fini_array");
+  }
+
+  // Lower data sections.
   for (const auto &data : prog_.data()) {
     if (data.IsEmpty()) {
       continue;
@@ -268,6 +291,24 @@ void DataPrinter::EmitVisibility(llvm::MCSymbol *sym, Visibility visibility)
     }
   }
   llvm_unreachable("invalid visibility attribute");
+}
+
+// -----------------------------------------------------------------------------
+void DataPrinter::LowerXtors(const XtorMap &map, const std::string &name)
+{
+  if (map.empty()) {
+    return;
+  }
+  os_->SwitchSection(ctx_->getELFSection(
+      name,
+      llvm::ELF::SHT_PROGBITS,
+      llvm::ELF::SHF_ALLOC | llvm::ELF::SHF_WRITE
+  ));
+  for (auto &[prio, funcs] : map) {
+    for (const Func *func : funcs) {
+      os_->emitSymbolValue(LowerSymbol(func->GetName()), 8);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

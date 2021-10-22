@@ -50,7 +50,7 @@ void Printer::Print(const Prog &prog)
 
   // Print all xtors.
   for (const Xtor &xtor : prog.xtor()) {
-    switch (xtor.getKind()) {
+    switch (xtor.GetKind()) {
       case Xtor::Kind::CTOR: {
         os_ << "\t.ctor ";
         break;
@@ -60,7 +60,7 @@ void Printer::Print(const Prog &prog)
         break;
       }
     }
-    os_ << xtor.getPriority() << ", " << xtor.getFunc()->getName() << "\n";
+    os_ << xtor.GetPriority() << ", " << xtor.GetFunc()->getName() << "\n";
   }
 }
 
