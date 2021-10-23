@@ -37,8 +37,30 @@ static void exitIfError(llvm::Error e, llvm::Twine ctx)
 }
 
 // -----------------------------------------------------------------------------
-static cl::opt<std::string>
-optInput(cl::Positional, cl::desc("<input>"), cl::Required);
+static cl::list<std::string>
+optInputs(cl::Positional, cl::desc("<input>"), cl::OneOrMore);
+
+// -----------------------------------------------------------------------------
+static void DumpSymbols(llvm::raw_ostream &os, const Prog &prog)
+{
+  os << prog.getName() << ":\n";
+
+  for (const Extern &ext : prog.externs()) {
+    os << "                 U " << ext.getName() << "\n";
+  }
+
+  for (const Func &func : prog) {
+    os << "0000000000000000 T " << func.getName() << "\n";
+  }
+
+  for (const Data &data : prog.data()) {
+    for (const Object &object : data) {
+      for (const Atom &atom : object) {
+        os << "0000000000000000 D " << atom.getName() << "\n";
+      }
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -49,6 +71,26 @@ int main(int argc, char **argv)
   // Parse command line options.
   if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLBC dumper\n\n")) {
     return EXIT_FAILURE;
+  }
+
+  for (auto input : optInputs) {
+    // Open the input.
+    auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(input);
+    if (auto EC = FileOrErr.getError()) {
+      llvm::errs() << "[Error] Cannot open input: " + EC.message();
+      return EXIT_FAILURE;
+    }
+    auto memBufferRef = FileOrErr.get()->getMemBufferRef();
+    auto buffer = memBufferRef.getBuffer();
+    if (IsLLIRObject(buffer)) {
+      std::unique_ptr<Prog> prog(BitcodeReader(buffer).Read());
+      if (!prog) {
+        return EXIT_FAILURE;
+      }
+      DumpSymbols(llvm::outs(), *prog);
+    } else {
+      llvm_unreachable("not implemented");
+    }
   }
 
   return EXIT_SUCCESS;
