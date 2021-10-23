@@ -117,8 +117,6 @@ private:
   std::string targetFS_;
   /// Entry point.
   std::string entry_;
-  /// DT_RPATH
-  std::string rpath_;
   /// Optimisation level.
   OptLevel optLevel_;
   /// Paths to libraries.

@@ -80,7 +80,6 @@ Driver::Driver(
   , targetABI_(args.getLastArgValue(OPT_mabi))
   , targetFS_(args.getLastArgValue(OPT_mfs))
   , entry_(args.getLastArgValue(OPT_entry))
-  , rpath_(args.getLastArgValue(OPT_rpath))
   , optLevel_(ParseOptLevel(args.getLastArg(OPT_O_Group)))
   , libraryPaths_(args.getAllArgValues(OPT_library_path))
 {
@@ -580,11 +579,6 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
             if (!entry_.empty()) {
               args.push_back("-e");
               args.push_back(entry_);
-            }
-            // rpath.
-            if (!rpath_.empty()) {
-              args.push_back("-rpath");
-              args.push_back(rpath_);
             }
             // Forwarded arguments.
             for (const auto &forwarded : forwarded_) {

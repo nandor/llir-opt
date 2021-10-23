@@ -153,6 +153,8 @@ def:
   JoinedOrSeparate<["-"], "R">,
   Alias<rpath>,
   HelpText<"Alias for --rpath">;
+defm rpath_link:
+  Eq<"rpath-link", "">;
 
 def Bstatic: Flag<["-", "--"], "Bstatic">, HelpText<"Do not link against shared libraries">;
 
