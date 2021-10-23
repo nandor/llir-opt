@@ -190,6 +190,10 @@ defm cref: YesNo
 
 defm unresolved_symbols: Eq<"unresolved-symbols", "Determine how to handle unresolved symbols">;
 
+defm retain_symbols_file:
+  Eq<"retain-symbols-file", "Retain only the specified symbols">,
+  MetaVarName<"<file>">;
+
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;
 defm mabi: Eq<"mabi", "Specify the target ABI">;
