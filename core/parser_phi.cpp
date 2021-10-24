@@ -5,6 +5,9 @@
 #include <stack>
 #include <queue>
 
+#include <llvm/ADT/PostOrderIterator.h>
+
+#include "core/cfg.h"
 #include "core/cast.h"
 #include "core/parser.h"
 #include "core/block.h"
@@ -16,6 +19,91 @@
 // -----------------------------------------------------------------------------
 llvm::Error Parser::PhiPlacement(Func &func, VRegMap vregs)
 {
+  // Find the live registers in each block.
+  using RegSet = std::unordered_set<unsigned>;
+  std::unordered_map<const Block *, RegSet> live;
+  {
+    // Cache the kill-gen function.
+    std::unordered_map<Block *, std::pair<RegSet, RegSet>> kg;
+    for (auto &block : func) {
+      auto &[kill, gen] = kg[&block];
+      for (auto it = block.rbegin(); it != block.rend(); ++it) {
+        auto &inst = *it;
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          Ref<Inst> ref(&inst, i);
+          auto it = vregs.find(ref);
+          assert(it != vregs.end() && "missing vreg");
+          kill.insert(it->second);
+          gen.erase(it->second);
+        }
+        if (auto *phi = ::cast_or_null<PhiInst>(&inst)) {
+          for (unsigned i = 0,  n = phi->GetNumIncoming(); i < n; ++i) {
+            auto &inGen = kg[phi->GetBlock(i)].second;
+
+            Use &use = *(phi->op_begin() + i * 2 + 1);
+            const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
+            if (vreg & 1) {
+              inGen.insert(vreg >> 1);
+            } else {
+              auto it = vregs.find(::cast<Inst>(*use));
+              assert(it != vregs.end() && "missing vreg");
+              gen.insert(it->second);
+            }
+          }
+        } else {
+          for (Use &use : inst.operands()) {
+            const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
+            if (vreg & 1) {
+              gen.insert(vreg >> 1);
+            } else {
+              if (Ref<Inst> ref = ::cast_or_null<Inst>(*use)) {
+                auto it = vregs.find(ref);
+                assert(it != vregs.end() && "missing vreg");
+                gen.insert(it->second);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    std::queue<Block *> q;
+    std::unordered_set<Block *> inQ;
+    for (auto *block : llvm::post_order(&func)) {
+      q.push(block);
+    }
+
+    while (!q.empty()) {
+      Block *b = q.front();
+      q.pop();
+      inQ.erase(b);
+
+      RegSet out;
+      for (auto *succ : b->successors()) {
+        auto in = live[succ];
+        std::copy(in.begin(), in.end(), std::inserter(out, out.end()));
+      }
+
+      auto &[kill, gen] = kg[b];
+
+      RegSet in = gen;
+      for (auto reg : out) {
+        if (!kill.count(reg)) {
+          in.insert(reg);
+        }
+      }
+
+      if (live[b] != in) {
+        live[b] = std::move(in);
+        for (auto *pred : b->predecessors()) {
+          if (inQ.insert(pred).second) {
+            q.push(pred);
+          }
+        }
+      }
+    }
+  }
+
   // Construct the dominator tree & find dominance frontiers.
   DominatorTree DT(func);
   DominanceFrontier DF;
@@ -23,14 +111,18 @@ llvm::Error Parser::PhiPlacement(Func &func, VRegMap vregs)
 
   // Find all definitions of all variables.
   llvm::DenseSet<unsigned> custom;
+  std::unordered_map<const Block *, std::set<unsigned>> defs;
   for (Block &block : func) {
-    for (PhiInst &inst : block.phis()) {
-      for (Use &use : inst.operands()) {
+    for (PhiInst &phi : block.phis()) {
+      for (Use &use : phi.operands()) {
         const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
         if (vreg & 1) {
           custom.insert(vreg >> 1);
         }
       }
+      auto it = vregs.find(phi.GetSubValue(0));
+      assert(it != vregs.end() && "missing vreg for PHI");
+      defs[&block].insert(it->second);
     }
   }
 
@@ -63,24 +155,19 @@ llvm::Error Parser::PhiPlacement(Func &func, VRegMap vregs)
       q.pop();
       auto *block = inst->getParent();
       if (auto *node = DT.getNode(block)) {
-        for (auto &front : DF.calculate(DT, node)) {
-          bool found = false;
-          for (PhiInst &phi : front->phis()) {
-            if (auto it = vregs.find(&phi); it != vregs.end()) {
-              if (it->second == var.first) {
-                found = true;
-                break;
-              }
-            }
+        for (Block *front : DF.calculate(DT, node)) {
+          if (defs[front].count(var.first)) {
+            continue;
           }
-
+          if (!live[front].count(var.first)) {
+            continue;
+          }
           // If the PHI node was not added already, add it.
-          if (!found) {
-            auto *phi = new PhiInst(inst.GetType(), {});
-            front->AddPhi(phi);
-            vregs[phi] = var.first;
-            q.push(phi);
-          }
+          auto *phi = new PhiInst(inst.GetType(), {});
+          front->AddPhi(phi);
+          defs[front].insert(var.first);
+          vregs[phi] = var.first;
+          q.push(phi);
         }
       }
     }
