@@ -103,13 +103,16 @@ enum class FileMagic {
   OBJECT,
   SHARED_OBJECT,
   BLOB,
+  EXPORT_LIST,
 };
 
 // -----------------------------------------------------------------------------
-FileMagic Identify(llvm::StringRef buffer)
+FileMagic Identify(llvm::StringRef name, llvm::StringRef buffer)
 {
   if (IsLLIRObject(buffer)) {
     return FileMagic::LLIR;
+  } else if (name.endswith(".def")) {
+    return FileMagic::EXPORT_LIST;
   } else {
     switch (llvm::identify_magic(buffer)) {
       case llvm::file_magic::archive: {
@@ -167,7 +170,7 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
     }
 
     // Parse bitcode or write data to a temporary file.
-    switch (Identify(buffer)) {
+    switch (Identify(name, buffer)) {
       case FileMagic::LLIR: {
         auto prog = BitcodeReader(buffer).Read();
         if (!prog) {
@@ -212,6 +215,7 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
         tempFiles_.emplace_back(std::move(tmp));
         continue;
       }
+      case FileMagic::EXPORT_LIST:
       case FileMagic::SHARED_OBJECT:
       case FileMagic::ARCHIVE: {
         llvm::report_fatal_error("nested archives not supported");
@@ -295,7 +299,7 @@ llvm::Error Driver::Link()
           return llvm::errorCodeToError(ec);
         }
         auto memBuffer = memBufferOrErr.get()->getMemBufferRef();
-        switch (Identify(memBuffer.getBuffer())) {
+        switch (Identify(fullPath, memBuffer.getBuffer())) {
           case FileMagic::LLIR: {
             // Decode an object.
             auto prog = Parse(memBuffer.getBuffer(), fullPath);
@@ -340,6 +344,10 @@ llvm::Error Driver::Link()
             // Shared libraries are always in executable form,
             // add them to the list of extern libraries.
             externLibs_.push_back(path.str());
+            continue;
+          }
+          case FileMagic::EXPORT_LIST: {
+            // TODO: do not ignore these files.
             continue;
           }
           case FileMagic::BLOB: {

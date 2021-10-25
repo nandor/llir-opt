@@ -189,6 +189,7 @@ defm cref: YesNo
   >;
 
 defm unresolved_symbols: Eq<"unresolved-symbols", "Determine how to handle unresolved symbols">;
+def no_undefined: Flag<["--"], "no-undefined">, HelpText<"Report unresolved symbols">;
 
 defm retain_symbols_file:
   Eq<"retain-symbols-file", "Retain only the specified symbols">,

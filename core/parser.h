@@ -92,6 +92,7 @@ private:
   void ParseAscii();
   void ParseAsciz();
   void ParseItem(Type ty);
+  void ParseItems(Type ty);
   void ParseComm(Visibility visibility);
   void ParseDouble();
   // Function and segment attributes.

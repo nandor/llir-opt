@@ -260,6 +260,19 @@ void Parser::ParseItem(Type ty)
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseItems(Type ty)
+{
+  for (;;) {
+    ParseItem(ty);
+    if (l_.GetToken() != Token::COMMA) {
+      return;
+    }
+    l_.NextToken();
+  }
+  l_.Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseComm(Visibility visibility)
 {
   End();
@@ -315,7 +328,7 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'b': {
-      if (op == ".byte") return ParseItem(Type::I8);
+      if (op == ".byte") return ParseItems(Type::I8);
       break;
     }
     case 'c': {
@@ -325,7 +338,7 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'd': {
-      if (op == ".double") return ParseItem(Type::F64);
+      if (op == ".double") return ParseItems(Type::F64);
       if (op == ".dtor") return ParseXtor(Xtor::Kind::DTOR);
       break;
     }
@@ -353,7 +366,7 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'l': {
-      if (op == ".long") return ParseItem(Type::I32);
+      if (op == ".long") return ParseItems(Type::I32);
       if (op == ".local") return ParseLocal();
       if (op == ".lcomm") return ParseComm(Visibility::WEAK_HIDDEN);
       break;
@@ -370,11 +383,11 @@ void Parser::ParseDirective(const std::string_view op)
       break;
     }
     case 'q': {
-      if (op == ".quad") return ParseItem(Type::I64);
+      if (op == ".quad") return ParseItems(Type::I64);
       break;
     }
     case 's': {
-      if (op == ".short") return ParseItem(Type::I16);
+      if (op == ".short") return ParseItems(Type::I16);
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
       if (op == ".section") return ParseSection(false);
