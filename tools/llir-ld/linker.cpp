@@ -99,6 +99,10 @@ Linker::Unit &Linker::Unit::operator=(Unit &&)
 // -----------------------------------------------------------------------------
 llvm::Error Linker::LinkUndefined(const std::string &symbol)
 {
+  if (symbol == "_ZN7rocksdb10LDBOptionsC1Ev") {
+    llvm::errs() << "unresolved " << symbol << "\n";
+  }
+
   unresolved_.insert(symbol);
   return llvm::Error::success();
 }
@@ -368,8 +372,12 @@ void Linker::Resolve(Prog &p)
 {
   for (Extern &ext : p.externs()) {
     std::string name(ext.getName());
-    if (!resolved_.count(name) && !ext.HasValue()) {
-      unresolved_.insert(name);
+    if (!resolved_.count(name)) {
+      if (ext.HasValue()) {
+        Resolve(name);
+      } else {
+        unresolved_.insert(name);
+      }
     }
   }
 
@@ -402,6 +410,10 @@ void Linker::Resolve(llvm::lto::InputFile &obj)
       Resolve(name);
     } else {
       if (!resolved_.count(name)) {
+        if (name == "_ZN7rocksdb10LDBOptionsC1Ev") {
+          llvm::errs() << "unresolved LTO" << "\n";
+        }
+
         unresolved_.insert(name);
       }
     }
@@ -459,6 +471,11 @@ bool Linker::Merge(Prog &dest, Prog &source)
   }
 
   for (auto it = source.begin(), end = source.end(); it != end; ) {
+    // /home/nand/Projects/llir/cpp/MariaDB/build-mariadb/storage/rocksdb/CMakeFiles/rocksdblib.dir/rocksdb/tools/ldb_tool.cc.o
+    // /home/nand/Projects/llir/cpp/MariaDB/build-mariadb/storage/rocksdb/CMakeFiles/rocksdb_tools.dir/rocksdb/tools/ldb_tool.cc.o
+    if (it->getName() == "_ZN7rocksdb10LDBOptionsC1Ev") {
+      llvm::errs() << source.getName() << "\n";
+    }
     if (!Merge(dest, *it++)) {
       return false;
     }
