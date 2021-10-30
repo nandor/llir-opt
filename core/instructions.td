@@ -229,6 +229,9 @@ class ConstInst : OperatorInst {
 class ControlInst : Inst {
 }
 
+class YieldInst : Inst {
+}
+
 class TerminatorInst : ControlInst {
   let IsTerminator = 1;
 
@@ -678,6 +681,11 @@ def X86_RD_MSR : Inst
 }
 
 def X86_PAUSE : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def X86_YIELD : YieldInst
 {
   let HasSideEffects = 1;
 }

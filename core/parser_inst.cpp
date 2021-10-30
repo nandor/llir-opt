@@ -605,6 +605,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_s_fence") return new X86_SFenceInst(std::move(annot));
       if (opc == "x86_barrier") return new X86_BarrierInst(std::move(annot));
       if (opc == "x86_pause")   return new X86_PauseInst(std::move(annot));
+      if (opc == "x86_yield")   return new X86_YieldInst(std::move(annot));
       if (opc == "x86_sti")     return new X86_StiInst(std::move(annot));
       if (opc == "x86_cli")     return new X86_CliInst(std::move(annot));
       if (opc == "x86_spin")    return new X86_SpinInst(std::move(annot));

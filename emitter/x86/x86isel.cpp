@@ -1465,6 +1465,21 @@ void X86ISel::Lower(const X86_PauseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_YieldInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "rep; nop",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { X86::EFLAGS },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_StiInst *inst)
 {
   auto &DAG = GetDAG();

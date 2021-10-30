@@ -128,6 +128,8 @@ private:
   void Lower(const X86_RdMsrInst *inst);
   /// Lowers a PAUSE instruction.
   void Lower(const X86_PauseInst *inst);
+  /// Lowers a YIELD instruction.
+  void Lower(const X86_YieldInst *inst);
   /// Lowers a STI instruction.
   void Lower(const X86_StiInst *inst);
   /// Lowers a CLI instruction.
