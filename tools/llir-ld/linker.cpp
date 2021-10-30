@@ -4,6 +4,7 @@
 
 #include <llvm/Support/Error.h>
 #include <llvm/CodeGen/CommandFlags.h>
+#include <llvm/ADT/CachedHashString.h>
 
 #include "core/atom.h"
 #include "core/block.h"
@@ -123,10 +124,6 @@ llvm::Error Linker::LinkObject(Unit &&unit)
       InitialiseLTO();
 
       auto &obj = *unit.s_.B;
-      for (auto s : obj.getComdatTable()) {
-        llvm_unreachable("not implemented");
-      }
-
       for (const auto &sym : obj.symbols()) {
         if (sym.isUndefined()) {
           std::string name(sym.getName());
@@ -234,10 +231,6 @@ bool Linker::Resolves(Prog &p)
 // -----------------------------------------------------------------------------
 bool Linker::Resolves(llvm::lto::InputFile &obj)
 {
-  for (auto s : obj.getComdatTable()) {
-    llvm_unreachable("not implemented");
-  }
-
   for (const auto &sym : obj.symbols()) {
     if (!sym.isUndefined()) {
       if (unresolved_.count(sym.getName().str())) {
@@ -400,10 +393,6 @@ void Linker::Resolve(Prog &p)
 // -----------------------------------------------------------------------------
 void Linker::Resolve(llvm::lto::InputFile &obj)
 {
-  for (auto s : obj.getComdatTable()) {
-    llvm_unreachable("not implemented");
-  }
-
   for (const auto &sym : obj.symbols()) {
     std::string name(sym.getName());
     if (!sym.isUndefined()) {
@@ -573,20 +562,32 @@ llvm::Expected<std::vector<std::unique_ptr<Prog>>> Linker::LTO(
   );
   auto opt = std::make_unique<llvm::lto::LTO>(CreateLTOConfig(), backend);
 
+  llvm::DenseMap<llvm::CachedHashStringRef, const llvm::lto::InputFile *> comdatGroups;
   for (auto &&obj : modules) {
+    llvm::DenseMap<llvm::CachedHashStringRef, bool> duplicate;
+    for (auto comdat : obj->getComdatTable()) {
+      auto ref = llvm::CachedHashStringRef(comdat);
+      duplicate.try_emplace(
+          ref,
+          !comdatGroups.try_emplace(ref, obj.get()).second
+      );
+    }
+
     auto objSyms = obj->symbols();
     std::vector<llvm::lto::SymbolResolution> resols(objSyms.size());
 
     // Provide a resolution to the LTO API for each symbol.
     for (size_t i = 0, n = objSyms.size(); i != n; ++i) {
       const auto &objSym = objSyms[i];
+
+      bool definedHere = !duplicate[llvm::CachedHashStringRef(objSym.getIRName())];
+
       auto &r = resols[i];
-      r.Prevailing = !objSym.isUndefined();
+      r.Prevailing = !objSym.isUndefined() && definedHere;
       r.VisibleToRegularObj = true;
       r.FinalDefinitionInLinkageUnit = true;
       r.LinkerRedefined = false;
     }
-
     if (auto err = opt->add(std::move(obj), resols)) {
       return std::move(err);
     }
