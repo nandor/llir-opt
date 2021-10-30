@@ -471,8 +471,6 @@ bool Linker::Merge(Prog &dest, Prog &source)
   }
 
   for (auto it = source.begin(), end = source.end(); it != end; ) {
-    // /home/nand/Projects/llir/cpp/MariaDB/build-mariadb/storage/rocksdb/CMakeFiles/rocksdblib.dir/rocksdb/tools/ldb_tool.cc.o
-    // /home/nand/Projects/llir/cpp/MariaDB/build-mariadb/storage/rocksdb/CMakeFiles/rocksdb_tools.dir/rocksdb/tools/ldb_tool.cc.o
     if (it->getName() == "_ZN7rocksdb10LDBOptionsC1Ev") {
       llvm::errs() << source.getName() << "\n";
     }

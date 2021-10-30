@@ -3,12 +3,14 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/StringRef.h>
+#include <llvm/BinaryFormat/Magic.h>
+#include <llvm/Object/ArchiveWriter.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/StringSaver.h>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/WithColor.h>
-#include <llvm/Object/ArchiveWriter.h>
 
 #include "core/prog.h"
 #include "core/bitcode.h"
@@ -92,6 +94,8 @@ static int CreateOrUpdateArchive(
   }
 
   // Find new members.
+  static llvm::BumpPtrAllocator alloc;
+  std::vector<std::unique_ptr<llvm::MemoryBuffer>> buffers;
   for (unsigned i = 0, n = objs.size(); i < n; ++i) {
     bool found = false;
     if (archive) {
@@ -113,9 +117,51 @@ static int CreateOrUpdateArchive(
     if (found && !quick) {
       llvm_unreachable("not implemented");
     } else {
-      auto fileOrErr = llvm::NewArchiveMember::getFile(objs[i], true);
-      exitIfError(fileOrErr.takeError(), "cannot open " + objs[i]);
-      members.emplace_back(std::move(fileOrErr.get()));
+      // Peek inside the file - save a buffer to ensure the data is available
+      // at the point writeArchive is called with contents to child objects.
+      auto bufOrError = llvm::MemoryBuffer::getFile(objs[i]);
+      if (auto EC = bufOrError.getError()) {
+        llvm::WithColor::error(llvm::errs(), ToolName)
+            << "cannot open " << path << ": " << EC.message() << "\n";
+        return EXIT_FAILURE;
+      }
+      auto mem = buffers.emplace_back(std::move(bufOrError.get()))->getMemBufferRef();
+
+      if (llvm::identify_magic(mem.getBuffer()) == llvm::file_magic::archive) {
+        auto libOrErr = llvm::object::Archive::create(mem);
+        exitIfError(libOrErr.takeError(), "cannot read " + path);
+
+        // Flatten archives.
+        llvm::Error err = llvm::Error::success();
+        for (auto &child : (*libOrErr)->children(err)) {
+          llvm::StringSaver ss(alloc);
+
+          auto member = llvm::NewArchiveMember::getOldMember(child, false);
+          exitIfError(member.takeError(), "cannot fetch old member");
+
+          // Find the child name.
+          auto nameOrError = child.getName();
+          exitIfError(nameOrError.takeError(), "cannot read name");
+          auto name = nameOrError.get();
+          if (sys::path::is_absolute(name)) {
+            member->MemberName = ss.save(sys::path::convert_to_slash(name));
+          } else {
+            auto pathOrError = llvm::computeArchiveRelativePath(path, name);
+            if (pathOrError) {
+              member->MemberName = ss.save(*pathOrError);
+            } else {
+              member->MemberName = ss.save(sys::path::convert_to_slash(name));
+            }
+          }
+          members.push_back(std::move(*member));
+        }
+        exitIfError(std::move(err), "cannot list archive");
+      } else {
+        // Add regular objects.
+        auto memberOrErr = llvm::NewArchiveMember::getFile(objs[i], true);
+        exitIfError(memberOrErr.takeError(), "cannot open " + objs[i]);
+        members.emplace_back(std::move(memberOrErr.get()));
+      }
     }
   }
 
