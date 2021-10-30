@@ -25,6 +25,9 @@ using WithColor = llvm::WithColor;
 static llvm::StringRef ToolName;
 
 // -----------------------------------------------------------------------------
+static llvm::BumpPtrAllocator kAlloc;
+
+// -----------------------------------------------------------------------------
 static void exitIfError(llvm::Error e, llvm::Twine ctx)
 {
   if (!e) {
@@ -94,7 +97,6 @@ static int CreateOrUpdateArchive(
   }
 
   // Find new members.
-  static llvm::BumpPtrAllocator alloc;
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> buffers;
   for (unsigned i = 0, n = objs.size(); i < n; ++i) {
     bool found = false;
@@ -134,7 +136,7 @@ static int CreateOrUpdateArchive(
         // Flatten archives.
         llvm::Error err = llvm::Error::success();
         for (auto &child : (*libOrErr)->children(err)) {
-          llvm::StringSaver ss(alloc);
+          llvm::StringSaver ss(kAlloc);
 
           auto member = llvm::NewArchiveMember::getOldMember(child, false);
           exitIfError(member.takeError(), "cannot fetch old member");
@@ -264,15 +266,20 @@ static int ListArchive(const std::string &path)
 int main(int argc, char **argv)
 {
   ToolName = (argc == 0 ? "llir-ar" : argv[0]);
-  if (argc < 3) {
+
+  llvm::SmallVector<const char *, 0> args(argv + 1, argv + argc);
+  llvm::StringSaver ss(kAlloc);
+  llvm::cl::ExpandResponseFiles(ss, llvm::cl::TokenizeGNUCommandLine, args);
+
+  if (args.size() < 2) {
     llvm::errs() << "Usage: " << ToolName << "{dtqrc} archive-file file...";
     return EXIT_FAILURE;
   }
 
-  llvm::StringRef archive(argv[2]);
+  std::string archive(args[1]);
   std::vector<llvm::StringRef> objs;
-  for (int i = 3; i < argc; ++i) {
-    objs.emplace_back(argv[i]);
+  for (int i = 2, n = args.size(); i < n; ++i) {
+    objs.emplace_back(args[i]);
   }
 
   bool do_index   = false;
@@ -284,7 +291,7 @@ int main(int argc, char **argv)
   bool do_update  = false;
   bool do_extract = false;
   bool do_verbose = false;
-  for (const char *ch = argv[1]; *ch; ++ch) {
+  for (const char *ch = args[0]; *ch; ++ch) {
     switch (*ch) {
       case 'd': do_delete  = true; continue;
       case 't': do_list    = true; continue;
@@ -318,15 +325,15 @@ int main(int argc, char **argv)
     if (!do_create && !sys::fs::exists(archive)) {
       llvm::outs() << "creating " << archive << "\n";
     }
-    return CreateOrUpdateArchive(argv[2], objs, do_quick);
+    return CreateOrUpdateArchive(archive, objs, do_quick);
   }
 
   if (do_extract) {
-    return ExtractArchive(argv[2], do_verbose);
+    return ExtractArchive(archive, do_verbose);
   }
 
   if (do_list) {
-    return ListArchive(argv[2]);
+    return ListArchive(archive);
   }
 
   if (do_index) {
