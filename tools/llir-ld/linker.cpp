@@ -272,17 +272,6 @@ llvm::Expected<Linker::LinkResult> Linker::Link()
     }
   }
 
-  // Resolve the aliases.
-  for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
-    Extern *ext = &*it++;
-    if (auto g = ::cast_or_null<Global>(ext->GetValue())) {
-      ext->replaceAllUsesWith(g);
-      if (ext->getName() == g->getName()) {
-        ext->eraseFromParent();
-      }
-    }
-  }
-
   // Some sections need begin/end symbols.
   for (Data &data : prog->data()) {
     // Find sections which have references to both start/end.
@@ -460,9 +449,6 @@ bool Linker::Merge(Prog &dest, Prog &source)
   }
 
   for (auto it = source.begin(), end = source.end(); it != end; ) {
-    if (it->getName() == "_ZN7rocksdb10LDBOptionsC1Ev") {
-      llvm::errs() << source.getName() << "\n";
-    }
     if (!Merge(dest, *it++)) {
       return false;
     }

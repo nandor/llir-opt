@@ -91,6 +91,8 @@ private:
   void VisitX86_LtrInst(X86_LtrInst &i) override {}
   void VisitX86_HltInst(X86_HltInst &i) override {}
   void VisitX86_PauseInst(X86_PauseInst &i) override {}
+  void VisitX86_YieldInst(X86_YieldInst &i) override {}
+  void VisitX86_BarrierInst(X86_BarrierInst &i) override {}
   void VisitX86_FnClExInst(X86_FnClExInst &i) override {}
 
   void VisitInst(Inst &i) override;

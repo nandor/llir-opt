@@ -110,13 +110,6 @@ bool LinkPass::Run(Prog &prog)
 
     for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
       Extern *ext = &*it++;
-      // Delete externs with no uses.
-      if (ext->use_empty() && !::cast_or_null<Constant>(ext->GetValue())) {
-        ext->eraseFromParent();
-        changed = true;
-        continue;
-      }
-
       // Replace _init/_fini with ctor/dtor.
       if (ext->getName() == "_init") {
         if (ctor) {
@@ -138,7 +131,20 @@ bool LinkPass::Run(Prog &prog)
         changed = true;
         continue;
       }
-
+      // Resolve aliases.
+      if (auto g = ::cast_or_null<Global>(ext->GetValue())) {
+        ext->replaceAllUsesWith(g);
+        if (ext->getName() == g->getName()) {
+          ext->eraseFromParent();
+          continue;
+        }
+      }
+      // Delete externs with no uses.
+      if (ext->use_empty() && !::cast_or_null<Constant>(ext->GetValue())) {
+        ext->eraseFromParent();
+        changed = true;
+        continue;
+      }
       // Weak symbols can be zeroed here.
       if (ext->IsWeak() || IsInitFini(ext->getName())) {
         ZeroExtern(ext);
@@ -146,7 +152,7 @@ bool LinkPass::Run(Prog &prog)
         continue;
       }
     }
-
+    // Set the visibility of all non-entry symbols to local.
     for (Data &data : prog.data()) {
       for (Object &object : data) {
         for (Atom &atom : object) {
@@ -155,7 +161,6 @@ bool LinkPass::Run(Prog &prog)
         }
       }
     }
-
     const std::string entry = cfg.Entry.empty() ? "_start" : cfg.Entry;
     for (Func &func : prog) {
       auto name = func.GetName();

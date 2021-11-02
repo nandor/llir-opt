@@ -4,13 +4,18 @@
 
 #include <unordered_set>
 
+#include "core/target.h"
 #include "passes/sccp/lattice.h"
 #include "passes/sccp/solver.h"
 
 
 
 // -----------------------------------------------------------------------------
-static Lattice LoadInt(Atom::iterator it, unsigned off, unsigned size)
+static Lattice LoadInt(
+    Atom::iterator it,
+    unsigned off,
+    unsigned size,
+    std::optional<bool> littleEndian)
 {
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
@@ -73,7 +78,11 @@ static Lattice LoadInt(Atom::iterator it, unsigned off, unsigned size)
 }
 
 // -----------------------------------------------------------------------------
-static Lattice LoadFloat(Atom::const_iterator it, unsigned off, unsigned size)
+static Lattice LoadFloat(
+    Atom::const_iterator it,
+    unsigned off,
+    unsigned size,
+    std::optional<bool> littleEndian)
 {
   if (it->GetKind() == Item::Kind::FLOAT64 && size == 8) {
     return Lattice::CreateFloat(it->GetFloat64());
@@ -241,29 +250,36 @@ void SCCPSolver::VisitLoadInst(LoadInst &inst)
               }
               itemOff = base - i;
             }
+
+            // Determine the endianness of the target, if available.
+            std::optional<bool> isLittleEndian = target_
+                ? std::optional<bool>(target_->IsLittleEndian())
+                : std::nullopt;
+
+            // Fold the constant, i fit can be loaded.
             switch (ty) {
               case Type::I8: {
-                Mark(inst, LoadInt(it, itemOff, 1));
+                Mark(inst, LoadInt(it, itemOff, 1, isLittleEndian));
                 return;
               }
               case Type::I16: {
-                Mark(inst, LoadInt(it, itemOff, 2));
+                Mark(inst, LoadInt(it, itemOff, 2, isLittleEndian));
                 return;
               }
               case Type::I32: {
-                Mark(inst, LoadInt(it, itemOff, 4));
+                Mark(inst, LoadInt(it, itemOff, 4, isLittleEndian));
                 return;
               }
               case Type::I64: case Type::V64: {
-                Mark(inst, LoadInt(it, itemOff, 8));
+                Mark(inst, LoadInt(it, itemOff, 8, isLittleEndian));
                 return;
               }
               case Type::F32: {
-                Mark(inst, LoadFloat(it, itemOff, 4));
+                Mark(inst, LoadFloat(it, itemOff, 4, isLittleEndian));
                 return;
               }
               case Type::F64: {
-                Mark(inst, LoadFloat(it, itemOff, 8));
+                Mark(inst, LoadFloat(it, itemOff, 8, isLittleEndian));
                 return;
               }
               case Type::I128: case Type::F80: case Type::F128: {
