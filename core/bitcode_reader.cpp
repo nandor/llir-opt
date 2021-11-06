@@ -99,6 +99,7 @@ std::unique_ptr<Prog> BitcodeReader::Read()
   // Read all data items.
   for (Data &data : prog->data()) {
     for (Object &object : data) {
+      object.SetThreadLocal(ReadData<uint8_t>());
       for (Atom &atom : object) {
         Read(atom);
       }

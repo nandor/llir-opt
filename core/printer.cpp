@@ -76,6 +76,9 @@ void Printer::Print(const Data &data)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Object &object)
 {
+  if (object.IsThreadLocal()) {
+    os_ << "\t.thread_local\n";
+  }
   for (auto &atom : object) {
     Print(atom);
   }

@@ -88,6 +88,7 @@ void BitcodeWriter::Write(const Prog &prog)
   // Emit all data items.
   for (const Data &data : prog.data()) {
     for (const Object &object : data) {
+      Emit<uint8_t>(object.IsThreadLocal());
       for (const Atom &atom : object) {
         Write(atom);
       }

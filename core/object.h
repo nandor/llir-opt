@@ -95,7 +95,7 @@ public:
   bool Store(uint64_t offset, Ref<Value> value, Type type);
 
   /// Set the thread local flag.
-  void SetThreadLocal() { isThreadLocal_ = true; }
+  void SetThreadLocal(bool flag = true) { isThreadLocal_ = flag; }
   /// Check whether the object is thread-local.
   bool IsThreadLocal() const { return isThreadLocal_; }
 
