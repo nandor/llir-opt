@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include <llvm/ADT/Triple.h>
 #include <llvm/Option/ArgList.h>
 #include <llvm/Support/Error.h>

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <set>
 
 #include <llvm/Pass.h>

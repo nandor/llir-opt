@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include <optional>
 #include <set>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 
 #include <llvm/Support/raw_ostream.h>
