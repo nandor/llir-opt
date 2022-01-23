@@ -398,17 +398,13 @@ void ISel::PrepareGlobals()
     // Forward target CPU and features if set.
     {
       auto cpu = func.getCPU();
-      if (!cpu.empty()) {
-        F->addFnAttr("target-cpu", cpu);
-      }
+      F->addFnAttr("target-cpu", cpu.empty() ? "generic" : cpu);
+
       auto tuneCPU = func.getTuneCPU();
-      if (!tuneCPU.empty()) {
-        F->addFnAttr("target-tuneCPU", tuneCPU);
-      }
+      F->addFnAttr("target-tuneCPU", tuneCPU.empty() ? "generic" : tuneCPU);
+
       auto features = func.getFeatures();
-      if (!features.empty()) {
-        F->addFnAttr("target-features", features);
-      }
+      F->addFnAttr("target-features", features.empty() ? "" : features);
     }
 
     // Set a dummy calling conv to emulate the set
@@ -467,22 +463,24 @@ void ISel::PrepareGlobals()
   // Create function declarations for externals.
   for (const Extern &ext : prog_.externs()) {
     auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
-    llvm::GlobalObject *GV = nullptr;
     if (ext.GetSection() == ".text") {
       auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
-      GV = llvm::cast<llvm::Function>(C.getCallee());
+      auto *GV = llvm::cast<llvm::Function>(C.getCallee());
       GV->setDSOLocal(true);
+      GV->setVisibility(visibility);
     } else if (ext.GetName() == "caml_call_gc") {
-      GV = llvm::Function::Create(
+      auto *F = llvm::Function::Create(
           funcTy_,
           llvm::GlobalValue::ExternalLinkage,
           0,
           ext.getName(),
           M_
       );
-      GV->setDSOLocal(dso);
+      F->setDSOLocal(dso);
+      F->addFnAttr("target-cpu", "generic");
+      F->setVisibility(visibility);
     } else {
-      GV = new llvm::GlobalVariable(
+      auto *GV = new llvm::GlobalVariable(
           *M_,
           i8PtrTy_,
           false,
@@ -495,8 +493,8 @@ void ISel::PrepareGlobals()
           true
       );
       GV->setDSOLocal(dso);
+      GV->setVisibility(visibility);
     }
-    GV->setVisibility(visibility);
   }
 }
 

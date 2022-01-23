@@ -240,6 +240,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
+      trampoline_->addFnAttr("target-cpu", "generic");
     }
 
     regArgs.emplace_back(PPC::X25, GetValue(call->GetCallee()));

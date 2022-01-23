@@ -61,6 +61,9 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
 
   for (auto &F : M) {
+    if (F.isDeclaration()) {
+      continue;
+    }
     auto &MF = MMI.getOrCreateMachineFunction(F);
     const auto *TFL = MF.getSubtarget().getFrameLowering();
     const auto *TII = MF.getSubtarget().getInstrInfo();

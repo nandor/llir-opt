@@ -335,6 +335,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
+      trampoline_->addFnAttr("target-cpu", "generic");
     }
     regArgs.emplace_back(RISCV::X7, GetValue(call->GetCallee()));
     callee = DAG.getTargetGlobalAddress(
