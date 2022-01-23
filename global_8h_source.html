@@ -77,85 +77,86 @@ $(function() {
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160; </div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160; </div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;llvm/Support/Alignment.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;core/user.h&quot;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;core/visibility.h&quot;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;llvm/Support/Alignment.h&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;core/user.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;core/visibility.h&quot;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classGlobal.html">   22</a></span>&#160;<span class="keyword">class </span><a class="code" href="classGlobal.html">Global</a> : <span class="keyword">public</span> <a class="code" href="classUser.html">User</a> {</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">   25</a></span>&#160;  <span class="keyword">static</span> constexpr <a class="code" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Value::Kind</a> <a class="code" href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">kValueKind</a> = Value::Kind::GLOBAL;</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">   29</a></span>&#160;  <span class="keyword">enum class</span> <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> {</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    EXTERN,</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    FUNC,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    BLOCK,</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    ATOM</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  };</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <a class="code" href="classGlobal.html">Global</a>(</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind,</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      <span class="keyword">const</span> std::string_view name,</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      Visibility visibility = Visibility::LOCAL,</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      <span class="keywordtype">unsigned</span> numOps = 0</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  );</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classGlobal.html">Global</a>();</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">   46</a></span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> <a class="code" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">GetKind</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> kind_; }</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classGlobal.html#a54415b386a12de174d5b584256ba904c">   48</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a54415b386a12de174d5b584256ba904c">Is</a>(<a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">GetKind</a>() == kind; }</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">   51</a></span>&#160;  <span class="keyword">const</span> std::string_view <a class="code" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">GetName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">   53</a></span>&#160;  llvm::StringRef <a class="code" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">getName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">virtual</span> std::optional&lt;llvm::Align&gt; <a class="code" href="classGlobal.html#afdb4a6c20bf11e48a5c6294aa8adce3b">GetAlignment</a>() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="classGlobal.html#aa3991a61da983498dba373590d161d2b">   59</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#aa3991a61da983498dba373590d161d2b">SetVisibility</a>(Visibility visibility) { visibility_ = visibility; }</div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classGlobal.html#a94145015d1b137b0a339992084d01871">   61</a></span>&#160;  Visibility <a class="code" href="classGlobal.html#a94145015d1b137b0a339992084d01871">GetVisibility</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> visibility_; }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a8e143a42ffbe639d887c386644767788">IsRoot</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a868e450364c91c9147f5a78a2dcc2c6b">IsLocal</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34">IsWeak</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#af872c630ff72ea2540736f8d68a9b936">removeFromParent</a>() = 0;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#aa7ffa0f8f3fa05ee68779c1b423c3c50">eraseFromParent</a>() = 0;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classProg.html">Prog</a> *<a class="code" href="classGlobal.html#a2fc848ae25922e85161e9b679b6b66b7">getProg</a>() = 0;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind_;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::string name_;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  Visibility visibility_;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;};</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classGlobal.html">   23</a></span>&#160;<span class="keyword">class </span><a class="code" href="classGlobal.html">Global</a> : <span class="keyword">public</span> <a class="code" href="classUser.html">User</a> {</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">   26</a></span>&#160;  <span class="keyword">static</span> constexpr <a class="code" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Value::Kind</a> <a class="code" href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">kValueKind</a> = Value::Kind::GLOBAL;</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">   30</a></span>&#160;  <span class="keyword">enum class</span> <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> {</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    EXTERN,</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    FUNC,</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    BLOCK,</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    ATOM</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  };</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <a class="code" href="classGlobal.html">Global</a>(</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      <span class="keyword">const</span> std::string_view name,</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      Visibility visibility = Visibility::LOCAL,</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      <span class="keywordtype">unsigned</span> numOps = 0</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  );</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classGlobal.html">Global</a>();</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">   47</a></span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> <a class="code" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">GetKind</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> kind_; }</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classGlobal.html#a54415b386a12de174d5b584256ba904c">   49</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a54415b386a12de174d5b584256ba904c">Is</a>(<a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">GetKind</a>() == kind; }</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">   52</a></span>&#160;  <span class="keyword">const</span> std::string_view <a class="code" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">GetName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">   54</a></span>&#160;  llvm::StringRef <a class="code" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">getName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keyword">virtual</span> std::optional&lt;llvm::Align&gt; <a class="code" href="classGlobal.html#afdb4a6c20bf11e48a5c6294aa8adce3b">GetAlignment</a>() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classGlobal.html#aa3991a61da983498dba373590d161d2b">   60</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#aa3991a61da983498dba373590d161d2b">SetVisibility</a>(Visibility visibility) { visibility_ = visibility; }</div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classGlobal.html#a94145015d1b137b0a339992084d01871">   62</a></span>&#160;  Visibility <a class="code" href="classGlobal.html#a94145015d1b137b0a339992084d01871">GetVisibility</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> visibility_; }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a8e143a42ffbe639d887c386644767788">IsRoot</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#a868e450364c91c9147f5a78a2dcc2c6b">IsLocal</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34">IsWeak</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#af872c630ff72ea2540736f8d68a9b936">removeFromParent</a>() = 0;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#aa7ffa0f8f3fa05ee68779c1b423c3c50">eraseFromParent</a>() = 0;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classProg.html">Prog</a> *<a class="code" href="classGlobal.html#a2fc848ae25922e85161e9b679b6b66b7">getProg</a>() = 0;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind_;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  std::string name_;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  Visibility visibility_;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassGlobal_html_af872c630ff72ea2540736f8d68a9b936"><div class="ttname"><a href="classGlobal.html#af872c630ff72ea2540736f8d68a9b936">Global::removeFromParent</a></div><div class="ttdeci">virtual void removeFromParent()=0</div><div class="ttdoc">Removes the global from the parent container.</div></div>
 <div class="ttc" id="aclassGlobal_html_a2fc848ae25922e85161e9b679b6b66b7"><div class="ttname"><a href="classGlobal.html#a2fc848ae25922e85161e9b679b6b66b7">Global::getProg</a></div><div class="ttdeci">virtual Prog * getProg()=0</div><div class="ttdoc">Returns the program to which the global belongs.</div></div>
-<div class="ttc" id="aclassGlobal_html_a94145015d1b137b0a339992084d01871"><div class="ttname"><a href="classGlobal.html#a94145015d1b137b0a339992084d01871">Global::GetVisibility</a></div><div class="ttdeci">Visibility GetVisibility() const</div><div class="ttdoc">Returns the visibilty of a global.</div><div class="ttdef"><b>Definition:</b> global.h:61</div></div>
+<div class="ttc" id="aclassGlobal_html_a94145015d1b137b0a339992084d01871"><div class="ttname"><a href="classGlobal.html#a94145015d1b137b0a339992084d01871">Global::GetVisibility</a></div><div class="ttdeci">Visibility GetVisibility() const</div><div class="ttdoc">Returns the visibilty of a global.</div><div class="ttdef"><b>Definition:</b> global.h:62</div></div>
 <div class="ttc" id="aclassGlobal_html_a8e143a42ffbe639d887c386644767788"><div class="ttname"><a href="classGlobal.html#a8e143a42ffbe639d887c386644767788">Global::IsRoot</a></div><div class="ttdeci">bool IsRoot() const</div><div class="ttdoc">Checks if the symbol can be externally referenced.</div><div class="ttdef"><b>Definition:</b> global.cpp:28</div></div>
-<div class="ttc" id="aclassGlobal_html_a0c2ad4408fd73c09a666880a81c91b44"><div class="ttname"><a href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Global::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of global kinds.</div><div class="ttdef"><b>Definition:</b> global.h:29</div></div>
+<div class="ttc" id="aclassGlobal_html_a0c2ad4408fd73c09a666880a81c91b44"><div class="ttname"><a href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Global::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of global kinds.</div><div class="ttdef"><b>Definition:</b> global.h:30</div></div>
 <div class="ttc" id="aclassGlobal_html_aec19143bdbf90c37da64a290e4d4ea34"><div class="ttname"><a href="classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34">Global::IsWeak</a></div><div class="ttdeci">bool IsWeak() const</div><div class="ttdoc">Checks if a symbol is weak.</div><div class="ttdef"><b>Definition:</b> global.cpp:62</div></div>
 <div class="ttc" id="aclassGlobal_html_afdb4a6c20bf11e48a5c6294aa8adce3b"><div class="ttname"><a href="classGlobal.html#afdb4a6c20bf11e48a5c6294aa8adce3b">Global::GetAlignment</a></div><div class="ttdeci">virtual std::optional&lt; llvm::Align &gt; GetAlignment() const =0</div><div class="ttdoc">Externs have no known alignment.</div></div>
-<div class="ttc" id="aclassGlobal_html_a41851ac5fa6c42fcc83684ad50dd900a"><div class="ttname"><a href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">Global::GetName</a></div><div class="ttdeci">const std::string_view GetName() const</div><div class="ttdoc">Returns the name of the global.</div><div class="ttdef"><b>Definition:</b> global.h:51</div></div>
-<div class="ttc" id="aclassGlobal_html_a54415b386a12de174d5b584256ba904c"><div class="ttname"><a href="classGlobal.html#a54415b386a12de174d5b584256ba904c">Global::Is</a></div><div class="ttdeci">bool Is(Kind kind) const</div><div class="ttdoc">Checks if the global is of a specific kind.</div><div class="ttdef"><b>Definition:</b> global.h:48</div></div>
+<div class="ttc" id="aclassGlobal_html_a41851ac5fa6c42fcc83684ad50dd900a"><div class="ttname"><a href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">Global::GetName</a></div><div class="ttdeci">const std::string_view GetName() const</div><div class="ttdoc">Returns the name of the global.</div><div class="ttdef"><b>Definition:</b> global.h:52</div></div>
+<div class="ttc" id="aclassGlobal_html_a54415b386a12de174d5b584256ba904c"><div class="ttname"><a href="classGlobal.html#a54415b386a12de174d5b584256ba904c">Global::Is</a></div><div class="ttdeci">bool Is(Kind kind) const</div><div class="ttdoc">Checks if the global is of a specific kind.</div><div class="ttdef"><b>Definition:</b> global.h:49</div></div>
 <div class="ttc" id="aclassValue_html_a3a5ef355996165c937baed6494fbe976"><div class="ttname"><a href="classValue.html#a3a5ef355996165c937baed6494fbe976">Value::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of value types.</div><div class="ttdef"><b>Definition:</b> value.h:133</div></div>
-<div class="ttc" id="aclassGlobal_html_aacf3a3c0366ab95777c9662fadc5a6f8"><div class="ttname"><a href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global::getName</a></div><div class="ttdeci">llvm::StringRef getName() const</div><div class="ttdoc">Returns the name of the basic block for LLVM.</div><div class="ttdef"><b>Definition:</b> global.h:53</div></div>
-<div class="ttc" id="aclassGlobal_html_a0a26fdc09d0ce6f7c26840fd570f1844"><div class="ttname"><a href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">Global::GetKind</a></div><div class="ttdeci">Kind GetKind() const</div><div class="ttdoc">Returns the kind of the global.</div><div class="ttdef"><b>Definition:</b> global.h:46</div></div>
+<div class="ttc" id="aclassGlobal_html_aacf3a3c0366ab95777c9662fadc5a6f8"><div class="ttname"><a href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global::getName</a></div><div class="ttdeci">llvm::StringRef getName() const</div><div class="ttdoc">Returns the name of the basic block for LLVM.</div><div class="ttdef"><b>Definition:</b> global.h:54</div></div>
+<div class="ttc" id="aclassGlobal_html_a0a26fdc09d0ce6f7c26840fd570f1844"><div class="ttname"><a href="classGlobal.html#a0a26fdc09d0ce6f7c26840fd570f1844">Global::GetKind</a></div><div class="ttdeci">Kind GetKind() const</div><div class="ttdoc">Returns the kind of the global.</div><div class="ttdef"><b>Definition:</b> global.h:47</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
 <div class="ttc" id="aclassGlobal_html_a868e450364c91c9147f5a78a2dcc2c6b"><div class="ttname"><a href="classGlobal.html#a868e450364c91c9147f5a78a2dcc2c6b">Global::IsLocal</a></div><div class="ttdeci">bool IsLocal() const</div><div class="ttdoc">Checks if the global is hidden in the compilation unit.</div><div class="ttdef"><b>Definition:</b> global.cpp:45</div></div>
-<div class="ttc" id="aclassGlobal_html_aaf4c2cfde80a2ebf1fafd68f0e2d9dec"><div class="ttname"><a href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">Global::kValueKind</a></div><div class="ttdeci">static constexpr Value::Kind kValueKind</div><div class="ttdoc">Kind of the global.</div><div class="ttdef"><b>Definition:</b> global.h:25</div></div>
+<div class="ttc" id="aclassGlobal_html_aaf4c2cfde80a2ebf1fafd68f0e2d9dec"><div class="ttname"><a href="classGlobal.html#aaf4c2cfde80a2ebf1fafd68f0e2d9dec">Global::kValueKind</a></div><div class="ttdeci">static constexpr Value::Kind kValueKind</div><div class="ttdoc">Kind of the global.</div><div class="ttdef"><b>Definition:</b> global.h:26</div></div>
 <div class="ttc" id="aclassGlobal_html_aa7ffa0f8f3fa05ee68779c1b423c3c50"><div class="ttname"><a href="classGlobal.html#aa7ffa0f8f3fa05ee68779c1b423c3c50">Global::eraseFromParent</a></div><div class="ttdeci">virtual void eraseFromParent()=0</div><div class="ttdoc">Removes the global from the parent container, deleting it.</div></div>
-<div class="ttc" id="aclassGlobal_html_aa3991a61da983498dba373590d161d2b"><div class="ttname"><a href="classGlobal.html#aa3991a61da983498dba373590d161d2b">Global::SetVisibility</a></div><div class="ttdeci">void SetVisibility(Visibility visibility)</div><div class="ttdoc">Sets the visibilty of the global.</div><div class="ttdef"><b>Definition:</b> global.h:59</div></div>
+<div class="ttc" id="aclassGlobal_html_aa3991a61da983498dba373590d161d2b"><div class="ttname"><a href="classGlobal.html#aa3991a61da983498dba373590d161d2b">Global::SetVisibility</a></div><div class="ttdeci">void SetVisibility(Visibility visibility)</div><div class="ttdoc">Sets the visibilty of the global.</div><div class="ttdef"><b>Definition:</b> global.h:60</div></div>
 <div class="ttc" id="aclassUser_html"><div class="ttname"><a href="classUser.html">User</a></div><div class="ttdef"><b>Definition:</b> user.h:20</div></div>
-<div class="ttc" id="aclassGlobal_html"><div class="ttname"><a href="classGlobal.html">Global</a></div><div class="ttdef"><b>Definition:</b> global.h:22</div></div>
+<div class="ttc" id="aclassGlobal_html"><div class="ttname"><a href="classGlobal.html">Global</a></div><div class="ttdef"><b>Definition:</b> global.h:23</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
