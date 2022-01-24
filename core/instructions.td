@@ -238,6 +238,10 @@ class TerminatorInst : ControlInst {
   int NumSuccessors = 0;
 }
 
+class StopInst : TerminatorInst {
+  bit HasSideEffects = 1;
+}
+
 // -----------------------------------------------------------------------------
 // PHI instruction.
 // -----------------------------------------------------------------------------
@@ -351,11 +355,12 @@ def SWITCH : TerminatorInst
  * The trap instruction should never be reached by execution. It lowers to
  * an illegal instruction to aid debugging.
  */
-def TRAP : TerminatorInst
-{
-  let NumSuccessors = 0;
-  bit HasSideEffects = 1;
-}
+def TRAP : StopInst;
+
+/**
+ * Debug trap instruction invoking a debugger.
+ */
+def DEBUG_TRAP : StopInst;
 
 /**
  * Long jump instruction.

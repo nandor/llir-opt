@@ -575,6 +575,7 @@ void InlineHelper::SplitEntry()
         break;
       }
       case Inst::Kind::TRAP:
+      case Inst::Kind::DEBUG_TRAP:
       case Inst::Kind::RAISE: {
         // Never return.
         break;

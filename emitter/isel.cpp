@@ -578,6 +578,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::JUMP:        return LowerJUMP(static_cast<const JumpInst *>(i));
     case Inst::Kind::SWITCH:      return LowerSwitch(static_cast<const SwitchInst *>(i));
     case Inst::Kind::TRAP:        return LowerTrap(static_cast<const TrapInst *>(i));
+    case Inst::Kind::DEBUG_TRAP:  return LowerDebugTrap(static_cast<const DebugTrapInst *>(i));
     // Memory.
     case Inst::Kind::LOAD:        return LowerLD(static_cast<const LoadInst *>(i));
     case Inst::Kind::STORE:       return LowerST(static_cast<const StoreInst *>(i));
@@ -2267,6 +2268,13 @@ void ISel::LowerTrap(const TrapInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
   dag.setRoot(dag.getNode(ISD::TRAP, SDL_, MVT::Other, dag.getRoot()));
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerDebugTrap(const DebugTrapInst *inst)
+{
+  llvm::SelectionDAG &dag = GetDAG();
+  dag.setRoot(dag.getNode(ISD::DEBUGTRAP, SDL_, MVT::Other, dag.getRoot()));
 }
 
 // -----------------------------------------------------------------------------

@@ -109,7 +109,7 @@ struct llvm::DOTGraphTraits<Func*> : public llvm::DefaultDOTGraphTraits {
       } else {
         os << "color=orange";
       }
-    } else if (term->Is(Inst::Kind::TRAP)) {
+    } else if (term->Is(Inst::Kind::TRAP) || term->Is(Inst::Kind::DEBUG_TRAP)) {
       os << "color=red";
     } else if (term->IsReturn()) {
       os << "color=blue";

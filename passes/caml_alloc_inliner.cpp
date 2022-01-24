@@ -300,6 +300,7 @@ bool CamlAllocInlinerPass::Run(Prog &prog)
         case Inst::Kind::JUMP:
         case Inst::Kind::SWITCH:
         case Inst::Kind::TRAP:
+        case Inst::Kind::DEBUG_TRAP:
         case Inst::Kind::RAISE: {
           continue;
         }

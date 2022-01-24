@@ -418,6 +418,10 @@ Inst *Parser::CreateInst(
       if (opc == "ctz")  return new CtzInst(t(0), op(1), std::move(annot));
       break;
     }
+    case 'd': {
+      if (opc == "debug_trap")  return new DebugTrapInst(std::move(annot));
+      break;
+    }
     case 'e': {
       if (opc == "exp") return new ExpInst(t(0), op(1), std::move(annot));
       if (opc == "exp2") return new Exp2Inst(t(0), op(1), std::move(annot));

@@ -243,6 +243,7 @@ public:
           default: llvm_unreachable("not a terminator");
           case Inst::Kind::JUMP:
           case Inst::Kind::TRAP:
+          case Inst::Kind::DEBUG_TRAP:
           case Inst::Kind::CALL:
           case Inst::Kind::TAIL_CALL:
           case Inst::Kind::INVOKE:

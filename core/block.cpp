@@ -145,7 +145,18 @@ bool Block::HasAddressTaken() const
 // -----------------------------------------------------------------------------
 bool Block::IsTrap() const
 {
-  return size() == 1 && GetTerminator()->Is(Inst::Kind::TRAP);
+  if (size() != 1) {
+    return false;
+  }
+  switch (GetTerminator()->GetKind()) {
+    default: {
+      return false;
+    }
+    case Inst::Kind::TRAP:
+    case Inst::Kind::DEBUG_TRAP: {
+      return true;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

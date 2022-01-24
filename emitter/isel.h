@@ -244,6 +244,8 @@ protected:
   void LowerCmp(const CmpInst *inst);
   /// Lowers a trap instruction.
   void LowerTrap(const TrapInst *inst);
+  /// Lowers a debug trap instruction.
+  void LowerDebugTrap(const DebugTrapInst *inst);
   /// Lowers a mov instruction.
   void LowerMov(const MovInst *inst);
   /// Lowers a sign extend instruction.
