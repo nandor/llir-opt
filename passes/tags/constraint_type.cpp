@@ -125,7 +125,7 @@ ConstraintType tags::LUB(ConstraintType a, ConstraintType b)
         case ConstraintType::HEAP:      return ConstraintType::HEAP_INT;
         case ConstraintType::PTR_BOT:   llvm_unreachable("not implemented");
         case ConstraintType::YOUNG:     llvm_unreachable("not implemented");
-        case ConstraintType::FUNC:      llvm_unreachable("not implemented");
+        case ConstraintType::FUNC:      return ConstraintType::HEAP_INT;
         case ConstraintType::PTR:       return ConstraintType::PTR_INT;
         case ConstraintType::PTR_INT:   return ConstraintType::PTR_INT;
         case ConstraintType::ADDR:      return ConstraintType::ADDR_INT;

@@ -145,7 +145,7 @@ TaggedType Step::Or(TaggedType vl, TaggedType vr)
         case TaggedType::Kind::PTR:       llvm_unreachable("not implemented");
         case TaggedType::Kind::YOUNG:     llvm_unreachable("not implemented");
         case TaggedType::Kind::UNDEF:     llvm_unreachable("not implemented");
-        case TaggedType::Kind::PTR_NULL:  llvm_unreachable("not implemented");
+        case TaggedType::Kind::PTR_NULL:  return TaggedType::PtrNull();
         case TaggedType::Kind::ADDR:      llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_INT:  llvm_unreachable("not implemented");
         case TaggedType::Kind::ADDR_NULL: llvm_unreachable("not implemented");
