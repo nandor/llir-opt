@@ -31,6 +31,7 @@ private:
   static Lattice Eval(CosInst *inst, Lattice &arg);
   static Lattice Eval(SExtInst *inst, Lattice &arg);
   static Lattice Eval(ZExtInst *inst, Lattice &arg);
+  static Lattice Eval(XExtInst *inst, Lattice &arg);
   static Lattice Eval(FExtInst *inst, Lattice &arg);
   static Lattice Eval(TruncInst *inst, Lattice &arg);
   static Lattice Eval(ExpInst *inst, Lattice &arg);

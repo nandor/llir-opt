@@ -291,6 +291,7 @@ int main(int argc, char **argv)
   bool do_update  = false;
   bool do_extract = false;
   bool do_verbose = false;
+  bool is_thin    = false;
   for (const char *ch = args[0]; *ch; ++ch) {
     switch (*ch) {
       case 'd': do_delete  = true; continue;
@@ -302,6 +303,7 @@ int main(int argc, char **argv)
       case 'u': do_update  = true; continue;
       case 'x': do_extract = true; continue;
       case 'v': do_verbose = true; continue;
+      case 'T': is_thin    = true; continue;
     }
     WithColor::error(llvm::errs(), ToolName) << "invalid command: " << *ch << "\n";
     return EXIT_FAILURE;

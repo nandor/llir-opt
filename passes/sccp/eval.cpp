@@ -302,7 +302,7 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
     case Inst::Kind::S_EXT:      return Eval(static_cast<SExtInst *>(inst),     arg);
     case Inst::Kind::Z_EXT:      return Eval(static_cast<ZExtInst *>(inst),     arg);
     case Inst::Kind::F_EXT:      return Eval(static_cast<FExtInst *>(inst),     arg);
-    case Inst::Kind::X_EXT:      return Eval(static_cast<ZExtInst *>(inst),     arg);
+    case Inst::Kind::X_EXT:      return Eval(static_cast<XExtInst *>(inst),     arg);
     case Inst::Kind::TRUNC:      return Eval(static_cast<TruncInst *>(inst),    arg);
     case Inst::Kind::EXP:        return Eval(static_cast<ExpInst *>(inst),      arg);
     case Inst::Kind::EXP2:       return Eval(static_cast<Exp2Inst *>(inst),     arg);
@@ -461,6 +461,42 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
     case Type::I64:
     case Type::V64:
     case Type::I128: {
+      const unsigned bits = GetBitWidth(ty);
+      if (auto i = arg.AsInt()) {
+        return Lattice::CreateInteger(i->zext(bits));
+      } else if (auto f = arg.AsFloat()) {
+        llvm::APSInt intVal(bits, false);
+        bool isExact;
+        f->convertToInteger(intVal, APFloat::rmTowardZero, &isExact);
+        if (isExact) {
+          return Lattice::CreateInteger(intVal);
+        } else {
+          return Lattice::Overdefined();
+        }
+      } else if (arg.IsFloatZero()) {
+        return Lattice::CreateInteger(APInt(bits, 0, true));
+      } else if (arg.IsMask()) {
+        return Lattice::Overdefined();
+      }
+      llvm_unreachable("cannot zext non-integer");
+    }
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
+      return Lattice::Overdefined();
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(XExtInst *inst, Lattice &arg)
+{
+  switch (auto ty = inst->GetType()) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::V64:
+    case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->zext(GetBitWidth(ty)));
       } else if (auto f = arg.AsFloat()) {
@@ -485,6 +521,7 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
   }
   llvm_unreachable("invalid type");
 }
+
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
