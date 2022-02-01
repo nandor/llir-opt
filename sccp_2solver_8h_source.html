@@ -139,8 +139,8 @@ $(function() {
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keywordtype">void</span> VisitBinaryInst(BinaryInst &amp;inst) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keywordtype">void</span> VisitCmpInst(CmpInst &amp;inst) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordtype">void</span> VisitUnaryInst(UnaryInst &amp;inst) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keywordtype">void</span> VisitJumpInst(<a class="code" href="classJumpInst.html">JumpInst</a> &amp;inst) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="keywordtype">void</span> VisitJumpCondInst(<a class="code" href="classJumpCondInst.html">JumpCondInst</a> &amp;inst) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keywordtype">void</span> VisitJumpInst(JumpInst &amp;inst) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="keywordtype">void</span> VisitJumpCondInst(JumpCondInst &amp;inst) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keywordtype">void</span> VisitSwitchInst(<a class="code" href="classSwitchInst.html">SwitchInst</a> &amp;inst) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  <span class="keywordtype">void</span> VisitSelectInst(SelectInst &amp;inst) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keywordtype">void</span> VisitFrameInst(FrameInst &amp;inst) <span class="keyword">override</span>;</div>
@@ -172,14 +172,12 @@ $(function() {
 <div class="ttc" id="aclassTailCallInst_html"><div class="ttname"><a href="classTailCallInst.html">TailCallInst</a></div><div class="ttdef"><b>Definition:</b> call.h:198</div></div>
 <div class="ttc" id="aclassLattice_html"><div class="ttname"><a href="classLattice.html">Lattice</a></div><div class="ttdef"><b>Definition:</b> lattice.h:22</div></div>
 <div class="ttc" id="aclassCallSite_html"><div class="ttname"><a href="classCallSite.html">CallSite</a></div><div class="ttdef"><b>Definition:</b> call.h:20</div></div>
-<div class="ttc" id="aclassJumpCondInst_html"><div class="ttname"><a href="classJumpCondInst.html">JumpCondInst</a></div><div class="ttdef"><b>Definition:</b> control.h:19</div></div>
-<div class="ttc" id="aclassJumpInst_html"><div class="ttname"><a href="classJumpInst.html">JumpInst</a></div><div class="ttdef"><b>Definition:</b> control.h:61</div></div>
 <div class="ttc" id="aclassTarget_html"><div class="ttname"><a href="classTarget.html">Target</a></div><div class="ttdef"><b>Definition:</b> target.h:24</div></div>
 <div class="ttc" id="aclassInst_html_ab76fe495a1a231b2190a8e3c6eb7e5c2"><div class="ttname"><a href="classInst.html#ab76fe495a1a231b2190a8e3c6eb7e5c2">Inst::GetSubValue</a></div><div class="ttdeci">Ref&lt; Inst &gt; GetSubValue(unsigned i)</div><div class="ttdoc">Returns the ith sub-value.</div><div class="ttdef"><b>Definition:</b> inst.h:136</div></div>
 <div class="ttc" id="aclassSCCPSolver_html_a24be307f53b908b127d74d39f4e2ea5c"><div class="ttname"><a href="classSCCPSolver.html#a24be307f53b908b127d74d39f4e2ea5c">SCCPSolver::SCCPSolver</a></div><div class="ttdeci">SCCPSolver(Prog &amp;prog, const Target *target)</div><div class="ttdoc">Solves constraints for the whole program.</div><div class="ttdef"><b>Definition:</b> solver.cpp:26</div></div>
 <div class="ttc" id="aclassMovInst_html"><div class="ttname"><a href="classMovInst.html">MovInst</a></div><div class="ttdef"><b>Definition:</b> mov.h:17</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
-<div class="ttc" id="aclassSwitchInst_html"><div class="ttname"><a href="classSwitchInst.html">SwitchInst</a></div><div class="ttdef"><b>Definition:</b> control.h:95</div></div>
+<div class="ttc" id="aclassSwitchInst_html"><div class="ttname"><a href="classSwitchInst.html">SwitchInst</a></div><div class="ttdef"><b>Definition:</b> control.h:13</div></div>
 <div class="ttc" id="aclassInst_html_a580908bd04c863709d44ade1f9add738"><div class="ttname"><a href="classInst.html#a580908bd04c863709d44ade1f9add738">Inst::getParent</a></div><div class="ttdeci">Block * getParent() const</div><div class="ttdoc">Returns the parent node.</div><div class="ttdef"><b>Definition:</b> inst.h:84</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
 <div class="ttc" id="aclassRef_html"><div class="ttname"><a href="classRef.html">Ref</a></div><div class="ttdef"><b>Definition:</b> ref.h:63</div></div>

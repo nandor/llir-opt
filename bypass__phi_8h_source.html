@@ -82,7 +82,7 @@ $(function() {
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">class </span><a class="code" href="classBlock.html">Block</a>;</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">class </span><a class="code" href="classFunc.html">Func</a>;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">class </span><a class="code" href="classJumpCondInst.html">JumpCondInst</a>;</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">class </span>JumpCondInst;</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">class </span>CmpInst;</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
@@ -100,7 +100,7 @@ $(function() {
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">bool</span> BypassPhiCmp(<a class="code" href="classBlock.html">Block</a> &amp;block);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">bool</span> Bypass(</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <a class="code" href="classJumpCondInst.html">JumpCondInst</a> &amp;jcc,</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    JumpCondInst &amp;jcc,</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    CmpInst &amp;cmp,</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> phiCandidate,</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="classRef.html">Ref&lt;Inst&gt;</a> reference,</div>
@@ -113,7 +113,6 @@ $(function() {
 <div class="ttc" id="aclassPass_html"><div class="ttname"><a href="classPass.html">Pass</a></div><div class="ttdef"><b>Definition:</b> pass.h:17</div></div>
 <div class="ttc" id="aclassBypassPhiPass_html_a60024250a65425e68c4af403037d0c96"><div class="ttname"><a href="classBypassPhiPass.html#a60024250a65425e68c4af403037d0c96">BypassPhiPass::BypassPhiPass</a></div><div class="ttdeci">BypassPhiPass(PassManager *passManager)</div><div class="ttdoc">Initialises the pass.</div><div class="ttdef"><b>Definition:</b> bypass_phi.h:26</div></div>
 <div class="ttc" id="aclassBypassPhiPass_html"><div class="ttname"><a href="classBypassPhiPass.html">BypassPhiPass</a></div><div class="ttdef"><b>Definition:</b> bypass_phi.h:20</div></div>
-<div class="ttc" id="aclassJumpCondInst_html"><div class="ttname"><a href="classJumpCondInst.html">JumpCondInst</a></div><div class="ttdef"><b>Definition:</b> control.h:19</div></div>
 <div class="ttc" id="aclassBypassPhiPass_html_a04e0aa8d54c1dcf942f182a960f57627"><div class="ttname"><a href="classBypassPhiPass.html#a04e0aa8d54c1dcf942f182a960f57627">BypassPhiPass::Run</a></div><div class="ttdeci">bool Run(Prog &amp;prog) override</div><div class="ttdoc">Runs the pass.</div><div class="ttdef"><b>Definition:</b> bypass_phi.cpp:30</div></div>
 <div class="ttc" id="aclassBypassPhiPass_html_af1e04275e4fb192654b50cbc78f83d10"><div class="ttname"><a href="classBypassPhiPass.html#af1e04275e4fb192654b50cbc78f83d10">BypassPhiPass::kPassID</a></div><div class="ttdeci">static const char * kPassID</div><div class="ttdoc">Pass identifier.</div><div class="ttdef"><b>Definition:</b> bypass_phi.h:23</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>

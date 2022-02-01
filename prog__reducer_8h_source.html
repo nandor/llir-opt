@@ -123,8 +123,8 @@ $(function() {
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  It VisitStore(StoreInst &amp;i);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  It VisitMov(<a class="code" href="classMovInst.html">MovInst</a> &amp;i);</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  It VisitSwitch(<a class="code" href="classSwitchInst.html">SwitchInst</a> &amp;i);</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  It VisitJmp(<a class="code" href="classJumpInst.html">JumpInst</a> &amp;i);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  It VisitJcc(<a class="code" href="classJumpCondInst.html">JumpCondInst</a> &amp;i);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  It VisitJmp(JumpInst &amp;i);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  It VisitJcc(JumpCondInst &amp;i);</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  It VisitReturn(ReturnInst &amp;i);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  It VisitPhi(<a class="code" href="classPhiInst.html">PhiInst</a> &amp;i);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  It VisitUndef(UndefInst &amp;i);</div>
@@ -173,13 +173,11 @@ $(function() {
 <div class="ttc" id="aclassTailCallInst_html"><div class="ttname"><a href="classTailCallInst.html">TailCallInst</a></div><div class="ttdef"><b>Definition:</b> call.h:198</div></div>
 <div class="ttc" id="aclassProgReducerBase_html_a2c94319e4bc215fedf8dfa8854f05014"><div class="ttname"><a href="classProgReducerBase.html#a2c94319e4bc215fedf8dfa8854f05014">ProgReducerBase::Verify</a></div><div class="ttdeci">virtual bool Verify(const Prog &amp;prog) const =0</div><div class="ttdoc">Verifies a program.</div></div>
 <div class="ttc" id="aclassAtom_html"><div class="ttname"><a href="classAtom.html">Atom</a></div><div class="ttdef"><b>Definition:</b> atom.h:23</div></div>
-<div class="ttc" id="aclassJumpCondInst_html"><div class="ttname"><a href="classJumpCondInst.html">JumpCondInst</a></div><div class="ttdef"><b>Definition:</b> control.h:19</div></div>
-<div class="ttc" id="aclassJumpInst_html"><div class="ttname"><a href="classJumpInst.html">JumpInst</a></div><div class="ttdef"><b>Definition:</b> control.h:61</div></div>
 <div class="ttc" id="aclassConstant_html"><div class="ttname"><a href="classConstant.html">Constant</a></div><div class="ttdef"><b>Definition:</b> constant.h:21</div></div>
 <div class="ttc" id="aclassProgReducerBase_html"><div class="ttname"><a href="classProgReducerBase.html">ProgReducerBase</a></div><div class="ttdef"><b>Definition:</b> prog_reducer.h:24</div></div>
 <div class="ttc" id="aclassMovInst_html"><div class="ttname"><a href="classMovInst.html">MovInst</a></div><div class="ttdef"><b>Definition:</b> mov.h:17</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
-<div class="ttc" id="aclassSwitchInst_html"><div class="ttname"><a href="classSwitchInst.html">SwitchInst</a></div><div class="ttdef"><b>Definition:</b> control.h:95</div></div>
+<div class="ttc" id="aclassSwitchInst_html"><div class="ttname"><a href="classSwitchInst.html">SwitchInst</a></div><div class="ttdef"><b>Definition:</b> control.h:13</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
 <div class="ttc" id="aclassProgReducerBase_html_ae094a12e5cafcf634eae90a49e5bb41d"><div class="ttname"><a href="classProgReducerBase.html#ae094a12e5cafcf634eae90a49e5bb41d">ProgReducerBase::ProgReducerBase</a></div><div class="ttdeci">ProgReducerBase(unsigned threads)</div><div class="ttdoc">Initialises the pass.</div><div class="ttdef"><b>Definition:</b> prog_reducer.h:27</div></div>
 <div class="ttc" id="aclassTimeout_html"><div class="ttname"><a href="classTimeout.html">Timeout</a></div><div class="ttdef"><b>Definition:</b> timeout.h:14</div></div>
