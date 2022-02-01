@@ -93,16 +93,17 @@ Collaboration diagram for ISel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classISel__coll__graph.png" border="0" usemap="#ISel_coll__map" alt="Collaboration graph"/></div>
 <map name="ISel_coll__map" id="ISel_coll__map">
-<area shape="rect" title=" " alt="" coords="230,351,277,377"/>
+<area shape="rect" title=" " alt="" coords="301,351,347,377"/>
 <area shape="rect" title=" " alt="" coords="5,261,141,288"/>
 <area shape="rect" href="classISelMapping.html" title=" " alt="" coords="166,261,269,288"/>
-<area shape="rect" href="classFunc.html" title=" " alt="" coords="293,261,345,288"/>
-<area shape="rect" title=" " alt="" coords="191,171,359,212"/>
-<area shape="rect" href="classGlobal.html" title=" " alt="" coords="383,178,447,205"/>
-<area shape="rect" href="classUser.html" title=" " alt="" coords="389,95,441,121"/>
-<area shape="rect" href="classValue.html" title=" " alt="" coords="347,5,405,32"/>
-<area shape="rect" href="classUse.html" title=" " alt="" coords="430,5,477,32"/>
-<area shape="rect" href="classProg.html" title=" " alt="" coords="369,261,420,288"/>
+<area shape="rect" href="classTarget.html" title=" " alt="" coords="293,261,355,288"/>
+<area shape="rect" href="classFunc.html" title=" " alt="" coords="379,261,431,288"/>
+<area shape="rect" title=" " alt="" coords="277,171,445,212"/>
+<area shape="rect" href="classGlobal.html" title=" " alt="" coords="469,178,533,205"/>
+<area shape="rect" href="classUser.html" title=" " alt="" coords="475,95,527,121"/>
+<area shape="rect" href="classValue.html" title=" " alt="" coords="433,5,492,32"/>
+<area shape="rect" href="classUse.html" title=" " alt="" coords="517,5,563,32"/>
+<area shape="rect" href="classProg.html" title=" " alt="" coords="456,261,507,288"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -142,10 +143,10 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cla
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:ab05a62953049de2cb07d560815b24fcc"><td class="memItemLeft" align="right" valign="top"><a id="ab05a62953049de2cb07d560815b24fcc"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ab05a62953049de2cb07d560815b24fcc">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo &amp;libInfo, llvm::CodeGenOpt::Level ol)</td></tr>
-<tr class="memdesc:ab05a62953049de2cb07d560815b24fcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
-<tr class="separator:ab05a62953049de2cb07d560815b24fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaab4f4225fd34e916fc0188a427e46b4"><td class="memItemLeft" align="right" valign="top"><a id="aaab4f4225fd34e916fc0188a427e46b4"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#aaab4f4225fd34e916fc0188a427e46b4">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classTarget.html">Target</a> &amp;target, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo &amp;libInfo, llvm::CodeGenOpt::Level ol)</td></tr>
+<tr class="memdesc:aaab4f4225fd34e916fc0188a427e46b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
+<tr class="separator:aaab4f4225fd34e916fc0188a427e46b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a713fe42d066276771c045f23a9f36c47"><td class="memItemLeft" align="right" valign="top"><a id="a713fe42d066276771c045f23a9f36c47"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a713fe42d066276771c045f23a9f36c47">Lower</a> (const <a class="el" href="classInst.html">Inst</a> *inst)</td></tr>
 <tr class="memdesc:a713fe42d066276771c045f23a9f36c47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an instruction. <br /></td></tr>
@@ -489,6 +490,10 @@ std::pair&lt; SDValue, SDValue &gt;&#160;</td><td class="memItemRight" valign="b
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:a732d8579a5754b78f9813f2cc3aa759f"><td class="memItemLeft" align="right" valign="top"><a id="a732d8579a5754b78f9813f2cc3aa759f"></a>
+const <a class="el" href="classTarget.html">Target</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a732d8579a5754b78f9813f2cc3aa759f">target_</a></td></tr>
+<tr class="memdesc:a732d8579a5754b78f9813f2cc3aa759f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference to the target. <br /></td></tr>
+<tr class="separator:a732d8579a5754b78f9813f2cc3aa759f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0dcb595d390879055bcc8063493bf62"><td class="memItemLeft" align="right" valign="top"><a id="ae0dcb595d390879055bcc8063493bf62"></a>
 const <a class="el" href="classProg.html">Prog</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae0dcb595d390879055bcc8063493bf62">prog_</a></td></tr>
 <tr class="memdesc:ae0dcb595d390879055bcc8063493bf62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Program to lower. <br /></td></tr>

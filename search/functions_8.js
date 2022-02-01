@@ -16,7 +16,7 @@ var searchData=
   ['isbypassed_1760',['IsBypassed',['../classSymbolicFrame.html#ad3ebf1940366012a60b7d9e0a21cf7ff',1,'SymbolicFrame::IsBypassed(Block *node)'],['../classSymbolicFrame.html#a5d17b948a33067608f2e9dfd66a6c60e',1,'SymbolicFrame::IsBypassed(DAGBlock *node)']]],
   ['isconstant_1761',['IsConstant',['../classData.html#a28589b724af2fbf02b76a0a1e7792c43',1,'Data::IsConstant()'],['../classInst.html#ae42511f9ed38c6729c32498299895a49',1,'Inst::IsConstant()'],['../classMovInst.html#ab8ecca08d88db46f2641798261131e1d',1,'MovInst::IsConstant()'],['../classPhiInst.html#ac183e1cdb765222a11d0bf59d9ea51eb',1,'PhiInst::IsConstant()'],['../classValue.html#a1ae187ac445f7c3e98a38bc13c3c7108',1,'Value::IsConstant()']]],
   ['isderef_1762',['IsDeref',['../classGraphNode.html#a56403d21845377dae9b420db30ada01f',1,'GraphNode']]],
-  ['isel_1763',['ISel',['../classISel.html#ab05a62953049de2cb07d560815b24fcc',1,'ISel']]],
+  ['isel_1763',['ISel',['../classISel.html#aaab4f4225fd34e916fc0188a427e46b4',1,'ISel']]],
   ['isentry_1764',['IsEntry',['../classFunc.html#a7867bdac62a252ebebfce40bfcddb655',1,'Func']]],
   ['isexecutable_1765',['IsExecutable',['../classSCCPSolver.html#a4a8d976f789c8c8ac367c4f313b7fd63',1,'SCCPSolver']]],
   ['isexecuted_1766',['IsExecuted',['../classSymbolicFrame.html#a541512d8e5171fd6dd385b65e3eb38b1',1,'SymbolicFrame']]],
