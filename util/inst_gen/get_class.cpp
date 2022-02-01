@@ -115,21 +115,30 @@ static void EmitConsTypes(
   for (unsigned i = 0, n = fields.size(); i < n; ++i) {
     auto *field = fields[i];
     auto fieldType = field->getValueAsString("Type");
+
+    const bool isScalar = field->getValueAsBit("IsScalar");
+    const bool isOptional = field->getValueAsBit("IsOptional");
+    const bool isUnwrapped = field->getValueAsBit("IsUnwrapped");
+
     if (field->getValueAsBit("IsList")) {
-      if (field->getValueAsBit("IsScalar")) {
+      if (isScalar) {
         llvm_unreachable("not implemented");
       } else {
         OS << "llvm::ArrayRef<Ref<" << fieldType << ">>";
       }
     } else {
-      if (field->getValueAsBit("IsScalar")) {
-        if (field->getValueAsBit("IsOptional")) {
+      if (isScalar) {
+        if (isOptional) {
           OS << "std::optional<" << fieldType << ">";
         } else {
           OS << fieldType;
         }
       } else {
-        OS << "Ref<" << fieldType << ">";
+        if (isUnwrapped) {
+          OS << fieldType << " *";
+        } else {
+          OS << "Ref<" << fieldType << ">";
+        }
       }
     }
     OS << " arg" << i << ",";
@@ -434,6 +443,7 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
         lastOffset = 0;
       }
     } else {
+      const bool unwrapped = field->getValueAsBit("IsUnwrapped");
       if (field->getValueAsBit("IsScalar")) {
         OS << "private: ";
         if (field->getValueAsBit("IsOptional")) {
@@ -452,8 +462,20 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
         OS << " Get" << fieldName << "() const ";
         OS <<" { return " << fieldName << "_; }\n";
       } else {
-        OS << "Ref<" << fieldType << "> Get" << fieldName << "();\n";
-        OS << "ConstRef<" << fieldType << "> Get" << fieldName << "() const;\n";
+        if (unwrapped) {
+          OS << fieldType << "* ";
+        } else {
+          OS << "Ref<" << fieldType << "> ";
+        }
+        OS << "Get" << fieldName << "();\n";
+
+        if (unwrapped) {
+          OS << "const " << fieldType << "* ";
+        } else {
+          OS << "ConstRef<" << fieldType << "> ";
+        }
+        OS << "Get" << fieldName << "() const;\n";
+
         lastOffset += 1;
       }
     }
@@ -504,8 +526,14 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
   } else if (r.isSubClassOf(termBase)) {
     int nsucc = r.getValueAsInt("NumSuccessors");
     int bsucc = base->getValueAsInt("NumSuccessors");
-    if (nsucc != bsucc) {
+    if (nsucc == -1) {
       llvm_unreachable("not implemented");
+    } else if (nsucc != bsucc) {
+      OS << "virtual unsigned getNumSuccessors() const override ";
+      OS << "{ return " << nsucc << "; }\n";
+
+      OS << "virtual const Block *getSuccessor(unsigned idx) const override;\n";
+      OS << "virtual Block *getSuccessor(unsigned idx) override;\n";
     }
   }
   OS << "};\n";
@@ -526,6 +554,7 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
 
   unsigned i = 0;
   std::vector<std::string> lastName;
+  std::vector<int> blocks;
   size_t lastOffset = 0;
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
@@ -566,26 +595,51 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
         lastOffset = 0;
       }
     } else {
-      if (!field->getValueAsBit("IsScalar")) {
-        if (fields.count(fieldName.str()) != 0) {
-          OS << "Ref<" << fieldType << "> " << type;
-          OS << "::Get" << fieldName << "() {";
-          if (field->getValueAsBit("IsOptional")) {
-            OS << " return ::cast_or_null<" << fieldType << ">(Get<" << i << ">()); }\n";
-          } else {
-            OS << " return ::cast<" << fieldType << ">(Get<" << i << ">()); }\n";
-          }
+      const bool unwrapped = field->getValueAsBit("IsUnwrapped");
+      const bool optional = field->getValueAsBit("IsOptional");
 
-          OS << "ConstRef<" << fieldType << "> " << type;
-          OS << "::Get" << fieldName << "() const {";
-          if (field->getValueAsBit("IsOptional")) {
-            OS << " return ::cast_or_null<" << fieldType << ">(Get<" << i << ">()); }\n";
+      if (field->getValueAsBit("IsScalar")) {
+        // Declared in interface.
+      } else {
+        if (fields.count(fieldName.str()) != 0) {
+          if (unwrapped) {
+            OS << fieldType << "* ";
           } else {
-            OS << " return ::cast<" << fieldType << ">(Get<" << i << ">()); }\n";
+            OS << "Ref<" << fieldType << "> ";
+          }
+          OS << type << "::Get" << fieldName << "() { return ";
+          if (optional) {
+            OS << "::cast_or_null<" << fieldType << ">(Get<" << i << ">())";
+          } else {
+            OS << "::cast<" << fieldType << ">(Get<" << i << ">())";
+          }
+          if (unwrapped) {
+            OS << ".Get()";
+          }
+          OS << "; }\n";
+
+          if (unwrapped) {
+            OS << "const " << fieldType << "* ";
+          } else {
+            OS << "ConstRef<" << fieldType << "> ";
+          }
+          OS << type << "::Get" << fieldName << "() const { return ";
+          if (optional) {
+            OS << "::cast_or_null<" << fieldType << ">(Get<" << i << ">())";
+          } else {
+            OS << "::cast<" << fieldType << ">(Get<" << i << ">())";
+          }
+          if (unwrapped) {
+            OS << ".Get()";
+          }
+          OS << "; }\n";
+
+          if (unwrapped && fieldType == "Block") {
+            blocks.push_back(i);
           }
         }
         lastOffset++;
-        ++i;
+        i++;
       }
     }
   }
@@ -606,5 +660,24 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
       OS << "llvm_unreachable(\"invalid type index\");\n";
     }
     OS << "}\n";
+  }
+  auto *termBase = records_.getClass("TerminatorInst");
+  if (termBase != &r && r.isSubClassOf(termBase)) {
+    int nsucc = r.getValueAsInt("NumSuccessors");
+    int bsucc = base->getValueAsInt("NumSuccessors");
+    if (nsucc == -1) {
+      llvm_unreachable("not implemented");
+    } else if (nsucc != bsucc) {
+      OS << "const Block *" << type << "::getSuccessor(unsigned idx) const ";
+      OS << "{ return const_cast<" << type << " *>(this)->getSuccessor(idx); }\n";
+
+      OS << "Block *" << type << "::getSuccessor(unsigned idx) { switch (idx) {";
+      OS << "default: llvm_unreachable(\"invalid successor\");\n";
+      for (unsigned i = 0; i < nsucc; ++i) {
+        OS << "case " << i << ": ";
+        OS << "return &*::cast<Block>(Get(" << blocks[i] << "));\n";
+      }
+      OS << "}}\n";
+    }
   }
 }

@@ -169,13 +169,13 @@ protected:
   template <int I>
   Ref<Value> Get()
   {
-    return static_cast<Ref<Value> &>((I < 0 ? op_end() : op_begin())[I]);
+    return static_cast<Ref<Value>>((I < 0 ? op_end() : op_begin())[I]);
   }
 
   /// Accessor for an operand.
   Ref<Value> Get(int i)
   {
-    return static_cast<Ref<Value> &>((i < 0 ? op_end() : op_begin())[i]);
+    return static_cast<Ref<Value>>((i < 0 ? op_end() : op_begin())[i]);
   }
 
   /// Accessor for an operand.

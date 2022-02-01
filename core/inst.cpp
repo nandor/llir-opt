@@ -118,3 +118,13 @@ Block *llvm::ilist_traits<Inst>::getParent() {
   auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
   return reinterpret_cast<Block *>(reinterpret_cast<char *>(this) - offset);
 }
+
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Inst::Kind kind)
+{
+  switch (kind) {
+    default: llvm_unreachable("unknown kind");
+    #define GET_INST(kind, t, name, s) case Inst::Kind::kind: return os << name;
+    #include "instructions.def"
+  }
+}

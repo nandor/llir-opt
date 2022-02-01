@@ -11,6 +11,7 @@ class Field {
   bit IsOptional = 0;
   bit IsScalar = 0;
   bit IsList = 0;
+  bit IsUnwrapped = 0;
 }
 
 class InstField<string name> : Field {
@@ -45,12 +46,14 @@ class ValueField<string name> : Field {
 class BlockField<string name> : Field {
   let Name = name;
   let Type = "Block";
+  let IsUnwrapped = 1;
 }
 
 class BlockListField<string name> : Field {
   let Name = name;
   let IsList = 1;
   let Type = "Block";
+  let IsUnwrapped = 1;
 }
 
 class IntField<string name> : Field {
@@ -324,6 +327,13 @@ def RETURN : TerminatorInst
   let IsReturn = 1;
 }
 
+
+/**
+ * Conditional jump instruction.
+ *
+ * Accepts a flag. If the argument is zero, the false branch is taken,
+ * otherwise the true branch is taken.
+ */
 def JUMP_COND : TerminatorInst
 {
   let Fields = [
@@ -331,15 +341,27 @@ def JUMP_COND : TerminatorInst
     BlockField<"TrueTarget">,
     BlockField<"FalseTarget">
   ];
-  let HasCustomDefinition = 1;
+  let NumSuccessors = 2;
 }
 
+/**
+ * Unconditional jump instruction.
+ *
+ * Transfers control to a basic block in the same function.
+ */
 def JUMP : TerminatorInst
 {
   let Fields = [ BlockField<"Target"> ];
-  let HasCustomDefinition = 1;
+  let NumSuccessors = 1;
 }
 
+/**
+ * Switch instruction
+ *
+ * Lowers to an efficient jump table. Takes a control index argument,
+ * along with a table of successor blocks. If the control index is out of
+ * bounds, behaviour is undefined.
+ */
 def SWITCH : TerminatorInst
 {
   let Fields = [
@@ -347,6 +369,7 @@ def SWITCH : TerminatorInst
     BlockListField<"Blocks">
   ];
   let HasCustomDefinition = 1;
+  let NumSuccessors = -1;
 }
 
 /**

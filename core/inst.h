@@ -181,6 +181,9 @@ protected:
   unsigned order_;
 };
 
+/// Print the kind to a stream.
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Inst::Kind kind);
+
 /// Print the value to a stream.
 inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Inst &inst)
 {
