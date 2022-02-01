@@ -16,6 +16,8 @@
 #include "emitter/isel_mapping.h"
 #include "emitter/call_lowering.h"
 
+class Target;
+
 
 
 /**
@@ -35,6 +37,7 @@ protected:
   /// Initialises the instruction selector.
   ISel(
       char &ID,
+      const Target &target,
       const Prog &prog,
       llvm::TargetLibraryInfo &libInfo,
       llvm::CodeGenOpt::Level ol
@@ -298,6 +301,8 @@ protected:
   );
 
 protected:
+  /// Reference to the target.
+  const Target &target_;
   /// Program to lower.
   const Prog &prog_;
   /// Target library info.

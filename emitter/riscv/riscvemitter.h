@@ -51,8 +51,6 @@ protected:
   ) override;
 
 private:
-  /// LLVM Target.
-  const llvm::Target *target_;
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.

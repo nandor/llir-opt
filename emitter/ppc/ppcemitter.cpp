@@ -79,6 +79,7 @@ ISel *PPCEmitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new PPCISel(
+      target_,
       *TM_,
       LibInfo_,
       prog,

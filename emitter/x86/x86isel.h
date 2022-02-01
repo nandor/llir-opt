@@ -63,6 +63,7 @@ public:
   static char ID;
 
   X86ISel(
+      Target &target,
       llvm::X86TargetMachine &tm,
       llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,

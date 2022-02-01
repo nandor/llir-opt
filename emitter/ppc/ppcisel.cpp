@@ -26,6 +26,7 @@
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/target.h"
 #include "core/analysis/dominator.h"
 #include "emitter/ppc/ppccall.h"
 #include "emitter/ppc/ppcisel.h"
@@ -70,12 +71,13 @@ PPCMatcher::~PPCMatcher()
 
 // -----------------------------------------------------------------------------
 PPCISel::PPCISel(
+    const Target &target,
     llvm::PPCTargetMachine &tm,
     llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
     llvm::CodeGenOpt::Level ol,
     bool shared)
-  : ISel(ID, prog, libInfo, ol)
+  : ISel(ID, target, prog, libInfo, ol)
   , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
@@ -240,7 +242,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
-      trampoline_->addFnAttr("target-cpu", "generic");
+      trampoline_->addFnAttr("target-cpu", target_.getCPU());
     }
 
     regArgs.emplace_back(PPC::X25, GetValue(call->GetCallee()));

@@ -20,7 +20,6 @@
 #include <llvm/IR/Mangler.h>
 #include <llvm/IR/LegacyPassManagers.h>
 
-#include "emitter/isel.h"
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
@@ -30,6 +29,8 @@
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/target.h"
+#include "emitter/isel.h"
 
 namespace ISD = llvm::ISD;
 using BranchProbability = llvm::BranchProbability;
@@ -91,10 +92,12 @@ static bool ReturnsTwice(CallingConv conv)
 // -----------------------------------------------------------------------------
 ISel::ISel(
     char &ID,
+    const Target &target,
     const Prog &prog,
     llvm::TargetLibraryInfo &libInfo,
     llvm::CodeGenOpt::Level ol)
   : llvm::ModulePass(ID)
+  , target_(target)
   , prog_(prog)
   , libInfo_(libInfo)
   , ol_(ol)
@@ -398,13 +401,12 @@ void ISel::PrepareGlobals()
     // Forward target CPU and features if set.
     {
       auto cpu = func.getCPU();
-      F->addFnAttr("target-cpu", cpu.empty() ? "generic" : cpu);
+      F->addFnAttr("target-cpu", cpu.empty() ? target_.getCPU() : cpu);
 
       auto tuneCPU = func.getTuneCPU();
-      F->addFnAttr("target-tuneCPU", tuneCPU.empty() ? "generic" : tuneCPU);
+      F->addFnAttr("target-tuneCPU", tuneCPU.empty() ? target_.getCPU() : tuneCPU);
 
-      auto features = func.getFeatures();
-      F->addFnAttr("target-features", features.empty() ? "" : features);
+      F->addFnAttr("target-features", func.getFeatures());
     }
 
     // Set a dummy calling conv to emulate the set
@@ -477,7 +479,7 @@ void ISel::PrepareGlobals()
           M_
       );
       F->setDSOLocal(dso);
-      F->addFnAttr("target-cpu", "generic");
+      F->addFnAttr("target-cpu", target_.getCPU());
       F->setVisibility(visibility);
     } else {
       auto *GV = new llvm::GlobalVariable(

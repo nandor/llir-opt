@@ -15,6 +15,14 @@ RISCVTarget::RISCVTarget(
     const std::string &fs,
     const std::string &abi,
     bool shared)
-  : Target(kKind, triple, cpu, tuneCPU, fs, abi, shared)
+  : Target(
+      kKind,
+      triple,
+      cpu.empty() ? "generic-rv64" : cpu,
+      tuneCPU,
+      fs,
+      abi,
+      shared
+    )
 {
 }

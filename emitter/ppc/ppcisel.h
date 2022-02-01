@@ -68,6 +68,7 @@ public:
   static char ID;
 
   PPCISel(
+      const Target &target,
       llvm::PPCTargetMachine &tm,
       llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,

@@ -25,6 +25,7 @@
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/target.h"
 #include "core/analysis/dominator.h"
 #include "emitter/x86/x86call.h"
 #include "emitter/x86/x86isel.h"
@@ -74,12 +75,13 @@ X86Matcher::~X86Matcher()
 
 // -----------------------------------------------------------------------------
 X86ISel::X86ISel(
+    Target &target,
     llvm::X86TargetMachine &tm,
     llvm::TargetLibraryInfo &LibInfo,
     const Prog &prog,
     llvm::CodeGenOpt::Level ol,
     bool shared)
-  : ISel(ID, prog, LibInfo, ol)
+  : ISel(ID, target, prog, LibInfo, ol)
   , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
@@ -670,7 +672,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
-      trampoline_->addFnAttr("target-cpu", "generic");
+      trampoline_->addFnAttr("target-cpu", target_.getCPU());
     }
     regArgs.emplace_back(X86::RAX, GetValue(call->GetCallee()));
     callee = DAG.getTargetGlobalAddress(

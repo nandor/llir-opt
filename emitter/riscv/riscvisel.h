@@ -68,6 +68,7 @@ public:
   static char ID;
 
   RISCVISel(
+      const Target &target,
       llvm::RISCVTargetMachine &tm,
       llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,

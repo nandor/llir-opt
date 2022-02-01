@@ -1,4 +1,4 @@
-# RUN: %opt - -triple riscv64 -mcpu sifive-u74
+# RUN: %opt - -triple riscv64 -mcpu sifive-u74 -mabi lp64d
 
 .globl feclearexcept
 feclearexcept:

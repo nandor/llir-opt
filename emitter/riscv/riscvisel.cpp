@@ -25,6 +25,7 @@
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/target.h"
 #include "core/analysis/dominator.h"
 #include "emitter/riscv/riscvcall.h"
 #include "emitter/riscv/riscvisel.h"
@@ -68,12 +69,13 @@ RISCVMatcher::~RISCVMatcher()
 
 // -----------------------------------------------------------------------------
 RISCVISel::RISCVISel(
+    const Target &target,
     llvm::RISCVTargetMachine &tm,
     llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
     llvm::CodeGenOpt::Level ol,
     bool shared)
-  : ISel(ID, prog, libInfo, ol)
+  : ISel(ID, target, prog, libInfo, ol)
   , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
@@ -335,7 +337,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
-      trampoline_->addFnAttr("target-cpu", "generic");
+      trampoline_->addFnAttr("target-cpu", target_.getCPU());
     }
     regArgs.emplace_back(RISCV::X7, GetValue(call->GetCallee()));
     callee = DAG.getTargetGlobalAddress(

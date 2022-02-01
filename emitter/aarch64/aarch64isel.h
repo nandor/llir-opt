@@ -68,6 +68,7 @@ public:
   static char ID;
 
   AArch64ISel(
+      const Target &target,
       llvm::AArch64TargetMachine &tm,
       llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,

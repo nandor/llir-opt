@@ -25,6 +25,7 @@
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/target.h"
 #include "core/analysis/dominator.h"
 #include "emitter/aarch64/aarch64call.h"
 #include "emitter/aarch64/aarch64isel.h"
@@ -68,12 +69,13 @@ AArch64Matcher::~AArch64Matcher()
 
 // -----------------------------------------------------------------------------
 AArch64ISel::AArch64ISel(
+    const Target &target,
     llvm::AArch64TargetMachine &tm,
     llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
     llvm::CodeGenOpt::Level ol,
     bool shared)
-  : ISel(ID, prog, libInfo, ol)
+  : ISel(ID, target, prog, libInfo, ol)
   , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
@@ -315,7 +317,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
           "caml_c_call",
           M_
       );
-      trampoline_->addFnAttr("target-cpu", "generic");
+      trampoline_->addFnAttr("target-cpu", target_.getCPU());
     }
     regArgs.emplace_back(AArch64::X15, GetValue(call->GetCallee()));
     callee = DAG.getTargetGlobalAddress(

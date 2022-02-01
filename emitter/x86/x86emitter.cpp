@@ -44,6 +44,7 @@ X86Emitter::~X86Emitter()
 ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
 {
   return new X86ISel(
+      target_,
       x86target_.GetTargetMachine(),
       LibInfo_,
       prog,

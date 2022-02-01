@@ -18,7 +18,15 @@ X86Target::X86Target(
     const std::string &fs,
     const std::string &abi,
     bool shared)
-  : Target(kKind, triple, cpu, tuneCPU, fs, abi, shared)
+  : Target(
+      kKind,
+      triple,
+      cpu.empty() ? "generic" : cpu,
+      tuneCPU,
+      fs,
+      abi,
+      shared
+    )
 {
   // Look up a backend for this target.
   std::string err;

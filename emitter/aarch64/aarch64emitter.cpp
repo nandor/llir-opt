@@ -69,6 +69,7 @@ ISel *AArch64Emitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new AArch64ISel(
+      target_,
       *TM_,
       LibInfo_,
       prog,

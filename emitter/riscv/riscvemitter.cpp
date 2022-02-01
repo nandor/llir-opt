@@ -71,6 +71,7 @@ ISel *RISCVEmitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new RISCVISel(
+      target_,
       *TM_,
       LibInfo_,
       prog,
