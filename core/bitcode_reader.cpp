@@ -332,7 +332,7 @@ Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
 }
 
 // -----------------------------------------------------------------------------
-Block * BitcodeReader::ReadBlock(const std::vector<Ref<Inst>> &map)
+Block *BitcodeReader::ReadBlock(const std::vector<Ref<Inst>> &map)
 {
   uint32_t index = ReadData<uint32_t>();
   if (index >= globals_.size()) {

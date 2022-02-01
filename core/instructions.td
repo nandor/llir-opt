@@ -237,8 +237,6 @@ class YieldInst : Inst {
 
 class TerminatorInst : ControlInst {
   let IsTerminator = 1;
-
-  int NumSuccessors = 0;
 }
 
 class StopInst : TerminatorInst {
@@ -341,7 +339,6 @@ def JUMP_COND : TerminatorInst
     BlockField<"TrueTarget">,
     BlockField<"FalseTarget">
   ];
-  let NumSuccessors = 2;
 }
 
 /**
@@ -352,7 +349,6 @@ def JUMP_COND : TerminatorInst
 def JUMP : TerminatorInst
 {
   let Fields = [ BlockField<"Target"> ];
-  let NumSuccessors = 1;
 }
 
 /**
@@ -368,8 +364,6 @@ def SWITCH : TerminatorInst
     InstField<"Index">,
     BlockListField<"Blocks">
   ];
-  let HasCustomDefinition = 1;
-  let NumSuccessors = -1;
 }
 
 /**

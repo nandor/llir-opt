@@ -4,11 +4,11 @@
 
 #include "core/insts.h"
 
-#define GET_BASE_IMPL
-#include "instructions.def"
-
 #define GET_CAST_IMPL
 #include "instructions.def"
 
 #define GET_CLASS_IMPL
+#include "instructions.def"
+
+#define GET_BASE_IMPL
 #include "instructions.def"

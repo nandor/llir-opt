@@ -49,18 +49,26 @@ void GetBitcodeWriter::GetReader(llvm::raw_ostream &OS)
     for (unsigned i = 0, n = fields.size(); i < n; ++i) {
       auto *field = fields[i];
       auto fieldType = field->getValueAsString("Type");
+
+      const bool isScalar = field->getValueAsBit("IsScalar");
+      const bool isUnwrapped = field->getValueAsBit("IsUnwrapped");
+
       if (field->getValueAsBit("IsList")) {
-        if (field->getValueAsBit("IsScalar")) {
+        if (isScalar) {
           OS << "std::vector<" << fieldType << "> arg" << i << ";";
           OS << "for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i)";
           OS << "arg" << i << ".push_back(Read" << fieldType << "());";
         } else {
-          OS << "std::vector<Ref<" << fieldType << ">> arg" << i << ";";
+          if (isUnwrapped) {
+            OS << "std::vector<" << fieldType << " *> arg" << i << ";";
+          } else {
+            OS << "std::vector<Ref<" << fieldType << ">> arg" << i << ";";
+          }
           OS << "for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i)";
           OS << "arg" << i << ".push_back(Read" << fieldType << "(map));";
         }
       } else {
-        if (field->getValueAsBit("IsScalar")) {
+        if (isScalar) {
           OS << "using T" << i;
           OS << " = sized_uint<sizeof(" << fieldType << ")>::type;";
           if (field->getValueAsBit("IsOptional")) {

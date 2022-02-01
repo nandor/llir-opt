@@ -47,7 +47,6 @@ add_library(llir-core
     inst_compare.cpp
     insts.cpp
     insts/call.cpp
-    insts/control.cpp
     insts/mov.cpp
     insts/phi.cpp
     item.cpp

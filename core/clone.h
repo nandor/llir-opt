@@ -63,9 +63,8 @@ public:
 protected:
   /// Maps a value to a potentially new one.
   Ref<Value> Map(Ref<Value> value);
-  /// Maps a block to a potentially new one.
-  Ref<Block> Map(Ref<Block> value);
 
+  /// Map a vector of values.
   template<typename It, typename T = typename It::value_type>
   std::vector<T> Map(llvm::iterator_range<It> range)
   {

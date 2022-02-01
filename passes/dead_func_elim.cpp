@@ -10,7 +10,6 @@
 #include "core/cast.h"
 #include "core/insts.h"
 #include "core/insts/call.h"
-#include "core/insts/control.h"
 #include "core/func.h"
 #include "core/pass_manager.h"
 #include "core/prog.h"

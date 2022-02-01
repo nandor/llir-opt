@@ -39,34 +39,6 @@ ConstRef<Inst> User::const_conv_op_iterator<Inst>::operator->() const
 }
 
 // -----------------------------------------------------------------------------
-template<>
-Ref<Block> User::conv_op_iterator<Block>::operator*() const
-{
-  return ::cast<Block>(*this->I);
-}
-
-// -----------------------------------------------------------------------------
-template<>
-Ref<Block> User::conv_op_iterator<Block>::operator->() const
-{
-  return ::cast<Block>(*this->I);
-}
-
-// -----------------------------------------------------------------------------
-template<>
-ConstRef<Block> User::const_conv_op_iterator<Block>::operator*() const
-{
-  return ::cast<Block>(*this->I);
-}
-
-// -----------------------------------------------------------------------------
-template<>
-ConstRef<Block> User::const_conv_op_iterator<Block>::operator->() const
-{
-  return ::cast<Block>(*this->I);
-}
-
-// -----------------------------------------------------------------------------
 User::User(Kind kind, unsigned numOps)
   : Value(kind)
   , numOps_(numOps)

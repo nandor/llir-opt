@@ -43,12 +43,6 @@ Ref<Value> CloneVisitor::Map(Ref<Value> value)
 }
 
 // -----------------------------------------------------------------------------
-Ref<Block> CloneVisitor::Map(Ref<Block> value)
-{
-  return Map(&*cast<Block>(value));
-}
-
-// -----------------------------------------------------------------------------
 Global *CloneVisitor::Map(Global *global)
 {
   switch (global->GetKind()) {

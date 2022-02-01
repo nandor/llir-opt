@@ -121,9 +121,69 @@ public:
 
   template<typename T>
   using conv_op_range = llvm::iterator_range<conv_op_iterator<T>>;
-
   template<typename T>
   using const_conv_op_range = llvm::iterator_range<const_conv_op_iterator<T>>;
+
+  template <typename T>
+  struct unref_iterator : llvm::iterator_adaptor_base
+      < unref_iterator<T>
+      , value_op_iterator
+      , std::random_access_iterator_tag
+      , T *
+      , ptrdiff_t
+      , T *
+      , T *
+      >
+  {
+    unref_iterator(User::value_op_iterator it)
+      : llvm::iterator_adaptor_base
+          < unref_iterator<T>
+          , value_op_iterator
+          , std::random_access_iterator_tag
+          , T *
+          , ptrdiff_t
+          , T *
+          , T *
+          >(it)
+    {
+    }
+
+    T *operator*() const { return static_cast<T *>((*this->I).Get()); }
+    T *operator->() const { return static_cast<T *>((*this->I).Get()); }
+  };
+
+  template <typename T>
+  struct const_unref_iterator : llvm::iterator_adaptor_base
+      < const_unref_iterator<T>
+      , const_value_op_iterator
+      , std::random_access_iterator_tag
+      , const T*
+      , ptrdiff_t
+      , const T*
+      , const T*
+      >
+  {
+    const_unref_iterator(User::const_value_op_iterator it)
+      : llvm::iterator_adaptor_base
+          < const_unref_iterator<T>
+          , const_value_op_iterator
+          , std::random_access_iterator_tag
+          , const T*
+          , ptrdiff_t
+          , const T*
+          , const T*
+          >(it)
+    {
+    }
+
+    const T *operator*() const { return static_cast<const T *>((*this->I).Get()); }
+    const T *operator->() const { return static_cast<const T *>((*this->I).Get()); }
+  };
+
+  template<typename T>
+  using unref_range = llvm::iterator_range<unref_iterator<T>>;
+  template<typename T>
+  using const_unref_range = llvm::iterator_range<const_unref_iterator<T>>;
 
 public:
   /// Creates a new user.

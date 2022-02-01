@@ -5,8 +5,8 @@
 #pragma once
 
 #include "core/cast.h"
+#include "core/block.h"
 #include "core/insts/call.h"
-#include "core/insts/control.h"
 #include "core/insts/mov.h"
 #include "core/insts/phi.h"
 
