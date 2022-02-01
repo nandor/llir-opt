@@ -97,7 +97,7 @@ $(function() {
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">bool</span> VisitJumpCondInst(JumpCondInst &amp;i) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">bool</span> VisitSwitchInst(<a class="code" href="classSwitchInst.html">SwitchInst</a> &amp;i) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">bool</span> VisitSwitchInst(SwitchInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">bool</span> VisitSelectInst(SelectInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">bool</span> VisitStoreInst(StoreInst &amp;i) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">bool</span> VisitInst(<a class="code" href="classInst.html">Inst</a> &amp;i)<span class="keyword"> override </span>{ <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
@@ -113,7 +113,6 @@ $(function() {
 <div class="ttc" id="aclassUndefElimPass_html_a301f3e516c618b968d8c513b81aaa9ce"><div class="ttname"><a href="classUndefElimPass.html#a301f3e516c618b968d8c513b81aaa9ce">UndefElimPass::kPassID</a></div><div class="ttdeci">static const char * kPassID</div><div class="ttdoc">Pass identifier.</div><div class="ttdef"><b>Definition:</b> undef_elim.h:25</div></div>
 <div class="ttc" id="aclassUndefElimPass_html_a6615e6e42330f85a34a2243e04c804ac"><div class="ttname"><a href="classUndefElimPass.html#a6615e6e42330f85a34a2243e04c804ac">UndefElimPass::GetPassName</a></div><div class="ttdeci">const char * GetPassName() const override</div><div class="ttdoc">Returns the name of the pass.</div><div class="ttdef"><b>Definition:</b> undef_elim.cpp:20</div></div>
 <div class="ttc" id="aclassProg_html"><div class="ttname"><a href="classProg.html">Prog</a></div><div class="ttdef"><b>Definition:</b> prog.h:33</div></div>
-<div class="ttc" id="aclassSwitchInst_html"><div class="ttname"><a href="classSwitchInst.html">SwitchInst</a></div><div class="ttdef"><b>Definition:</b> control.h:13</div></div>
 <div class="ttc" id="aclassInstVisitor_html"><div class="ttname"><a href="classInstVisitor.html">InstVisitor</a></div><div class="ttdef"><b>Definition:</b> inst_visitor.h:15</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
