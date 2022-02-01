@@ -131,12 +131,14 @@ $(function() {
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classProg.html">Prog</a> *<a class="code" href="classGlobal.html#a2fc848ae25922e85161e9b679b6b66b7">getProg</a>() = 0;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind_;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  std::string name_;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  Visibility visibility_;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;};</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGlobal.html#a83f14f68b8bafe9212b7f77ccc4732b9">dump</a>(llvm::raw_ostream &amp;os = llvm::errs()) <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classProg.html">Prog</a>;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <a class="code" href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Kind</a> kind_;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  std::string name_;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  Visibility visibility_;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassGlobal_html_af872c630ff72ea2540736f8d68a9b936"><div class="ttname"><a href="classGlobal.html#af872c630ff72ea2540736f8d68a9b936">Global::removeFromParent</a></div><div class="ttdeci">virtual void removeFromParent()=0</div><div class="ttdoc">Removes the global from the parent container.</div></div>
 <div class="ttc" id="aclassGlobal_html_a2fc848ae25922e85161e9b679b6b66b7"><div class="ttname"><a href="classGlobal.html#a2fc848ae25922e85161e9b679b6b66b7">Global::getProg</a></div><div class="ttdeci">virtual Prog * getProg()=0</div><div class="ttdoc">Returns the program to which the global belongs.</div></div>
@@ -144,6 +146,7 @@ $(function() {
 <div class="ttc" id="aclassGlobal_html_a8e143a42ffbe639d887c386644767788"><div class="ttname"><a href="classGlobal.html#a8e143a42ffbe639d887c386644767788">Global::IsRoot</a></div><div class="ttdeci">bool IsRoot() const</div><div class="ttdoc">Checks if the symbol can be externally referenced.</div><div class="ttdef"><b>Definition:</b> global.cpp:28</div></div>
 <div class="ttc" id="aclassGlobal_html_a0c2ad4408fd73c09a666880a81c91b44"><div class="ttname"><a href="classGlobal.html#a0c2ad4408fd73c09a666880a81c91b44">Global::Kind</a></div><div class="ttdeci">Kind</div><div class="ttdoc">Enumeration of global kinds.</div><div class="ttdef"><b>Definition:</b> global.h:30</div></div>
 <div class="ttc" id="aclassGlobal_html_aec19143bdbf90c37da64a290e4d4ea34"><div class="ttname"><a href="classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34">Global::IsWeak</a></div><div class="ttdeci">bool IsWeak() const</div><div class="ttdoc">Checks if a symbol is weak.</div><div class="ttdef"><b>Definition:</b> global.cpp:62</div></div>
+<div class="ttc" id="aclassGlobal_html_a83f14f68b8bafe9212b7f77ccc4732b9"><div class="ttname"><a href="classGlobal.html#a83f14f68b8bafe9212b7f77ccc4732b9">Global::dump</a></div><div class="ttdeci">virtual void dump(llvm::raw_ostream &amp;os=llvm::errs()) const =0</div><div class="ttdoc">Dumps the representation of the function.</div></div>
 <div class="ttc" id="aclassGlobal_html_afdb4a6c20bf11e48a5c6294aa8adce3b"><div class="ttname"><a href="classGlobal.html#afdb4a6c20bf11e48a5c6294aa8adce3b">Global::GetAlignment</a></div><div class="ttdeci">virtual std::optional&lt; llvm::Align &gt; GetAlignment() const =0</div><div class="ttdoc">Externs have no known alignment.</div></div>
 <div class="ttc" id="aclassGlobal_html_a41851ac5fa6c42fcc83684ad50dd900a"><div class="ttname"><a href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">Global::GetName</a></div><div class="ttdeci">const std::string_view GetName() const</div><div class="ttdoc">Returns the name of the global.</div><div class="ttdef"><b>Definition:</b> global.h:52</div></div>
 <div class="ttc" id="aclassGlobal_html_a54415b386a12de174d5b584256ba904c"><div class="ttname"><a href="classGlobal.html#a54415b386a12de174d5b584256ba904c">Global::Is</a></div><div class="ttdeci">bool Is(Kind kind) const</div><div class="ttdoc">Checks if the global is of a specific kind.</div><div class="ttdef"><b>Definition:</b> global.h:49</div></div>
