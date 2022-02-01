@@ -100,10 +100,6 @@ Linker::Unit &Linker::Unit::operator=(Unit &&)
 // -----------------------------------------------------------------------------
 llvm::Error Linker::LinkUndefined(const std::string &symbol)
 {
-  if (symbol == "_ZN7rocksdb10LDBOptionsC1Ev") {
-    llvm::errs() << "unresolved " << symbol << "\n";
-  }
-
   unresolved_.insert(symbol);
   return llvm::Error::success();
 }
@@ -216,6 +212,9 @@ llvm::Error Linker::LinkGroup(std::list<Linker::Unit> &&units)
 bool Linker::Resolves(Prog &p)
 {
   for (Global *g : p.globals()) {
+    if (g->IsLocal()) {
+      continue;
+    }
     if (auto *ext = ::cast_or_null<Extern>(g)) {
       if (!ext->HasValue()) {
         continue;
@@ -364,16 +363,22 @@ void Linker::Resolve(Prog &p)
   }
 
   for (Func &func : p) {
-    Resolve(std::string(func.GetName()));
+    if (!func.IsLocal()) {
+      Resolve(std::string(func.GetName()));
+    }
     for (Block &block : func) {
-      Resolve(std::string(block.GetName()));
+      if (!block.IsLocal()) {
+        Resolve(std::string(block.GetName()));
+      }
     }
   }
 
   for (Data &data : p.data()) {
     for (Object &object : data) {
       for (Atom &atom : object) {
-        Resolve(std::string(atom.GetName()));
+        if (!atom.IsLocal()) {
+          Resolve(std::string(atom.GetName()));
+        }
       }
     }
   }
@@ -388,10 +393,6 @@ void Linker::Resolve(llvm::lto::InputFile &obj)
       Resolve(name);
     } else {
       if (!resolved_.count(name)) {
-        if (name == "_ZN7rocksdb10LDBOptionsC1Ev") {
-          llvm::errs() << "unresolved LTO" << "\n";
-        }
-
         unresolved_.insert(name);
       }
     }
@@ -418,7 +419,8 @@ bool Linker::Merge(Prog &dest, Prog &source)
     std::string extName(currExt->getName());
 
     // Create a symbol mapped to the target name.
-    if (Global *g = dest.GetGlobal(extName)) {
+    Global *g = dest.GetGlobal(extName);
+    if (g && !g->IsLocal()) {
       if (auto *prevExt = ::cast_or_null<Extern>(g)) {
         if (prevExt->HasValue()) {
           if (currExt->HasValue()) {
@@ -480,6 +482,7 @@ bool Linker::Merge(Prog &dest, Func &func)
       }
     }
   }
+
   // Transfer the function.
   func.removeFromParent();
   dest.AddFunc(&func);

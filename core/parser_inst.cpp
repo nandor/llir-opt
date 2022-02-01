@@ -223,8 +223,11 @@ void Parser::ParseInstruction(
   }
 
   // Add the instruction to the block.
+  Block *block = &*func->rbegin();
+
   Inst *i = CreateInst(
       func,
+      block,
       op,
       ops,
       flags,
@@ -235,21 +238,23 @@ void Parser::ParseInstruction(
       strict,
       std::move(annot)
   );
+
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
     if (auto vreg = ops[idx].ToVReg()) {
       vregs[i->GetSubValue(idx)] = *vreg >> 1;
     } else {
-      l_.Error("vreg expected");
+      l_.Error(func, block, "vreg expected");
     }
   }
 
-  func->rbegin()->AddInst(i);
+  block->AddInst(i);
 }
 
 
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
     Func *func,
+    Block *block,
     const std::string &opc,
     const std::vector<Operand> &ops,
     const std::vector<std::pair<unsigned, TypeFlag>> &fs,
@@ -281,7 +286,7 @@ Inst *Parser::CreateInst(
   auto op = [&, this] (int idx) -> Ref<Inst> {
     const auto &ref = val(idx);
     if ((reinterpret_cast<uintptr_t>(ref.Get()) & 1) == 0) {
-      l_.Error(func, "vreg expected");
+      l_.Error(func, block, "vreg expected at '" + opc + "'");
     }
     return Ref(static_cast<Inst *>(ref.Get()), ref.Index());
   };

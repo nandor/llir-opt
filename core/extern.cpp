@@ -5,6 +5,7 @@
 #include "core/cast.h"
 #include "core/extern.h"
 #include "core/prog.h"
+#include "core/printer.h"
 
 
 
@@ -49,4 +50,10 @@ void Extern::eraseFromParent()
 void Extern::SetValue(Ref<Value> g)
 {
   Set<0>(g);
+}
+
+// -----------------------------------------------------------------------------
+void Extern::dump(llvm::raw_ostream &os) const
+{
+  Printer(os).Print(*this);
 }

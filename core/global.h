@@ -76,6 +76,9 @@ public:
   /// Returns the program to which the global belongs.
   virtual Prog *getProg() = 0;
 
+  /// Dumps the representation of the function.
+  virtual void dump(llvm::raw_ostream &os = llvm::errs()) const = 0;
+
 private:
   friend class Prog;
   /// Kind of the global.

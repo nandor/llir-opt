@@ -77,6 +77,9 @@ public:
   /// Returns the section.
   std::optional<const std::string_view> GetSection() const { return section_; }
 
+  /// Dumps the representation of the function.
+  void dump(llvm::raw_ostream &os = llvm::errs()) const override;
+
 private:
   friend struct SymbolTableListTraits<Extern>;
   /// Updates the parent node.

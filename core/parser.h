@@ -215,6 +215,7 @@ private:
   /// Factory method for instructions.
   Inst *CreateInst(
       Func *func,
+      Block *block,
       const std::string &op,
       const std::vector<Operand> &ops,
       const std::vector<std::pair<unsigned, TypeFlag>> &flags,
