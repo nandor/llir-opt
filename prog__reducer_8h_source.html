@@ -114,9 +114,9 @@ $(function() {
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  Ft ReduceFunc(<a class="code" href="classFunc.html">Func</a> *f);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  It VisitArg(ArgInst &amp;i);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  It VisitCall(<a class="code" href="classCallInst.html">CallInst</a> &amp;i);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  It VisitInvoke(<a class="code" href="classInvokeInst.html">InvokeInst</a> &amp;i);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  It VisitTailCall(<a class="code" href="classTailCallInst.html">TailCallInst</a> &amp;i);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  It VisitCall(CallInst &amp;i);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  It VisitInvoke(InvokeInst &amp;i);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  It VisitTailCall(TailCallInst &amp;i);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  It VisitSyscall(SyscallInst &amp;i);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  It VisitClone(CloneInst &amp;i);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  It VisitRaise(RaiseInst &amp;i);</div>
@@ -168,9 +168,8 @@ $(function() {
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordtype">unsigned</span> threads_;</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
+<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:53</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
-<div class="ttc" id="aclassTailCallInst_html"><div class="ttname"><a href="classTailCallInst.html">TailCallInst</a></div><div class="ttdef"><b>Definition:</b> call.h:198</div></div>
 <div class="ttc" id="aclassProgReducerBase_html_a2c94319e4bc215fedf8dfa8854f05014"><div class="ttname"><a href="classProgReducerBase.html#a2c94319e4bc215fedf8dfa8854f05014">ProgReducerBase::Verify</a></div><div class="ttdeci">virtual bool Verify(const Prog &amp;prog) const =0</div><div class="ttdoc">Verifies a program.</div></div>
 <div class="ttc" id="aclassAtom_html"><div class="ttname"><a href="classAtom.html">Atom</a></div><div class="ttdef"><b>Definition:</b> atom.h:23</div></div>
 <div class="ttc" id="aclassConstant_html"><div class="ttname"><a href="classConstant.html">Constant</a></div><div class="ttdef"><b>Definition:</b> constant.h:21</div></div>
@@ -181,9 +180,7 @@ $(function() {
 <div class="ttc" id="aclassProgReducerBase_html_ae094a12e5cafcf634eae90a49e5bb41d"><div class="ttname"><a href="classProgReducerBase.html#ae094a12e5cafcf634eae90a49e5bb41d">ProgReducerBase::ProgReducerBase</a></div><div class="ttdeci">ProgReducerBase(unsigned threads)</div><div class="ttdoc">Initialises the pass.</div><div class="ttdef"><b>Definition:</b> prog_reducer.h:27</div></div>
 <div class="ttc" id="aclassTimeout_html"><div class="ttname"><a href="classTimeout.html">Timeout</a></div><div class="ttdef"><b>Definition:</b> timeout.h:14</div></div>
 <div class="ttc" id="aclassBlock_html"><div class="ttname"><a href="classBlock.html">Block</a></div><div class="ttdef"><b>Definition:</b> block.h:29</div></div>
-<div class="ttc" id="aclassCallInst_html"><div class="ttname"><a href="classCallInst.html">CallInst</a></div><div class="ttdef"><b>Definition:</b> call.h:145</div></div>
 <div class="ttc" id="aclassPhiInst_html"><div class="ttname"><a href="classPhiInst.html">PhiInst</a></div><div class="ttdef"><b>Definition:</b> phi.h:14</div></div>
-<div class="ttc" id="aclassInvokeInst_html"><div class="ttname"><a href="classInvokeInst.html">InvokeInst</a></div><div class="ttdef"><b>Definition:</b> call.h:241</div></div>
 <div class="ttc" id="aclassProgReducerBase_html_a253e71f19e906bcdf21bd2d8a40b5ab7"><div class="ttname"><a href="classProgReducerBase.html#a253e71f19e906bcdf21bd2d8a40b5ab7">ProgReducerBase::Reduce</a></div><div class="ttdeci">std::unique_ptr&lt; Prog &gt; Reduce(std::unique_ptr&lt; Prog &gt; &amp;&amp;prog, const Timeout &amp;Timeout)</div><div class="ttdoc">Runs the pass.</div><div class="ttdef"><b>Definition:</b> prog_reducer.cpp:96</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

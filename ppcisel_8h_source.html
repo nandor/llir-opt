@@ -179,7 +179,7 @@ $(function() {
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;      llvm::SDValue &amp;chain,</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;      llvm::SDValue &amp;glue</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;  );</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">void</span> LowerCallSite(llvm::SDValue chain, <span class="keyword">const</span> <a class="code" href="classCallSite.html">CallSite</a> *call) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">void</span> LowerCallSite(llvm::SDValue chain, <span class="keyword">const</span> CallSite *call) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  llvm::PPCTargetMachine &amp;tm_;</div>
@@ -188,12 +188,11 @@ $(function() {
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
+<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:53</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
 <div class="ttc" id="aclassPPCMatcher_html"><div class="ttname"><a href="classPPCMatcher.html">PPCMatcher</a></div><div class="ttdef"><b>Definition:</b> ppcisel.h:37</div></div>
 <div class="ttc" id="aclassConstRef_html"><div class="ttname"><a href="classConstRef.html">ConstRef</a></div><div class="ttdef"><b>Definition:</b> ref.h:83</div></div>
 <div class="ttc" id="aclassPPCMatcher_html_ad941e0ad9ec2996e55ba5f09b7bacfdb"><div class="ttname"><a href="classPPCMatcher.html#ad941e0ad9ec2996e55ba5f09b7bacfdb">PPCMatcher::getTargetLowering</a></div><div class="ttdeci">const llvm::TargetLowering * getTargetLowering() const override</div><div class="ttdoc">Returns the target lowering.</div><div class="ttdef"><b>Definition:</b> ppcisel.h:51</div></div>
-<div class="ttc" id="aclassCallSite_html"><div class="ttname"><a href="classCallSite.html">CallSite</a></div><div class="ttdef"><b>Definition:</b> call.h:20</div></div>
 <div class="ttc" id="aclassPPCMatcher_html_a139d7ecceec6cd10fa346e35473655bc"><div class="ttname"><a href="classPPCMatcher.html#a139d7ecceec6cd10fa346e35473655bc">PPCMatcher::GetDAG</a></div><div class="ttdeci">llvm::SelectionDAG &amp; GetDAG() const</div><div class="ttdoc">Return the current DAG.</div><div class="ttdef"><b>Definition:</b> ppcisel.h:49</div></div>
 <div class="ttc" id="aclassTarget_html"><div class="ttname"><a href="classTarget.html">Target</a></div><div class="ttdef"><b>Definition:</b> target.h:24</div></div>
 <div class="ttc" id="aclassData_html"><div class="ttname"><a href="classData.html">Data</a></div><div class="ttdef"><b>Definition:</b> data.h:47</div></div>

@@ -91,7 +91,7 @@ $(function() {
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span><a class="code" href="classObject.html">Object</a>;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">class </span><a class="code" href="classSymbolicFrame.html">SymbolicFrame</a>;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">class </span><a class="code" href="classSymbolicSummary.html">SymbolicSummary</a>;</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">class </span><a class="code" href="classCallSite.html">CallSite</a>;</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">class </span>CallSite;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
@@ -200,7 +200,7 @@ $(function() {
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <a class="code" href="classSymbolicValue.html">SymbolicValue</a> <a class="code" href="classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101">Load</a>(<span class="keyword">const</span> <a class="code" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, Type type);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  SymbolicPointer::Ref <a class="code" href="classSymbolicContext.html#a0bf62cca27b619aad928a976db5b4468">Malloc</a>(<a class="code" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt;unsigned&gt; size);</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  SymbolicPointer::Ref <a class="code" href="classSymbolicContext.html#a0bf62cca27b619aad928a976db5b4468">Malloc</a>(CallSite &amp;site, std::optional&lt;unsigned&gt; size);</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160; </div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classSymbolicContext.html#a39857aaae5e0cc37280941cb7018ea0e">Merge</a>(<span class="keyword">const</span> <a class="code" href="classSymbolicContext.html">SymbolicContext</a> &amp;that);</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
@@ -256,7 +256,6 @@ $(function() {
 <div class="ttc" id="aclassSymbolicValue_html"><div class="ttname"><a href="classSymbolicValue.html">SymbolicValue</a></div><div class="ttdef"><b>Definition:</b> symbolic_value.h:24</div></div>
 <div class="ttc" id="aclassAtom_html"><div class="ttname"><a href="classAtom.html">Atom</a></div><div class="ttdef"><b>Definition:</b> atom.h:23</div></div>
 <div class="ttc" id="aclassSymbolicContext_html_a3c6cd7ec3946cfea4dbb98a9af9494a9"><div class="ttname"><a href="classSymbolicContext.html#a3c6cd7ec3946cfea4dbb98a9af9494a9">SymbolicContext::GetFrame</a></div><div class="ttdeci">SymbolicObject &amp; GetFrame(unsigned frame, unsigned object)</div><div class="ttdoc">Returns a frame object to store to.</div><div class="ttdef"><b>Definition:</b> symbolic_context.h:137</div></div>
-<div class="ttc" id="aclassCallSite_html"><div class="ttname"><a href="classCallSite.html">CallSite</a></div><div class="ttdef"><b>Definition:</b> call.h:20</div></div>
 <div class="ttc" id="aclassSymbolicContext_html_ac26a5d93290bfe810b46505c4415b3cd"><div class="ttname"><a href="classSymbolicContext.html#ac26a5d93290bfe810b46505c4415b3cd">SymbolicContext::~SymbolicContext</a></div><div class="ttdeci">~SymbolicContext()</div><div class="ttdoc">Cleanup.</div><div class="ttdef"><b>Definition:</b> symbolic_context.cpp:43</div></div>
 <div class="ttc" id="aclassSymbolicObject_html"><div class="ttname"><a href="classSymbolicObject.html">SymbolicObject</a></div><div class="ttdef"><b>Definition:</b> symbolic_object.h:26</div></div>
 <div class="ttc" id="aclassSymbolicContext_html_a5cb100356055eb7b6ce83c0b5b1e8507"><div class="ttname"><a href="classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507">SymbolicContext::LeaveFrame</a></div><div class="ttdeci">void LeaveFrame(Func &amp;func)</div><div class="ttdoc">Pop a stack frame for a function from the heap.</div><div class="ttdef"><b>Definition:</b> symbolic_context.cpp:137</div></div>

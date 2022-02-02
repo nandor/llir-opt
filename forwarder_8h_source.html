@@ -128,7 +128,7 @@ $(function() {
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">void</span> VisitMovInst(<a class="code" href="classMovInst.html">MovInst</a> &amp;mov) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">void</span> VisitMemoryStoreInst(MemoryStoreInst &amp;store) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">void</span> VisitMemoryLoadInst(MemoryLoadInst &amp;load) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">void</span> VisitCallSite(<a class="code" href="classCallSite.html">CallSite</a> &amp;site) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">void</span> VisitCallSite(CallSite &amp;site) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">void</span> VisitTrapInst(TrapInst &amp;)<span class="keyword"> override </span>{ }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">void</span> VisitRaiseInst(RaiseInst &amp;<span class="keyword">raise</span>)<span class="keyword"> override </span>{ Raises = <span class="keyword">true</span>; }</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
@@ -239,9 +239,8 @@ $(function() {
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  std::vector&lt;FuncState&gt; stack_;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:51</div></div>
+<div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:53</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
-<div class="ttc" id="aclassCallSite_html"><div class="ttname"><a href="classCallSite.html">CallSite</a></div><div class="ttdef"><b>Definition:</b> call.h:20</div></div>
 <div class="ttc" id="aclassGlobalForwarder_html_acd03c6d3e31e99ae54e3c04633f93b11"><div class="ttname"><a href="classGlobalForwarder.html#acd03c6d3e31e99ae54e3c04633f93b11">GlobalForwarder::Forward</a></div><div class="ttdeci">bool Forward()</div><div class="ttdoc">Simplify loads and build the graph for the reverse transformations.</div><div class="ttdef"><b>Definition:</b> forwarder.cpp:186</div></div>
 <div class="ttc" id="aclassID_html"><div class="ttname"><a href="classID.html">ID&lt; Func &gt;</a></div></div>
 <div class="ttc" id="aclassDAGFunc_html"><div class="ttname"><a href="classDAGFunc.html">DAGFunc</a></div><div class="ttdef"><b>Definition:</b> dag.h:75</div></div>

@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classCamlGlobalSimplifier.html" title=" " alt="" coords="5,5,165,32"/>
+<area shape="rect" id="node1" href="$classCloneVisitor.html" title=" " alt="" coords="5,56,107,83"/>
+<area shape="rect" id="node2" href="$classInlineHelper.html" title=" " alt="" coords="199,5,301,32"/>
+<area shape="rect" id="node3" href="$classProgramCloneVisitor.html" title=" " alt="" coords="172,56,328,83"/>
+<area shape="rect" id="node4" href="$classSpecialisePass_1_1SpecialiseClone.html" title=" " alt="" coords="155,107,345,149"/>
 </map>
