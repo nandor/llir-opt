@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/symbol_table.h"
+
 #include "core/func.h"
 #include "core/atom.h"
 #include "core/extern.h"

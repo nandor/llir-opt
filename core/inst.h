@@ -17,8 +17,10 @@
 #include "core/type.h"
 #include "core/register.h"
 #include "core/value.h"
+#include "core/calling_conv.h"
 
 class Block;
+class Func;
 class Inst;
 class Context;
 class Symbol;

@@ -35,7 +35,7 @@ void GetClassWriter::run(llvm::raw_ostream &OS)
   OS << "#ifdef GET_BASE_INTF\n";
   OS << "#undef GET_BASE_INTF\n";
   for (auto *baseClass : bases_) {
-    if (baseClass == inst || baseClass->getName() == "CallSite") {
+    if (baseClass == inst) {
       continue;
     }
     EmitClassIntf(OS, *baseClass);
@@ -45,7 +45,7 @@ void GetClassWriter::run(llvm::raw_ostream &OS)
   OS << "#ifdef GET_BASE_IMPL\n";
   OS << "#undef GET_BASE_IMPL\n";
   for (auto *baseClass : bases_) {
-    if (baseClass == inst || baseClass->getName() == "CallSite") {
+    if (baseClass == inst) {
       continue;
     }
     EmitClassImpl(OS, *baseClass);
@@ -121,15 +121,17 @@ static void EmitConsTypes(
     const bool isUnwrapped = field->getValueAsBit("IsUnwrapped");
 
     if (field->getValueAsBit("IsList")) {
+      OS << "llvm::ArrayRef<";
       if (isScalar) {
-        llvm_unreachable("not implemented");
+         OS << fieldType;
       } else {
         if (isUnwrapped) {
-          OS << "llvm::ArrayRef<" << fieldType << " *>";
+          OS << fieldType << "*";
         } else {
-          OS << "llvm::ArrayRef<Ref<" << fieldType << ">>";
+          OS << "Ref<" << fieldType << ">";
         }
       }
+      OS << ">";
     } else {
       if (isScalar) {
         if (isOptional) {
@@ -147,6 +149,7 @@ static void EmitConsTypes(
     }
     OS << " arg" << i << ",";
   }
+
   if (annot) {
     OS << "const AnnotSet &annot";
   } else {
@@ -234,69 +237,64 @@ static void EmitConsImpl(
       OS << ", t" << i << "_(t" << i << ")";
     }
   }
-  using Index = std::tuple<llvm::Record *, std::vector<std::string>, unsigned>;
-  std::vector<Index> ownRefFields;
-  std::vector<std::string> lastName;
-  unsigned lastOffset = 0;
+
   for (unsigned i = 0, n = allFields.size(); i < n; ++i) {
     auto *field = allFields[i];
     auto fieldName = field->getValueAsString("Name").str();
-    if (field->getValueAsBit("IsList")) {
+    if (ownFields.count(fieldName)) {
       if (field->getValueAsBit("IsScalar")) {
-        llvm_unreachable("not implemented");
+        OS << ", " << fieldName << "_(arg" << i << ")";
       } else {
-        if (ownFields.count(fieldName)) {
+        if (field->getValueAsBit("IsList")) {
           OS << ", num" << fieldName << "_(arg" << i << ".size())";
-          ownRefFields.emplace_back(field, lastName, lastOffset);
-          lastName.push_back(fieldName);
-          lastOffset = 0;
         }
-      }
-    } else {
-      if (field->getValueAsBit("IsScalar")) {
-        if (ownFields.count(fieldName)) {
-          OS << ", " << fieldName << "_(arg" << i << ")";
-        }
-      } else {
-        if (ownFields.count(fieldName)) {
-          ownRefFields.emplace_back(field, lastName, lastOffset);
-        }
-        lastOffset++;
       }
     }
   }
-  OS << "{\n";
-  for (auto &[field, path, idx] : ownRefFields) {
-    OS << "{\n";
-    OS << "size_t base = ";
-    bool first = true;
-    for (auto &elem : path) {
-      if (!first) {
-        OS << " + ";
-      } else {
-        first = false;
-      }
-      OS << "num" << elem << "_";
-    }
-    if (!first) {
-      OS << " + ";
-    }
-    OS << idx << ";\n";
 
-    auto fieldName = field->getValueAsString("Name").str();
+  OS << "{\n";
+
+  std::vector<std::pair<llvm::StringRef, bool>> preds;
+  unsigned lastOffset = 0;
+  for (auto *field : allFields) {
+    if (field->getValueAsBit("IsScalar")) {
+      continue;
+    }
+
+    OS << "{";
+
+    auto fieldName = field->getValueAsString("Name");
+    const bool isList = field->getValueAsBit("IsList");
+    const bool isOwnField = ownFields.count(fieldName.str());
+
+    // Find the index the argument is at.
+    OS << "size_t base = 0";
+    for (auto &[name, arr] : preds) {
+      OS << "+";
+      if (arr) {
+        OS << "num" << name << "_";
+      } else {
+        OS << "1";
+      }
+    }
+    OS << ";";
+
     auto it = std::find(fields.begin(), fields.end(), field);
-    if (field->getValueAsBit("IsList")) {
+    if (isList) {
       OS << "for (unsigned i = 0; i < num" << fieldName << "_; ++i) ";
       OS << "Set(base + i, arg" << (it - fields.begin()) << "[i]);";
     } else {
       if (it == fields.end()) {
         OS << "Set(base, nullptr);";
       } else {
-        OS << "Set(base, arg" << (it - fields.begin()) << ");\n";
+        OS << "Set(base, arg" << (it - fields.begin()) << ");";
       }
     }
+    preds.emplace_back(fieldName, isList);
+
     OS << "};\n";
   }
+
   OS << "};\n";
 }
 
@@ -365,7 +363,7 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
   EmitCons(OS, r, false, EmitConsIntf);
   EmitCons(OS, r, true, EmitConsIntf);
   if (r.isClass()) {
-    OS << "~" << type << "();";
+    OS << "virtual ~" << type << "();";
   }
 
   EmitAttr(OS, r, *base, "IsReturn");
@@ -379,130 +377,142 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
     auto fieldType = field->getValueAsString("Type");
-    if (fields.count(fieldName.str()) == 0) {
-      continue;
-    }
 
+    const bool isList = field->getValueAsBit("IsList");
     const bool isScalar = field->getValueAsBit("IsScalar");
     const bool isUnwrapped = field->getValueAsBit("IsUnwrapped");
+    const bool isOptional = field->getValueAsBit("IsOptional");
 
-    if (field->getValueAsBit("IsList")) {
-      if (isScalar) {
-        llvm_unreachable("not implemented");
-      } else {
-        auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
-        OS << "private: size_t num" << fieldName << "_;public:\n";
+    const bool isOwnField = fields.count(fieldName.str()) != 0;
 
-        OS << "size_t " << itName << "_size() const { return num" << fieldName << "_; }\n";
-        OS << "bool " << itName << "_empty() const { return 0 == " << itName << "_size(); }\n";
+    if (isScalar) {
+      if (isOwnField) {
+        if (isList) {
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
+          OS << "protected: std::vector<" << fieldType << "> " << fieldName << "_; public:\n";
 
-        if (isUnwrapped) {
-          OS << "using " << itName << "_iterator = unref_iterator<" << fieldType << ">;\n";
-          OS << "using " << itName << "_range = unref_range<" << fieldType << ">;\n";
-          OS << "using const_" << itName << "_iterator = const_unref_iterator<" << fieldType << ">;\n";
-          OS << "using const_" << itName << "_range = const_unref_range<" << fieldType << ">;\n";
+          OS << "llvm::ArrayRef<" << fieldType << "> Get" << fieldName << "() const";
+          OS << "{ return " << fieldName << "_; }\n";
 
-          OS << "const " << fieldType << " *" << itName << "(unsigned i) const;\n";
-          OS << fieldType << " *" << itName << "(unsigned i);\n";
+          OS << fieldType << " " << itName << "(unsigned idx) const";
+          OS << "{ return " << fieldName << "_[idx]; }\n";
         } else {
-          OS << "using " << itName << "_iterator = conv_op_iterator<" << fieldType << ">;\n";
-          OS << "using " << itName << "_range = conv_op_range<" << fieldType << ">;\n";
-          OS << "using const_" << itName << "_iterator = const_conv_op_iterator<" << fieldType << ">;\n";
-          OS << "using const_" << itName << "_range = const_conv_op_range<" << fieldType << ">;\n";
-
-          OS << "ConstRef<" << fieldType << "> " << itName << "(unsigned i) const;\n";
-          OS << "Ref<" << fieldType << "> " << itName << "(unsigned i);\n";
-        }
-
-        auto base = [&, this]
-        {
-          bool first = true;
-          for (auto &elem : lastName) {
-            if (!first) {
-              OS << " + ";
-            } else {
-              first = false;
-            }
-            OS << "num" << elem << "_";
+          OS << "protected: ";
+          if (isOptional) {
+            OS << "std::optional<" << fieldType << ">";
+          } else {
+            OS << fieldType;
           }
-          if (!first) {
-            OS << " + ";
+          OS << " " << fieldName << "_;";
+          OS << "public:\n";
+
+          if (isOptional) {
+            OS << "std::optional<" << fieldType << ">";
+          } else {
+            OS << fieldType;
           }
-          OS << lastOffset;
-        };
-
-        OS << itName << "_iterator " << itName << "_begin() ";
-        OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
-        base();
-        OS << "); }\n";
-
-        OS << itName << "_iterator " << itName << "_end() ";
-        OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
-        base();
-        OS << " + num" << fieldName << "_); }\n";
-
-        OS << itName << "_range " << itName << "s() ";
-        OS <<" { return llvm::make_range";
-        OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
-
-        OS << "const_" << itName << "_iterator " << itName << "_begin() const ";
-        OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
-        base();
-        OS << "); }\n";
-
-        OS << "const_" << itName << "_iterator " << itName << "_end() const ";
-        OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
-        base();
-        OS << " + num" << fieldName << "_); }\n";
-
-        OS << "const_" << itName << "_range " << itName << "s() const ";
-        OS <<" { return llvm::make_range";
-        OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
-
-        if (fieldType == "Block") {
-          blocks.emplace_back(fieldName, -1);
+          OS << " Get" << fieldName << "() const ";
+          OS <<" { return " << fieldName << "_; }\n";
         }
-
-        lastName.push_back(fieldName.str());
-        lastOffset = 0;
       }
     } else {
-      if (isScalar) {
-        OS << "private: ";
-        if (field->getValueAsBit("IsOptional")) {
-          OS << "std::optional<" << fieldType << ">";
-        } else {
-          OS << fieldType;
-        }
-        OS << " " << fieldName << "_;";
-        OS << "public:\n";
+      if (isList) {
+        if (isOwnField) {
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
+          OS << "protected: size_t num" << fieldName << "_;public:\n";
 
-        if (field->getValueAsBit("IsOptional")) {
-          OS << "std::optional<" << fieldType << ">";
-        } else {
-          OS << fieldType;
+          OS << "size_t " << itName << "_size() const { return num" << fieldName << "_; }\n";
+          OS << "bool " << itName << "_empty() const { return 0 == " << itName << "_size(); }\n";
+
+          if (isUnwrapped) {
+            OS << "using " << itName << "_iterator = unref_iterator<" << fieldType << ">;\n";
+            OS << "using " << itName << "_range = unref_range<" << fieldType << ">;\n";
+            OS << "using const_" << itName << "_iterator = const_unref_iterator<" << fieldType << ">;\n";
+            OS << "using const_" << itName << "_range = const_unref_range<" << fieldType << ">;\n";
+
+            OS << "const " << fieldType << " *" << itName << "(unsigned i) const;\n";
+            OS << fieldType << " *" << itName << "(unsigned i);\n";
+          } else {
+            OS << "using " << itName << "_iterator = conv_op_iterator<" << fieldType << ">;\n";
+            OS << "using " << itName << "_range = conv_op_range<" << fieldType << ">;\n";
+            OS << "using const_" << itName << "_iterator = const_conv_op_iterator<" << fieldType << ">;\n";
+            OS << "using const_" << itName << "_range = const_conv_op_range<" << fieldType << ">;\n";
+
+            OS << "ConstRef<" << fieldType << "> " << itName << "(unsigned i) const;\n";
+            OS << "Ref<" << fieldType << "> " << itName << "(unsigned i);\n";
+          }
+
+          auto base = [&, this]
+          {
+            bool first = true;
+            for (auto &elem : lastName) {
+              if (!first) {
+                OS << " + ";
+              } else {
+                first = false;
+              }
+              OS << "num" << elem << "_";
+            }
+            if (!first) {
+              OS << " + ";
+            }
+            OS << lastOffset;
+          };
+
+          OS << itName << "_iterator " << itName << "_begin() ";
+          OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
+          base();
+          OS << "); }\n";
+
+          OS << itName << "_iterator " << itName << "_end() ";
+          OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
+          base();
+          OS << " + num" << fieldName << "_); }\n";
+
+          OS << itName << "_range " << itName << "s() ";
+          OS <<" { return llvm::make_range";
+          OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
+
+          OS << "const_" << itName << "_iterator " << itName << "_begin() const ";
+          OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
+          base();
+          OS << "); }\n";
+
+          OS << "const_" << itName << "_iterator " << itName << "_end() const ";
+          OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
+          base();
+          OS << " + num" << fieldName << "_); }\n";
+
+          OS << "const_" << itName << "_range " << itName << "s() const ";
+          OS <<" { return llvm::make_range";
+          OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
+
+          if (fieldType == "Block") {
+            blocks.emplace_back(fieldName, -1);
+          }
         }
-        OS << " Get" << fieldName << "() const ";
-        OS <<" { return " << fieldName << "_; }\n";
+        lastName.push_back(fieldName.str());
+        lastOffset = 0;
       } else {
-        if (isUnwrapped) {
-          OS << fieldType << "* ";
-        } else {
-          OS << "Ref<" << fieldType << "> ";
-        }
-        OS << "Get" << fieldName << "();\n";
+        if (isOwnField) {
+          if (isUnwrapped) {
+            OS << fieldType << "* ";
+          } else {
+            OS << "Ref<" << fieldType << "> ";
+          }
+          OS << "Get" << fieldName << "();\n";
 
-        if (isUnwrapped) {
-          OS << "const " << fieldType << "* ";
-        } else {
-          OS << "ConstRef<" << fieldType << "> ";
-        }
-        OS << "Get" << fieldName << "() const;\n";
+          if (isUnwrapped) {
+            OS << "const " << fieldType << "* ";
+          } else {
+            OS << "ConstRef<" << fieldType << "> ";
+          }
+          OS << "Get" << fieldName << "() const;\n";
 
-        if (isUnwrapped && fieldType == "Block") {
-          blocks.emplace_back(fieldName, i);
+          if (isUnwrapped && fieldType == "Block") {
+            blocks.emplace_back(fieldName, i);
+          }
         }
-
         i++;
         lastOffset += 1;
       }
@@ -518,7 +528,7 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
     }
 
     if (ntys < 0 && btys >= 0) {
-      OS << "private: std::vector<Type> types_; public: \n";
+      OS << "protected: std::vector<Type> types_; public: \n";
       OS << "using type_iterator = std::vector<Type>::iterator;\n";
       OS << "using const_type_iterator = std::vector<Type>::const_iterator;\n";
       OS << "using type_range = llvm::iterator_range<type_iterator>;\n";
@@ -532,14 +542,27 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
       OS << "const_type_iterator type_end() const { return types_.end(); }\n";
       OS << "type_range types() { return llvm::make_range(type_begin(), type_end()); }\n";
       OS << "const_type_range types() const { return llvm::make_range(type_begin(), type_end()); }\n";
-      OS << "virtual unsigned GetNumRets() const override{ return types_.size(); }\n";
+      OS << "llvm::ArrayRef<Type> GetTypes() const { return types_; }\n";
     } else if (ntys >= btys) {
-      OS << "virtual unsigned GetNumRets() const override{ return " << ntys << "; }\n";
-      OS << "private:\n";
+      OS << "protected:\n";
       for (int i = btys; i < ntys; ++i) {
         OS << "const Type t" << i << "_;\n";
       }
       OS << "public:\n";
+    }
+  }
+
+  int nrets = r.getValueAsInt("NumReturns");
+  int brets = base->getValueAsInt("NumReturns");
+  if (nrets != brets && nrets != -1) {
+    OS << "virtual unsigned GetNumRets() const override { return " << nrets << "; }\n";
+  } else {
+    if (ntys != btys) {
+      if (ntys < 0 && btys >= 0) {
+        OS << "virtual unsigned GetNumRets() const override { return types_.size(); }\n";
+      } else {
+        OS << "virtual unsigned GetNumRets() const override { return " << ntys << "; }\n";
+      }
     }
   }
 
@@ -568,6 +591,13 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
     OS << "virtual const Block *getSuccessor(unsigned idx) const override;\n";
     OS << "virtual Block *getSuccessor(unsigned idx) override;\n";
   }
+
+  auto customIntf = r.getValueAsString("CustomIntf");
+  auto baseCustomIntf = base->getValueAsString("CustomIntf");
+  if (!customIntf.empty() && customIntf != baseCustomIntf) {
+    OS << customIntf;
+  }
+
   OS << "};\n";
 }
 
@@ -584,124 +614,110 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
     OS << type << "::" <<  "~" << type << "() {}\n";
   }
 
-  unsigned i = 0;
-  std::vector<std::string> lastName;
-  std::vector<std::pair<llvm::StringRef, int>> blocks;
+  std::vector<std::pair<llvm::StringRef, bool>> preds;
+  std::vector<std::pair<llvm::StringRef, bool>> blocks;
   size_t lastOffset = 0;
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
     auto fieldType = field->getValueAsString("Type");
     auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
 
+    const bool isList = field->getValueAsBit("IsList");
     const bool isScalar = field->getValueAsBit("IsScalar");
     const bool isUnwrapped = field->getValueAsBit("IsUnwrapped");
+    const bool isOptional = field->getValueAsBit("IsOptional");
 
-    if (field->getValueAsBit("IsList")) {
-      if (isScalar) {
-        llvm_unreachable("not implemented");
-      } else {
-        auto base = [&, this]
-        {
-          bool first = true;
-          for (auto &elem : lastName) {
-            if (!first) {
-              OS << " + ";
-            } else {
-              first = false;
-            }
-            OS << "num" << elem << "_";
-          }
-          if (!first) {
-            OS << " + ";
-          }
-          OS << lastOffset;
-        };
+    const bool isOwnField = fields.count(fieldName.str()) != 0;
 
-        if (isUnwrapped) {
-          OS << "const " << fieldType << " *";
-        } else {
-          OS << "ConstRef<" << fieldType << "> ";
-        }
-
-        OS << type << "::" << itName << "(unsigned i) const";
-        OS << "{ return cast<" << fieldType << ">(static_cast<ConstRef<Value>>(Get(";
-        base();
-        OS << " + i)))";
-        if (isUnwrapped) {
-          OS << ".Get()";
-        }
-        OS << "; }\n";
-
-        if (isUnwrapped) {
-          OS << fieldType << " *";
-        } else {
-          OS << "Ref<" << fieldType << "> ";
-        }
-
-        OS << type << "::" << itName << "(unsigned i) ";
-        OS << "{ return cast<" << fieldType << ">(static_cast<Ref<Value>>(Get(";
-        base();
-        OS << " + i)))";
-        if (isUnwrapped) {
-          OS << ".Get()";
-        }
-        OS << "; }\n";
-
-        if (fieldType == "Block") {
-          blocks.emplace_back(fieldName, -1);
-        }
-
-        lastName.push_back(fieldName.str());
-        lastOffset = 0;
-      }
+    if (isScalar) {
+      // Implemented in interface
     } else {
-      const bool unwrapped = field->getValueAsBit("IsUnwrapped");
-      const bool optional = field->getValueAsBit("IsOptional");
+      auto idx = [&, this]
+      {
+        OS << "0";
+        for (auto &[name, arr] : preds) {
+          OS << " + ";
+          if (arr) {
+            OS << "num" << name << "_";
+          } else {
+            OS << "1";
+          }
+        }
+      };
 
-      if (isScalar) {
-        // Declared in interface.
-      } else {
-        if (fields.count(fieldName.str()) != 0) {
-          if (unwrapped) {
+      if (isOwnField) {
+        if (isList) {
+          if (isUnwrapped) {
+            OS << "const " << fieldType << " *";
+          } else {
+            OS << "ConstRef<" << fieldType << "> ";
+          }
+
+          OS << type << "::" << itName << "(unsigned i) const";
+          OS << "{ return cast<" << fieldType << ">(static_cast<ConstRef<Value>>(Get(";
+          idx();
+          OS << " + i)))";
+          if (isUnwrapped) {
+            OS << ".Get()";
+          }
+          OS << "; }\n";
+
+          if (isUnwrapped) {
+            OS << fieldType << " *";
+          } else {
+            OS << "Ref<" << fieldType << "> ";
+          }
+
+          OS << type << "::" << itName << "(unsigned i) ";
+          OS << "{ return cast<" << fieldType << ">(static_cast<Ref<Value>>(Get(";
+          idx();
+          OS << " + i)))";
+          if (isUnwrapped) {
+            OS << ".Get()";
+          }
+          OS << "; }\n";
+        } else {
+          if (isUnwrapped) {
             OS << fieldType << "* ";
           } else {
             OS << "Ref<" << fieldType << "> ";
           }
           OS << type << "::Get" << fieldName << "() { return ";
-          if (optional) {
-            OS << "::cast_or_null<" << fieldType << ">(Get<" << i << ">())";
+          if (isOptional) {
+            OS << "::cast_or_null<" << fieldType << ">(";
           } else {
-            OS << "::cast<" << fieldType << ">(Get<" << i << ">())";
+            OS << "::cast<" << fieldType << ">(";
           }
-          if (unwrapped) {
+          OS << "Get("; idx(); OS << "))";
+          if (isUnwrapped) {
             OS << ".Get()";
           }
           OS << "; }\n";
 
-          if (unwrapped) {
+          if (isUnwrapped) {
             OS << "const " << fieldType << "* ";
           } else {
             OS << "ConstRef<" << fieldType << "> ";
           }
           OS << type << "::Get" << fieldName << "() const { return ";
-          if (optional) {
-            OS << "::cast_or_null<" << fieldType << ">(Get<" << i << ">())";
+          if (isOptional) {
+            OS << "::cast_or_null<" << fieldType << ">(";
           } else {
-            OS << "::cast<" << fieldType << ">(Get<" << i << ">())";
+            OS << "::cast<" << fieldType << ">(";
           }
-          if (unwrapped) {
+          OS << "Get("; idx(); OS << "))";
+          if (isUnwrapped) {
             OS << ".Get()";
           }
           OS << "; }\n";
-
-          if (unwrapped && fieldType == "Block") {
-            blocks.emplace_back(fieldName, i);
-          }
         }
 
-        lastOffset++;
-        i++;
+        if (isUnwrapped && fieldType == "Block") {
+          blocks.emplace_back(fieldName, isList);
+        }
       }
+
+      preds.emplace_back(fieldName, isList);
     }
   }
 
@@ -724,16 +740,14 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
   }
   auto *termBase = records_.getClass("TerminatorInst");
   if (termBase != &r && r.isSubClassOf(termBase) && !blocks.empty()) {
-
     OS << "const Block *" << type << "::getSuccessor(unsigned idx) const ";
     OS << "{ return const_cast<" << type << " *>(this)->getSuccessor(idx); }\n";
-
 
     OS << "Block *" << type << "::getSuccessor(unsigned idx) {";
 
     bool allFixed = true;
-    for (auto &[name, idx] : blocks) {
-      if (idx < 0) {
+    for (auto &[name, arr] : blocks) {
+      if (arr) {
         allFixed = false;
         break;
       }

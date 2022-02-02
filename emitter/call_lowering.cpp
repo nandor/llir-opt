@@ -2,8 +2,10 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/insts.h"
 #include "emitter/call_lowering.h"
+
+#include "core/insts.h"
+#include "core/func.h"
 
 
 
@@ -48,7 +50,7 @@ void CallLowering::AnalyseCall(const CallSite *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
-    AssignArg(i, FlaggedType((*it).GetType(), call->GetFlag(i)));
+    AssignArg(i, FlaggedType((*it).GetType(), call->flag(i)));
   }
 
   // Handle arguments.

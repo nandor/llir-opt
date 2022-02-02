@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/item.h"
+
 #include "core/atom.h"
 #include "core/expr.h"
 #include "core/cast.h"

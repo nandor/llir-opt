@@ -512,7 +512,7 @@ SpecialisePass::Specialise(CallSite *call, const Parameters &params)
     }
     if (!replace) {
       args.push_back(call->arg(i));
-      flags.push_back(call->GetFlag(i));
+      flags.push_back(call->flag(i));
     }
   }
   return { args, flags };

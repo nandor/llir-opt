@@ -40,16 +40,21 @@ void GetCompareWriter::run(llvm::raw_ostream &OS)
     auto fields = r->getValueAsListOfDefs("Fields");
     for (unsigned i = 0, n = fields.size(); i < n; ++i) {
       auto *field = fields[i];
+
       auto fieldType = field->getValueAsString("Type");
       auto fieldName = field->getValueAsString("Name");
-      if (field->getValueAsBit("IsScalar")) {
+
+      const bool isScalar = field->getValueAsBit("IsScalar");
+      const bool isList = field->getValueAsBit("IsList");
+
+      if (isScalar) {
         OS << "if (";
         OS << "ai.Get" << fieldName << "()";
         OS << " != ";
         OS << "bi.Get" << fieldName << "()";
         OS << ") return false;";
       } else {
-        if (field->getValueAsBit("IsList")) {
+        if (isList) {
           auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
           OS << "{";
           OS << "const size_t n = ai." << itName << "_size(); ";

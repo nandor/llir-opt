@@ -34,17 +34,20 @@ void GetCloneWriter::run(llvm::raw_ostream &OS)
       }
     }
     for (auto *field : r->getValueAsListOfDefs("Fields")) {
+      auto fieldName = field->getValueAsString("Name");
+
       if (field->getValueAsBit("IsList")) {
         if (field->getValueAsBit("IsScalar")) {
-          OS << "inst->Get" << field->getValueAsString("Name") << "()";
+          OS << "inst->Get" << fieldName << "()";
         } else {
-          OS << "Map(inst->" << field->getValueAsString("Name").lower() << "())";
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
+          OS << "Map(inst->" << itName << "s())";
         }
       } else {
         if (field->getValueAsBit("IsScalar")) {
-          OS << "inst->Get" << field->getValueAsString("Name") << "()";
+          OS << "inst->Get" << fieldName << "()";
         } else {
-          OS << "Map(inst->Get" << field->getValueAsString("Name") << "())";
+          OS << "Map(inst->Get" << fieldName << "())";
         }
       }
       OS << ", ";

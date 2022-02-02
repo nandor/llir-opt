@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/util.h"
+
 #include <llvm/Support/Endian.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
@@ -9,7 +11,6 @@
 #include "core/bitcode.h"
 #include "core/parser.h"
 #include "core/prog.h"
-#include "core/util.h"
 
 namespace endian = llvm::support::endian;
 

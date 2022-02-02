@@ -3,4 +3,5 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/cfg.h"
+
 #include "core/insts.h"

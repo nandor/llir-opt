@@ -12,7 +12,6 @@
 
 #include "core/inst.h"
 #include "core/func.h"
-#include "core/insts/call.h"
 #include "emitter/call_lowering.h"
 
 class CallInst;

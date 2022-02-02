@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/func.h"
+
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/prog.h"

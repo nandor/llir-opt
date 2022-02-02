@@ -9,13 +9,9 @@
 
 #include "core/type.h"
 #include "core/calling_conv.h"
+#include "core/insts.h"
 
-class Inst;
 class Func;
-class CallSite;
-class ReturnInst;
-class RaiseInst;
-class LandingPadInst;
 
 
 

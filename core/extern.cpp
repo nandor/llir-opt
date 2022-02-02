@@ -2,8 +2,9 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/cast.h"
 #include "core/extern.h"
+
+#include "core/cast.h"
 #include "core/prog.h"
 #include "core/printer.h"
 

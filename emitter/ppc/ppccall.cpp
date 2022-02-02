@@ -5,7 +5,6 @@
 #include <llvm/Target/PowerPC/PPCISelLowering.h>
 #include <llvm/Target/PowerPC/PPCInstrInfo.h>
 
-#include "core/insts/call.h"
 #include "emitter/ppc/ppccall.h"
 
 namespace PPC = llvm::PPC;

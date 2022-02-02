@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/pass_manager.h"
+
 #include <chrono>
 #include <iostream>
 
@@ -9,7 +11,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "core/pass.h"
-#include "core/pass_manager.h"
 #include "core/printer.h"
 #include "core/bitcode.h"
 #include "core/verifier.h"

@@ -2,9 +2,11 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/block.h"
-#include "core/cast.h"
 #include "core/inst.h"
+
+#include "core/block.h"
+#include "core/func.h"
+#include "core/cast.h"
 #include "core/insts.h"
 #include "core/printer.h"
 
@@ -127,4 +129,23 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Inst::Kind kind)
     #define GET_INST(kind, t, name, s) case Inst::Kind::kind: return os << name;
     #include "instructions.def"
   }
+}
+
+// -----------------------------------------------------------------------------
+Func *CallSite::GetDirectCallee()
+{
+  Ref<Inst> callee = GetCallee();
+  while (auto mov = ::cast_or_null<MovInst>(callee)) {
+    auto movArg = mov->GetArg();
+    if (auto func = ::cast_or_null<Func>(movArg)) {
+      return func.Get();
+    }
+    if (auto inst = ::cast_or_null<Inst>(movArg)) {
+      callee = inst;
+      continue;
+    }
+    break;
+  }
+
+  return nullptr;
 }

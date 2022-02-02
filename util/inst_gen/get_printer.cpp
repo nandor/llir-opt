@@ -51,7 +51,8 @@ void GetPrinterWriter::run(llvm::raw_ostream &OS)
           OS << "for (auto arg : v.Get" << fieldName << "())";
           OS << "{"; comma(); OS << " os_ << arg; comma = true; };";
         } else {
-          OS << "for (auto arg : v." << fieldName.lower() << "())";
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
+          OS << "for (auto arg : v." << itName << "s())";
           OS << "{"; comma(); OS << " Print(arg); comma = true; };";
         }
       } else {

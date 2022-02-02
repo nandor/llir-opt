@@ -124,13 +124,22 @@ class Inst {
   bit HasCustomDefinition = 0;
   // Custom comparison required.
   bit HasCustomCompare = 0;
-  // Number of values returned.
+  // Number of types attached to the instruction.
   int NumTypes = 0;
+  // Number of returned values, -1 meaning equal to the number of types.
+  int NumReturns = -1;
 
+  /// Indicates whether the instruction can return from the function.
   bit IsReturn = 0;
+  /// Indicates whether the instruction introduces a constant.
   bit IsConstant = 0;
+  /// Indicates basic block terminators.
   bit IsTerminator = 0;
+  /// The instruction produces side effects on memory or hardware state.
   bit HasSideEffects = 0;
+
+  /// Custom code in the interface.
+  string CustomIntf = "";
 }
 
 class OperatorInst : Inst {
@@ -269,8 +278,25 @@ class CallSite : TerminatorInst {
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
   ];
+
   let HasSideEffects = 1;
-  let HasCustomDefinition = 1;
+  let NumTypes = -1;
+
+  let CustomIntf = [{
+    /// Returns the called func.
+    Func *GetDirectCallee();
+    /// Returns the called func.
+    const Func *GetDirectCallee() const
+    {
+      return const_cast<CallSite *>(this)->GetDirectCallee();
+    }
+
+    /// Changes the calling conv.
+    void SetCallingConv(CallingConv conv) { CallingConv_ = conv; }
+
+    /// Checks if the function is var arg: more args than fixed ones.
+    bool IsVarArg() const { return !!GetNumFixedArgs(); }
+  }];
 }
 
 def CALL : CallSite
@@ -283,7 +309,6 @@ def CALL : CallSite
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
   ];
-  let NumTypes = -1;
 }
 
 def TAIL_CALL : CallSite
@@ -295,8 +320,8 @@ def TAIL_CALL : CallSite
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
   ];
-  let NumTypes = -1;
   let IsReturn = 1;
+  let NumReturns = 0;
 }
 
 def INVOKE : CallSite
@@ -310,7 +335,6 @@ def INVOKE : CallSite
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
   ];
-  let NumTypes = -1;
 }
 
 /**

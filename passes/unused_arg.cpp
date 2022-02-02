@@ -94,7 +94,7 @@ bool UnusedArgPass::Run(Prog &prog)
       std::vector<TypeFlag> newFlags;
       if (auto it = usedArgs.find(callee); it != usedArgs.end()) {
         for (unsigned i = 0, n = site->arg_size(); i < n; ++i) {
-          newFlags.push_back(site->GetFlag(i));
+          newFlags.push_back(site->flag(i));
           auto arg = site->arg(i);
           if (it->second.count(i)) {
             newArgs.push_back(arg);
@@ -113,7 +113,7 @@ bool UnusedArgPass::Run(Prog &prog)
         for (unsigned i = 0, n = site->arg_size(); i < n; ++i) {
           if (!it->second.count(i)) {
             newArgs.push_back(site->arg(i));
-            newFlags.push_back(site->GetFlag(i));
+            newFlags.push_back(site->flag(i));
           }
         }
         replaced = true;

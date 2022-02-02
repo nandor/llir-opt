@@ -2,10 +2,11 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/printer.h"
+
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/Support/Format.h>
 
-#include "core/printer.h"
 #include "core/block.h"
 #include "core/cfg.h"
 #include "core/constant.h"

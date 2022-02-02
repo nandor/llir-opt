@@ -6,11 +6,12 @@
 
 #include <tuple>
 #include <vector>
+
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MemoryBuffer.h>
 
-#include "core/inst.h"
 #include "core/util.h"
+#include "core/inst.h"
 
 class Block;
 class Data;
@@ -18,6 +19,7 @@ class Expr;
 class Extern;
 class Func;
 class Global;
+class Inst;
 class PhiInst;
 class Prog;
 class Value;

@@ -8,6 +8,7 @@
 
 class Func;
 class MovInst;
+class Target;
 
 
 

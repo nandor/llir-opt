@@ -21,6 +21,7 @@
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "core/insts.h"
 #include "emitter/annot_printer.h"
 #include "emitter/isel_mapping.h"
 
