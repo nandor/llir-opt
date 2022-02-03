@@ -7,7 +7,7 @@ _switch:
   mov.i32 $5, 14
   cmp.ugt.i32 $6, $1, $5
   jt  $6, .Ldefault
-  zext.i64  $2, $1
+  z_ext.i64  $2, $1
   switch  $2, .LBB0_2, .LBB0_3, .LBB0_4, .LBB0_5, .LBB0_6, .Ldefault, .Ldefault, .Ldefault, .Ldefault, .Ldefault, .LBB0_7, .LBB0_8, .LBB0_9, .LBB0_10, .LBB0_11
 .LBB0_2:
   mov.i64  $16, _f10

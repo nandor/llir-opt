@@ -9,20 +9,20 @@ path_join:
 
   frame.i64     $1, 1, 0
   mov.i64       $2, 0
-  st            $1, $2
+  store            $1, $2
 
   arg.i32       $3, 0
   jt.i32        $3, .Ltrue
 .Lfalse:
   mov.i64       $4, 0
-  st            $0, $4
-  jmp           .Lend
+  store            $0, $4
+  jump          .Lend
 .Ltrue:
   mov.i64       $5, 0
-  st            $0, $5
+  store            $0, $5
 .Lend:
-  ld.i64        $6, $0
-  ld.i64        $7, $1
+  load.i64        $6, $0
+  load.i64        $7, $1
   add.i64       $8, $6, $7
   ret.i64       $8
   .end

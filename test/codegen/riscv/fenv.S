@@ -4,7 +4,7 @@
 feclearexcept:
   .args         i32
   arg.i32       $0, 0
-  xext.i64      $1, $0
+  x_ext.i64     $1, $0
   get.i64       $2, $riscv_fflags
   xor.i64       $3, $2, $1
   set           $riscv_fflags, $3
@@ -16,7 +16,7 @@ feclearexcept:
 feraiseexcept:
   .args         i32
   arg.i32       $0, 0
-  xext.i64      $1, $0
+  x_ext.i64     $1, $0
   get.i64       $2, $riscv_fflags
   or.i64        $3, $2, $1
   set           $riscv_fflags, $3
@@ -45,7 +45,7 @@ fegetround:
 __fesetround:
   .args         i32
   arg.i32       $0, 0
-  xext.i64      $1, $0
+  x_ext.i64     $1, $0
   get.i64       $2, $riscv_frm
   or.i64        $3, $2, $1
   set           $riscv_frm, $3
@@ -59,7 +59,7 @@ fegetenv:
   arg.i64         $0, 0
   get.i64         $1, $riscv_fcsr
   trunc.i32       $2, $1
-  st              [$0], $2
+  store              [$0], $2
   mov.i32         $3, 0
   ret             $3
   .end
@@ -70,13 +70,13 @@ fesetenv:
   arg.i64       $0, 0
   mov.i64       $1, 0xFFFFFFFF
   cmp.eq.i32    $2, $0, $1
-  jcc           $2, .Lclear, .Lset
+  jump_cond           $2, .Lclear, .Lset
 .Lclear:
   mov.i64       $3, 0
-  jmp           .Ljoin
+  jump          .Ljoin
 .Lset:
-  ld.i64        $4, [$0]
-  jmp           .Ljoin
+  load.i64        $4, [$0]
+  jump          .Ljoin
 .Ljoin:
   phi.i64       $5, .Lclear, $3, .Lset, $4
   set           $riscv_fcsr, $5

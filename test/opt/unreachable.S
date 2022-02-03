@@ -4,9 +4,9 @@
 main:
   .visibility global_default
   mov.i64   $0, ptr0 # ptr0
-  ld.8.i64  $1, [$0] # ptr1
-  ld.8.i64  $2, [$1] # ptr2
-  ld.8.i64  $3, [$2] # f1
+  load.i64  $1, [$0] # ptr1
+  load.i64  $2, [$1] # ptr2
+  load.i64  $3, [$2] # f1
   call.c    $3
   ret
   .end

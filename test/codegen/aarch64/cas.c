@@ -4,7 +4,7 @@ static inline int a_ll(volatile int *p)
 {
   int v;
   __asm__ __volatile__
-    ( "aarch64_ll.i32 %w0, %1"
+    ( "aarch64_load_link.i32 %w0, %1"
     : "=r"(v)
     : "r"(p)
     :
@@ -16,7 +16,7 @@ static inline int a_sc(volatile int *p, int v)
 {
   int r;
   __asm__ __volatile__
-    ( "aarch64_sc.i32 %w0, %1, %w2"
+    ( "aarch64_store_cond.i32 %w0, %1, %w2"
     : "=r"(r)
     : "r"(p), "r"(v)
     : "memory"

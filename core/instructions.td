@@ -124,6 +124,8 @@ class Inst {
   bit HasCustomDefinition = 0;
   // Custom comparison required.
   bit HasCustomCompare = 0;
+  // Custom parsing required.
+  bit HasCustomParser = 0;
   // Number of types attached to the instruction.
   int NumTypes = 0;
   // Number of returned values, -1 meaning equal to the number of types.
@@ -264,6 +266,7 @@ def PHI : Inst
   let HasCustomDefinition = 1;
   let HasCustomPrinter = 1;
   let HasCustomCompare = 1;
+  let HasCustomParser = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -297,6 +300,8 @@ class CallSite : TerminatorInst {
     /// Checks if the function is var arg: more args than fixed ones.
     bool IsVarArg() const { return !!GetNumFixedArgs(); }
   }];
+
+  let HasCustomParser = 1;
 }
 
 def CALL : CallSite
@@ -347,6 +352,8 @@ def RETURN : TerminatorInst
   ];
   let HasSideEffects = 1;
   let IsReturn = 1;
+
+  let HasCustomParser = 1;
 }
 
 
@@ -388,6 +395,8 @@ def SWITCH : TerminatorInst
     InstField<"Index">,
     BlockListField<"Blocks">
   ];
+
+  let HasCustomParser = 1;
 }
 
 /**
@@ -419,6 +428,8 @@ def RAISE : TerminatorInst
     InstListField<"Args">
   ];
   bit HasSideEffects = 1;
+
+  let HasCustomParser = 1;
 }
 
 /**
@@ -447,6 +458,8 @@ def LANDING_PAD : ControlInst
   let Fields = [ OptCallinvConvField<"CallingConv"> ];
   let NumTypes = -1;
   let HasSideEffects = 1;
+
+  let HasCustomParser = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -634,6 +647,8 @@ def SYSCALL : Inst
   let NumTypes = -1;
 
   bit HasSideEffects = 1;
+
+  let HasCustomParser = 1;
 }
 
 def CLONE : Inst
@@ -679,6 +694,8 @@ def X86_CPU_ID : Inst
   let Fields = [ InstField<"Leaf">, OptInstField<"Subleaf"> ];
   let NumTypes = 4;
   let IsConstant = 1;
+
+  let HasCustomParser = 1;
 }
 
 def X86_GET_XCR : Inst
@@ -834,6 +851,8 @@ def X86_INT : Inst
     InstListField<"Args">
   ];
   let HasSideEffects = 1;
+
+  let HasCustomParser = 1;
 }
 
 // -----------------------------------------------------------------------------

@@ -14,7 +14,7 @@ _cmp_xchg_8:
   arg.i64         $0, 0
   arg.i8          $1, 1
   arg.i8          $2, 2
-  x86_cmpxchg.i8  $3, $0, $1, $2
+  x86_cmp_xchg.i8  $3, $0, $1, $2
   ret             $3
   .end
 
@@ -24,7 +24,7 @@ _cmp_xchg_16:
   arg.i64         $0, 0
   arg.i16         $1, 1
   arg.i16         $2, 2
-  x86_cmpxchg.i16 $3, $0, $1, $2
+  x86_cmp_xchg.i16 $3, $0, $1, $2
   ret             $3
   .end
 
@@ -34,7 +34,7 @@ _cmp_xchg_32:
   arg.i64         $0, 0
   arg.i32         $1, 1
   arg.i32         $2, 2
-  x86_cmpxchg.i32 $3, $0, $1, $2
+  x86_cmp_xchg.i32 $3, $0, $1, $2
   ret             $3
   .end
 
@@ -44,7 +44,7 @@ _cmp_xchg_64:
   arg.i64         $0, 0
   arg.i64         $1, 1
   arg.i64         $2, 2
-  x86_cmpxchg.i64 $3, $0, $1, $2
+  x86_cmp_xchg.i64 $3, $0, $1, $2
   ret             $3
   .end
 

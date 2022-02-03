@@ -31,13 +31,13 @@ callee:
   mov.i64     $1, 100
 
   mov.i64     $2, addr
-  ld.i64      $3, $2
+  load.i64      $3, $2
 
   mov.i64     $4, stack
-  ld.i64      $5, $4
+  load.i64      $5, $4
 
   cmp.le.i8   $6, $0, $1
-  jcc         $6, .Ltrue, .Lfalse
+  jump_cond         $6, .Ltrue, .Lfalse
 .Ltrue:
   mov.i64     $7, 100
   add.i64     $8, $0, $7

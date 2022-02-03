@@ -7,18 +7,18 @@ xmm_call:
   arg.i64          $3, 2
   arg.i64          $4, 3
 
-  ld.8.f64         $21, [$4]
+  load.8.f64         $21, [$4]
   trunc.f32        $22, $21
-  fext.f64         $23, $22
-  ld.8.f64         $24, [$3]
+  f_ext.f64         $23, $22
+  load.8.f64         $24, [$3]
   trunc.f32        $25, $24
-  fext.f64         $26, $25
-  ld.8.f64         $27, [$2]
+  f_ext.f64         $26, $25
+  load.8.f64         $27, [$2]
   trunc.f32        $28, $27
-  fext.f64         $29, $28
-  ld.8.f64         $30, [$1]
+  f_ext.f64         $29, $28
+  load.8.f64         $30, [$1]
   trunc.f32        $31, $30
-  fext.f64         $32, $31
+  f_ext.f64         $32, $31
 
   mov.i64          $33, L.str.28
   mov.i64          $34, xmm_callee

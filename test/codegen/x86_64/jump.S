@@ -2,7 +2,7 @@
   .section .text
 _jmp:
   .call        c
-  jmp          .BB
+  jump         .BB
 .BB:
   ret
   .end

@@ -16,7 +16,7 @@
 #include "get_compare.h"
 #include "get_instruction.h"
 #include "get_printer.h"
-
+#include "get_parser.h"
 
 
 // -----------------------------------------------------------------------------
@@ -29,6 +29,7 @@ bool LLIRTableGenMain(llvm::raw_ostream &os, llvm::RecordKeeper &records)
   GetInstructionWriter(records).run(os);
   GetPrinterWriter(records).run(os);
   GetCastWriter(records).run(os);
+  GetParserWriter(records).run(os);
   return false;
 }
 

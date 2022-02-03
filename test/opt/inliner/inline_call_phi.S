@@ -6,7 +6,7 @@ callee:
   .visibility local
 
   arg.i64     $0, 0
-  jcc         $0, .Lcallee_true, .Lcallee_false
+  jump_cond         $0, .Lcallee_true, .Lcallee_false
 .Lcallee_true:
   mov.i64     $1, 1
   ret.i64     $1
@@ -22,7 +22,7 @@ caller:
 .Lcaller_entry:
   arg.i64     $0, 0
   mov.i64     $1, 1
-  jcc         $0, .Lcaller_true, .Lcaller_false
+  jump_cond         $0, .Lcaller_true, .Lcaller_false
 .Lcaller_true:
   mov.i64     $2, callee
   call.i64.c  $3, $2, .Lcaller_false

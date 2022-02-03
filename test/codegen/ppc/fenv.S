@@ -18,7 +18,7 @@ feclearexcept:
   select.i32  $9, $8, $2, $4
   mov.i32 $10, -1
   xor.i32 $11, $9, $10
-  sext.i64  $12, $11
+  s_ext.i64  $12, $11
   get.f64 $13, $ppc_fpscr
   bit_cast.i64 $14, $13
   and.i64 $15, $14, $12

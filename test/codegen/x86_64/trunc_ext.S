@@ -6,7 +6,7 @@ trunc_ext:
 
   arg.f64          $1, 0
   trunc.f32        $31, $1
-  fext.f64         $32, $31
+  f_ext.f64         $32, $31
 
   ret              $32
   .end

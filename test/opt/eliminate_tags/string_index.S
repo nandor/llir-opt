@@ -13,17 +13,17 @@ to_optimise:
   arg.v64     $3, 3
   arg.v64     $4, 4
   arg.v64     $5, 5
-  jmp         .Lstart
+  jump        .Lstart
 .Lstart:
   phi.v64     $6, .Lentry, $4, .Lpred, $22
   cmp.i8.lt   $7, $6, $3
-  jcc         $7, .Lbody, .Lcheck
+  jump_cond         $7, .Lbody, .Lcheck
 .Lcheck:
   mov.i64     $8, .Lexception + 8
   mov.i64     $9, 232
   add.i64     $10, $0, $9
   mov.i64     $11, 0
-  st          $10, $11
+  store          $10, $11
   mov.i64     $12, caml_raise_exn
   call.caml   $12, $0, $1, $8, .Lend @caml_frame(() (((2024409346867202 "string.ml" "Stdlib__string.index_rec"))))
 .Lend:
@@ -32,18 +32,18 @@ to_optimise:
   mov.i64     $13, 1
   sra.i64     $14, $6, $13
   add.i64     $15, $2, $14
-  ld.i8       $16, $15
-  zext.i64    $17, $16
+  load.i8       $16, $15
+  z_ext.i64    $17, $16
   sll.i64     $18, $17, $13
   add.i64     $19, $18, $13
   cmp.i8.ne   $20, $19, $5
-  jcc         $20, .Lpred, .Lexit
+  jump_cond         $20, .Lpred, .Lexit
 .Lexit:
   ret         $0, $1, $6
 .Lpred:
   mov.i64     $21, 2
   add.i64     $22, $6, $21
-  jmp         .Lstart
+  jump        .Lstart
   .end
 
   .align 1

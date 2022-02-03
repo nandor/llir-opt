@@ -27,15 +27,15 @@ test:
   # CHECK: data_global_hidden
   # CHECK: data_weak_hidden
   mov.i64 $1, data_global_hidden
-  ld.i32  $2, [$1]
+  load.i32  $2, [$1]
   mov.i64 $3, data_global_default
-  ld.i32  $4, [$3]
+  load.i32  $4, [$3]
   add.i32 $5, $4, $2
   mov.i64 $6, data_weak_hidden
-  ld.i32  $7, [$6]
+  load.i32  $7, [$6]
   add.i32 $8, $5, $7
   mov.i64 $9, data_weak_default
-  ld.i32  $10, [$9]
+  load.i32  $10, [$9]
   add.i32 $11, $8, $10
   ret $11
   .end

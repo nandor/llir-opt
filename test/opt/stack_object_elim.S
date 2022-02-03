@@ -9,7 +9,7 @@ func:
   .stack_object 2, 8, 8
   frame.i64     $0, 2, 4
   mov.i64       $1, 1
-  st.8          $0, $1
+  store         $0, $1
   # CHECK: ret
   ret
   .end

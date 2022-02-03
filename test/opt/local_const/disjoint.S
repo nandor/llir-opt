@@ -7,9 +7,9 @@ caml_request_major_slice:
 .LBBentry563:
   mov.i32 $6975, 1
   mov.i64 $6976, caml_requested_major_slice
-  st.4  $6976, $6975
+  store.4  $6976, $6975
   mov.i64 $6978, caml_something_to_do
-  st.4  $6978, $6975
+  store.4  $6978, $6975
   ret
   .end
 

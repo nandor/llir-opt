@@ -11,23 +11,23 @@ test:
 .Lentry:
   frame.i64   $0, 0, 0
   mov.i64     $1, 10
-  udiv.i64    $2, $0, $1
+  u_div.i64    $2, $0, $1
   cmp.i8.ne   $3, $1, $1
-  jcc         $3, .Ltrue, .Lfalse
+  jump_cond         $3, .Ltrue, .Lfalse
 .Ltrue:
   mov.i64     $20, 100
-  udiv.i64    $21, $0, $20
-  st          $0, $21
-  jmp         .Lend
+  u_div.i64    $21, $0, $20
+  store          $0, $21
+  jump        .Lend
 .Lfalse:
   mov.i64     $30, 100
-  udiv.i64    $31, $0, $30
-  st          $0, $31
-  jmp         .Lend
+  u_div.i64    $31, $0, $30
+  store          $0, $31
+  jump        .Lend
 .Lend:
-  ld.i64      $40, $0
+  load.i64      $40, $0
   mov.i64     $41, data
-  st          $41, $40
+  store          $41, $40
   ret         $40
 
   .section .data

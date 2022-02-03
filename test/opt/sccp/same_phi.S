@@ -13,12 +13,12 @@ sccp_same_phi:
 .Lfalse:
   mov.i64       $1, 1
   add.i64       $3, $0, $1
-  jmp           .Lmerge
+  jump          .Lmerge
 
 .Ltrue:
   mov.i64       $1, 2
   add.i64       $4, $2, $1
-  jmp           .Lmerge
+  jump          .Lmerge
 
 .Lmerge:
   phi.i64       $5, .Lfalse, $3, .Ltrue, $4

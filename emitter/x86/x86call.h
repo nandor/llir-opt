@@ -14,7 +14,6 @@
 
 class CallInst;
 class InvokeInst;
-class TailCallInst;
 class ReturnInst;
 class RaiseInst;
 class Func;

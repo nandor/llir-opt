@@ -26,7 +26,7 @@ rem_u32_const:
 
   arg.i32          $0, 0
   mov.i32          $1, 13
-  urem.i32          $2, $0, $1
+  u_rem.i32          $2, $0, $1
   ret.i32          $2
   .end
 
@@ -36,6 +36,6 @@ rem_i32_const:
 
   arg.i32          $0, 0
   mov.i32          $1, 13
-  srem.i32          $2, $0, $1
+  s_rem.i32          $2, $0, $1
   ret.i32          $2
   .end

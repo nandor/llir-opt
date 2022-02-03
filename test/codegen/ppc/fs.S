@@ -10,7 +10,7 @@ __init_ssp:
   # CHECK:             13
   get.i64              $10, $fs
   add.i64              $12, $10, $11
-  st                   [$12], $13
+  store                   [$12], $13
   ret
   .end
 

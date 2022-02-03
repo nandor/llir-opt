@@ -8,7 +8,7 @@ test:
   arg.i128  $1, 1
   mov.i128  $2, 1
   add.i128  $3, $0, $2
-  jmp       .Lcont
+  jump      .Lcont
 .Lcont:
   add.i128  $4, $3, $1
   ret       $4

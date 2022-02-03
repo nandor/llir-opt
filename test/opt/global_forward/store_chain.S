@@ -6,12 +6,12 @@ _start:
   .call c
   mov.i64 $0, val
   mov.i64 $1, 1
-  st      $0, $1
-  st      $0, $1
-  st      $0, $1
-  st      $0, $1
-  st      $0, $1
-  st      $0, $1
+  store      $0, $1
+  store      $0, $1
+  store      $0, $1
+  store      $0, $1
+  store      $0, $1
+  store      $0, $1
   ret
   .end
 

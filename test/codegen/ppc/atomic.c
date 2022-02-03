@@ -18,7 +18,7 @@ static inline int a_ll(volatile int *p)
 {
   int v;
   __asm__ __volatile__
-    ( "ppc_ll.i32 %0, %1"
+    ( "ppc_load_link.i32 %0, %1"
     : "=r"(v)
     : "r"(p)
     :
@@ -30,7 +30,7 @@ static inline int a_sc(volatile int *p, int v)
 {
   int r;
   __asm__ __volatile__
-    ( "ppc_sc.i32 %0, %1, %2"
+    ( "ppc_store_cond.i32 %0, %1, %2"
     : "=r"(r)
     : "r"(p), "r"(v)
     : "memory"
@@ -43,6 +43,6 @@ int a_swap(volatile int *p, int v)
   int old;
   do old = a_ll(p);
   while (!a_sc(p, v));
-  __asm__ __volatile__ ("ppc_isync" : : : "memory");
+  __asm__ __volatile__ ("ppc_i_fence" : : : "memory");
   return old;
 }

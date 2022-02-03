@@ -5,7 +5,7 @@ umulo:
 
   arg.i32   $0, 0
   arg.i32   $1, 1
-  umulo.i32 $2, $0, $1
+  o_u_mul.i32 $2, $0, $1
   ret.i32   $2
   .end
 
@@ -14,6 +14,6 @@ uaddo:
 
   arg.i32   $0, 0
   arg.i32   $1, 1
-  uaddo.i32 $2, $0, $1
+  o_u_add.i32 $2, $0, $1
   ret.i32   $2
   .end

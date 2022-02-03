@@ -3,10 +3,10 @@
   .section .text
 main:
   mov.i64   $0, a
-  ld.i64    $1, [$0]
+  load.i64    $1, [$0]
   mov.i64   $2, 1
   add.i64   $3, $1, $2
-  st.i64    [$0], $3
+  store.i64    [$0], $3
   ret.i64   $3
   .end
 

@@ -6,7 +6,7 @@ main:
   .call   c
   .args   i32, i64
 .START:
-  jmp        .BLOCK1
+  jump       .BLOCK1
 .BLOCK1:
   ret
   .end

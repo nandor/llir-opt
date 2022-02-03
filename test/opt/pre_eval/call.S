@@ -5,15 +5,15 @@ main:
 .Lentry:
   mov.i64   $0, func_b
   call.c    $0
-  jmp.i64   .Lfunc_c
+  jump      .Lfunc_c
 .Lfunc_c:
   mov.i64   $1, func_c
   call.c    $1
-  jmp.i64   .Lfinal
+  jump      .Lfinal
 .Lfinal:
   mov.i64   $0, a
   mov.i64   $1, 3
-  st.i64    [$0], $1
+  store.i64    [$0], $1
   ret
   .end
 
@@ -22,7 +22,7 @@ func_b:
 .Lentry_b:
   mov.i64   $0, b
   mov.i64   $1, 1
-  st.i64    [$0], $1
+  store.i64    [$0], $1
   ret
   .end
 
@@ -31,7 +31,7 @@ func_c:
 .Lentry_c:
   mov.i64   $0, c
   mov.i64   $1, 2
-  st.i64    [$0], $1
+  store.i64    [$0], $1
   ret
   .end
 

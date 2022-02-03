@@ -6,7 +6,7 @@ caller:
   arg.i64       $0, 0
   mov.i64       $1, callee
   mov.i64       $3, Caml_state
-  ld.i64        $4, $3
+  load.i64        $4, $3
   call.i64.c    $2, $1, $0, $4 @caml_frame
   ret.i64       $2
   .end

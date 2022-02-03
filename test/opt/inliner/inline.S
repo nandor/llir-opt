@@ -107,7 +107,7 @@ callee_merge:
   jt        $0, .Ltrue_merge
 .Lfalse_merge:
   mov.i64   $1, 100
-  jmp       .Lend_merge
+  jump      .Lend_merge
 .Ltrue_merge:
   mov.i64   $2, 200
 .Lend_merge:

@@ -13,13 +13,13 @@ __cp_begin:
   arg.i64   $6, 6 # arg4
   arg.i64   $7, 7 # arg5
 
-  ld.i32    $8, [$0]
+  load.i32    $8, [$0]
   mov.i32   $9, 0
   cmp.ne.i8 $10, $8, $9
-  jcc       $10, __cp_cancel, Lcont
+  jump_cond       $10, __cp_cancel, Lcont
 Lcont:
   syscall.i64  $11, $1, $2, $3, $4, $5, $6, $7
-  jmp __cp_end
+  jump __cp_end
 __cp_end:
   ret     $11
 __cp_cancel:

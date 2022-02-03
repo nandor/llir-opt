@@ -31,7 +31,7 @@ caml_thread_start:
   .args         i64
 
   arg.i64       $0, 0
-  ld.8.i64      $1, [$0]
+  load.8.i64      $1, [$0]
   call.c        [$1]
   ret
   .end

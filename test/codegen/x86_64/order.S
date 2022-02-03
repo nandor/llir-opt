@@ -4,17 +4,17 @@ caml_alloc1:
   .call       c
 .Lalloc1:
   mov.i64     $0, caml_young_ptr
-  ld.8.i64    $1, [$0]
+  load.8.i64    $1, [$0]
   mov.i64     $2, 16
   sub.i64     $3, $1, $2
 
   mov.i64     $4, caml_young_limit
-  ld.8.i64    $5, [$4]
+  load.8.i64    $5, [$4]
 
   cmp.ge.i32  $6, $3, $5
   jf          $6, .Lcollect1
 
-  st.8        [$0], $3
+  store.8        [$0], $3
   mov.i64     $7, 8
   add.i64     $8, $3, $7
   ret.i64     $8
@@ -22,5 +22,5 @@ caml_alloc1:
 .Lcollect1:
   mov.i64     $99, caml_call_gc
   call.c      $99
-  jmp         .Lalloc1
+  jump        .Lalloc1
   .end

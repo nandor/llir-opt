@@ -7,7 +7,7 @@ callee_loop:
   mov.i64     $0, foo_loop
   arg.i64     $1, 0
   call.c      $0, $1
-  jmp         .Lentry_loop
+  jump        .Lentry_loop
   .end
 
 caller_loop:

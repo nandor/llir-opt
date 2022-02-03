@@ -19,7 +19,7 @@ trap_caller_1:
   mov.i64     $1, trap_callee
   call.c.i64  $2, $1, .Lcont
 .Lcont:
-  jmp         .Ltrue
+  jump        .Ltrue
 .Ltrue:
   phi.i64     $3, .Lentry, $5, .Lcont, $2
   ret.i64     $3

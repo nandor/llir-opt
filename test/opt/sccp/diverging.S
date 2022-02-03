@@ -7,7 +7,7 @@ diverging:
   .visibility global_hidden
 
   arg.i8    $0, 0
-  jcc       $0, .Ltrue, .Lfalse
+  jump_cond $0, .Ltrue, .Lfalse
 .Ltrue:
   mov.i8    $1, 100
   ret       $1

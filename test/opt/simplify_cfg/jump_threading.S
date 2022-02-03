@@ -13,13 +13,13 @@ thread_cond_same_target:
   mov.i64     $2, 200
   jt          $1, .L1
 .Lt:
-  jmp         .L4
+  jump        .L4
 .L1:
-  jmp         .L2
+  jump        .L2
 .L2:
-  jmp         .L3
+  jump        .L3
 .L3:
-  jmp         .L4
+  jump        .L4
 .L4:
   phi.i64     $3, .Lt, $2, .L3, $0
   ret.i64     $3
@@ -36,13 +36,13 @@ thread_cond_same_pred:
   arg.i32     $1, 0
   jt          $1, .Lf1
 .Lt2:
-  jmp         .Lt1
+  jump        .Lt1
 .Lt1:
-  jmp         .L5
+  jump        .L5
 .Lf1:
-  jmp         .L5
+  jump        .L5
 .L5:
-  jmp         .L6
+  jump        .L6
 .L6:
   mov.i64     $3, 0
   ret.i64     $3

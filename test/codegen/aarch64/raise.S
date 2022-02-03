@@ -15,10 +15,10 @@ longjmp:
   select.i64          $4, $1, $2, $3
   add.i64             $5, $1, $4
 
-  ld.i64              $6, [$0]
+  load.i64              $6, [$0]
 
   mov.i64             $7, 8
   add.i64             $8, $0, $7
-  ld.i64              $9, [$8]
+  load.i64              $9, [$8]
 
-  raise.setjmp        $9, $6, $5
+  raise.setjmp       $9, $6, $5

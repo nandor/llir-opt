@@ -7,7 +7,7 @@ sign_extend:
   mov.i64          $1, 1
   undef.i32        $66
   jt               $66, .Lother
-  sext.i128        $95, $1
+  s_ext.i128        $95, $1
   mov.i64          $5, 1
 .Lother:
   trap
@@ -18,8 +18,8 @@ hmul:
   .args            i64
   arg.i64          $1, 0
   mov.i64          $0, 2582544170319337227
-  sext.i128        $2, $1
-  sext.i128        $3, $0
+  s_ext.i128        $2, $1
+  s_ext.i128        $3, $0
   mul.i128         $4, $2, $3
   mov.i8           $5, 64
   srl.i128         $4, $4, $5
@@ -55,8 +55,8 @@ phi_loop:
 .L194.32:
 
   mov.i64          $8, 2582544170319337227
-  sext.i128        $95, $5
-  sext.i128        $96, $8
+  s_ext.i128        $95, $5
+  s_ext.i128        $96, $8
   mul.i128         $97, $95, $96
   mov.i8           $98, 64
   srl.i128         $97, $97, $98

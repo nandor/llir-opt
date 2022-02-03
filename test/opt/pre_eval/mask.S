@@ -14,7 +14,7 @@ test:
   trunc.i8    $1, $0
   mov.i8      $2, 1
   cmp.eq.i8   $3, $1, $2
-  jcc         $3, .Ltrue, .Lfalse
+  jump_cond         $3, .Ltrue, .Lfalse
 .Ltrue:
   mov.i64     $4, 1234
   ret.i64     $4

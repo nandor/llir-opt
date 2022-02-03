@@ -6,8 +6,8 @@ load_store:
   .call c
   frame.i64 $0, 0, 0
   # CHECK: fnstcw
-  x86_fnstcw $0
+  x86_fn_st_cw $0
   # CHECK: fldcw
-  x86_fldcw $0
+  x86_f_ld_cw $0
   ret
   .end

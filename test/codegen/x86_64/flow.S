@@ -11,5 +11,5 @@ phi_exn:
 
 .Lhandler:
   mov.i64           $23, 5
-  jmp               .Lreturn
+  jump              .Lreturn
 

@@ -21,7 +21,7 @@ _Exit:
   .args                i32
   .call                c
   arg.i32              $3, 0
-  sext.i64             $6, $3
+  s_ext.i64             $6, $3
   mov.i64              $2, 231
   # CHECK: svc
   syscall.i64          $1, $2, $6
@@ -29,7 +29,7 @@ _Exit:
 .LBB0_1$149:
   # CHECK: svc
   syscall.i64          $4, $5, $6
-  jmp                  .LBB0_1$149
+  jump                 .LBB0_1$149
   .end
 
 test:

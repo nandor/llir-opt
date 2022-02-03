@@ -6,11 +6,11 @@ caml_call_gc:
 
   get.i64     $3, $ret_addr
   mov.i64     $4, caml_last_return_address
-  st.8        [$4], $3
+  store.8        [$4], $3
 
   get.i64     $5, $frame_addr
   mov.i64     $6, caml_bottom_of_stack
-  st.8        [$6], $5
+  store.8        [$6], $5
 
   mov.i64     $7, caml_collect
   tcall.c     $7
@@ -22,17 +22,17 @@ caml_alloc1:
 
 .Lalloc1:
   mov.i64     $0, caml_young_ptr
-  ld.8.i64    $1, [$0]
+  load.8.i64    $1, [$0]
   mov.i64     $2, 16
   sub.i64     $3, $1, $2
 
   mov.i64     $4, caml_young_limit
-  ld.8.i64    $5, [$4]
+  load.8.i64    $5, [$4]
 
   cmp.ge.i32  $6, $3, $5
   jf          $6, .Lcollect1
 
-  st.8        [$0], $3
+  store.8        [$0], $3
   mov.i64     $7, 8
   add.i64     $8, $3, $7
   ret.i64     $8
@@ -40,15 +40,15 @@ caml_alloc1:
 .Lcollect1:
   get.i64     $3, $ret_addr
   mov.i64     $4, caml_last_return_address
-  st.8        [$4], $3
+  store.8        [$4], $3
 
   get.i64     $5, $frame_addr
   mov.i64     $6, caml_bottom_of_stack
-  st.8        [$6], $5
+  store.8        [$6], $5
 
   mov.i64     $99, caml_collect
   call.c      $99
-  jmp         .Lalloc1
+  jump        .Lalloc1
   .end
 
 caml_collect:

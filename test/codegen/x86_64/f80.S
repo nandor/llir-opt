@@ -11,7 +11,7 @@ ctypes_copy_ldouble:
   # CHECK: fstpt
   arg.f80              $1, 0
   frame.i64            $12, 0, 0
-  st.10                [$12], $1
+  store.10                [$12], $1
   mov.i64              $2, 1
   mov.i64              $3, 0
   mov.i64              $4, 16
@@ -35,7 +35,7 @@ ctypes_ldouble_inf:
   mov.f64   $1, 0
   log.f64 $2, $1
   neg.f64 $3, $2
-  fext.f80  $4, $3
+  f_ext.f80  $4, $3
   mov.i64 $5, no_impl
   call.i64.c  $6, $5, $4
   ret
@@ -48,9 +48,9 @@ extend:
   .visibility global_default
   arg.i64 $0, 0
   arg.i64 $1, 1
-  ld.f64  $2, [$0]
-  fext.f80  $3, $2
-  st  [$1], $3
+  load.f64  $2, [$0]
+  f_ext.f80  $3, $2
+  store  [$1], $3
   ret
   .end
 
@@ -60,8 +60,8 @@ copy:
   .visibility global_default
   arg.i64 $0, 0
   arg.i64 $1, 1
-  ld.f80  $2, [$0]
-  st  [$1], $2
+  load.f80  $2, [$0]
+  store  [$1], $2
   ret
   .end
 
@@ -69,7 +69,7 @@ constant_1:
   .args i64
   arg.i64 $0, 0
   mov.f80 $1, 0x41cdcd6500000000
-  st      [$0], $1
+  store      [$0], $1
   ret
   .end
 

@@ -17,10 +17,10 @@ cgt_init:
   mov.i64 $6, vdso_func
   mov.i64 $7, cgt_init
   # cmpxchg
-  x86_cmpxchg.i64 $8, $6, $5, $7
+  x86_cmp_xchg.i64 $8, $6, $5, $7
   mov.i64 $9, 0
   cmp.eq.i8 $10, $5, $9
-  jcc $10, .LBB1_2, .LBBterm11
+  jump_cond $10, .LBB1_2, .LBBterm11
 .LBBterm11:
   .visibility local
   tcall.2.c.i32 $5, $1, $0

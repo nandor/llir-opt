@@ -18,8 +18,8 @@ test2:
 test:
 
   mov.i64   $0, test0
-  ld.i64    $1, $0
-  ld.i64    $2, $1
+  load.i64    $1, $0
+  load.i64    $2, $1
 
   ret       $2
   .end
