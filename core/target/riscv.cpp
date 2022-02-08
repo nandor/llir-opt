@@ -18,7 +18,7 @@ RISCVTarget::RISCVTarget(
   : Target(
       kKind,
       triple,
-      cpu.empty() ? "generic-rv64" : cpu,
+      cpu.empty() ? "generic-rv64gc" : cpu,
       tuneCPU,
       fs,
       abi,
