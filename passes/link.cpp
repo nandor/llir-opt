@@ -72,8 +72,8 @@ static Func *MergeXtors(Prog &prog, const char *name, const XtorMap &xtors)
           {},
           {},
           next,
-          std::nullopt,
           CallingConv::C,
+          std::nullopt,
           {}
       ));
     }

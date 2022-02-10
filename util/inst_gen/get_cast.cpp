@@ -18,16 +18,15 @@ void GetCastWriter::run(llvm::raw_ostream &OS)
       continue;
     }
 
-    auto n = baseClass->getName();
-    OS << "class " << n << ";\n";
+    OS << "class " << name << ";\n";
     OS << "template<> ";
-    OS << n << " *cast_or_null<" << n << ">";
+    OS << name << " *cast_or_null<" << name << ">";
     OS << "(Value *value);\n";
 
     OS << "template<> ";
-    OS << "inline const " << n << " *cast_or_null<const " << n << ">";
+    OS << "inline const " << name << " *cast_or_null<const " << name << ">";
     OS << "(const Value *value) {\n";
-    OS << "\treturn ::cast_or_null<" << n << ">(const_cast<Value *>(value));\n";
+    OS << "\treturn ::cast_or_null<" << name << ">(const_cast<Value *>(value));\n";
     OS << "}\n";
   }
   OS << "#endif // GET_CAST_INTF\n\n";
@@ -40,17 +39,15 @@ void GetCastWriter::run(llvm::raw_ostream &OS)
       continue;
     }
 
-    auto n = baseClass->getName();
-    OS << "class " << n << ";\n";
     OS << "template<> ";
-    OS << n << " *cast_or_null<" << n << ">";
+    OS << name << " *cast_or_null<" << name << ">";
     OS << "(Value *value) {\n";
     OS << "\tauto *i = ::cast_or_null<Inst>(value); if (!i) return nullptr;\n";
     OS << "\tswitch (i->GetKind()) {\n\t\tdefault: return nullptr;\n";
-    for (auto *r : records_.getAllDerivedDefinitions(n)) {
+    for (auto *r : records_.getAllDerivedDefinitions(name)) {
       OS << "\t\tcase Inst::Kind::" << r->getName() << ": \n";
     }
-    OS << "\t\t\treturn reinterpret_cast<" << n << "*>(value);\n";
+    OS << "\t\t\treturn reinterpret_cast<" << name << "*>(value);\n";
     OS << "\t}\n";
     OS << "}\n";
   }

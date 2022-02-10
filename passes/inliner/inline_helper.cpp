@@ -168,8 +168,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             call->GetFlags(),
             Map(call->GetCont()),
             throw_,
-            call->GetNumFixedArgs(),
             call->GetCallingConv(),
+            call->GetNumFixedArgs(),
             Annot(inst)
         );
       } else {
@@ -199,8 +199,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 call->GetFlags(),
                 cont,
                 throw_,
-                call->GetNumFixedArgs(),
                 call->GetCallingConv(),
+                call->GetNumFixedArgs(),
                 Annot(inst)
             );
           } else {
@@ -210,8 +210,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 CloneVisitor::Map(call->args()),
                 call->GetFlags(),
                 cont,
-                call->GetNumFixedArgs(),
                 call->GetCallingConv(),
+                call->GetNumFixedArgs(),
                 Annot(inst)
             );
           }

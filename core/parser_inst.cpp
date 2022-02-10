@@ -367,8 +367,8 @@ Inst *Parser::CreateInst(
               args(1 + ts.size(), -1),
               flags(1 + ts.size(), -1),
               OpBlock(-1),
-              size,
               call(),
+              size,
               std::move(annot)
           );
         } else {
@@ -378,8 +378,38 @@ Inst *Parser::CreateInst(
               args(1 + ts.size(), 0),
               flags(1 + ts.size(), 0),
               nullptr,
-              size,
               call(),
+              size,
+              std::move(annot)
+          );
+        }
+      }
+      break;
+    }
+    case 'f': {
+      if (opc == "frame_call") {
+        if (is_sym(-1)) {
+          return new FrameCallInst(
+              ts,
+              OpInst(ts.size()),
+              OpInst(ts.size() + 1),
+              args(2 + ts.size(), -1),
+              flags(2 + ts.size(), -1),
+              OpBlock(-1),
+              call(),
+              size,
+              std::move(annot)
+          );
+        } else {
+          return new FrameCallInst(
+              ts,
+              OpInst(ts.size()),
+              OpInst(ts.size() + 1),
+              args(2 + ts.size(), 0),
+              flags(2 + ts.size(), 0),
+              nullptr,
+              call(),
+              size,
               std::move(annot)
           );
         }
@@ -396,8 +426,8 @@ Inst *Parser::CreateInst(
               flags(1 + ts.size(), -2),
               OpBlock(-2),
               OpBlock(-1),
-              size,
               call(),
+              size,
               std::move(annot)
           );
         } else {
@@ -408,8 +438,8 @@ Inst *Parser::CreateInst(
               flags(1 + ts.size(), -1),
               nullptr,
               OpBlock(-1),
-              size,
               call(),
+              size,
               std::move(annot)
           );
         }
@@ -463,8 +493,8 @@ Inst *Parser::CreateInst(
             OpInst(0),
             args(1, 0),
             flags(1, 0),
-            size,
             call(),
+            size,
             std::move(annot)
         );
       }

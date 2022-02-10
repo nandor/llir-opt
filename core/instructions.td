@@ -278,8 +278,8 @@ class CallSite : TerminatorInst {
     InstField<"Callee">,
     InstListField<"Args">,
     FlagListField<"Flags">,
-    OptUnsignedField<"NumFixedArgs">,
-    CallingConvField<"CallingConv">
+    CallingConvField<"CallingConv">,
+    OptUnsignedField<"NumFixedArgs">
   ];
 
   let HasSideEffects = 1;
@@ -297,7 +297,7 @@ class CallSite : TerminatorInst {
     /// Changes the calling conv.
     void SetCallingConv(CallingConv conv) { CallingConv_ = conv; }
 
-    /// Checks if the function is var arg: more args than fixed ones.
+    /// Such a call site has no variadic arguments.
     bool IsVarArg() const { return !!GetNumFixedArgs(); }
   }];
 
@@ -311,8 +311,8 @@ def CALL : CallSite
     InstListField<"Args">,
     FlagListField<"Flags">,
     BlockField<"Cont">,
-    OptUnsignedField<"NumFixedArgs">,
-    CallingConvField<"CallingConv">
+    CallingConvField<"CallingConv">,
+    OptUnsignedField<"NumFixedArgs">
   ];
 }
 
@@ -322,13 +322,16 @@ def TAIL_CALL : CallSite
     InstField<"Callee">,
     InstListField<"Args">,
     FlagListField<"Flags">,
-    OptUnsignedField<"NumFixedArgs">,
-    CallingConvField<"CallingConv">
+    CallingConvField<"CallingConv">,
+    OptUnsignedField<"NumFixedArgs">
   ];
   let IsReturn = 1;
   let NumReturns = 0;
 }
 
+/**
+ * Call instruction representing an exceptional continuation path.
+ */
 def INVOKE : CallSite
 {
   let Fields = [
@@ -337,8 +340,24 @@ def INVOKE : CallSite
     FlagListField<"Flags">,
     BlockField<"Cont">,
     BlockField<"Throw">,
-    OptUnsignedField<"NumFixedArgs">,
-    CallingConvField<"CallingConv">
+    CallingConvField<"CallingConv">,
+    OptUnsignedField<"NumFixedArgs">
+  ];
+}
+
+/**
+ * Call instruction that can change the frame.
+ */
+def FRAME_CALL : CallSite
+{
+  let Fields = [
+    InstField<"Frame">,
+    InstField<"Callee">,
+    InstListField<"Args">,
+    FlagListField<"Flags">,
+    BlockField<"Cont">,
+    CallingConvField<"CallingConv">,
+    OptUnsignedField<"NumFixedArgs">
   ];
 }
 

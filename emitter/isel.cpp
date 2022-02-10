@@ -406,7 +406,8 @@ void ISel::PrepareGlobals()
       auto tuneCPU = func.getTuneCPU();
       F->addFnAttr("target-tuneCPU", tuneCPU.empty() ? target_.getCPU() : tuneCPU);
 
-      F->addFnAttr("target-features", func.getFeatures());
+      auto fs = func.getFeatures();
+      F->addFnAttr("target-features", fs.empty() ? target_.getFS() : fs);
     }
 
     // Set a dummy calling conv to emulate the set
