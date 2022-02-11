@@ -310,9 +310,9 @@ def CALL : CallSite
     InstField<"Callee">,
     InstListField<"Args">,
     FlagListField<"Flags">,
-    BlockField<"Cont">,
     CallingConvField<"CallingConv">,
-    OptUnsignedField<"NumFixedArgs">
+    OptUnsignedField<"NumFixedArgs">,
+    BlockField<"Cont">
   ];
 }
 
@@ -338,10 +338,10 @@ def INVOKE : CallSite
     InstField<"Callee">,
     InstListField<"Args">,
     FlagListField<"Flags">,
-    BlockField<"Cont">,
-    BlockField<"Throw">,
     CallingConvField<"CallingConv">,
-    OptUnsignedField<"NumFixedArgs">
+    OptUnsignedField<"NumFixedArgs">,
+    BlockField<"Cont">,
+    BlockField<"Throw">
   ];
 }
 
@@ -351,13 +351,13 @@ def INVOKE : CallSite
 def FRAME_CALL : CallSite
 {
   let Fields = [
-    InstField<"Frame">,
     InstField<"Callee">,
     InstListField<"Args">,
     FlagListField<"Flags">,
-    BlockField<"Cont">,
     CallingConvField<"CallingConv">,
-    OptUnsignedField<"NumFixedArgs">
+    OptUnsignedField<"NumFixedArgs">,
+    InstField<"Frame">,
+    BlockField<"Cont">,
   ];
 }
 

@@ -131,9 +131,9 @@ bool UnusedArgPass::Run(Prog &prog)
                 site->GetCallee(),
                 newArgs,
                 newFlags,
-                call->GetCont(),
                 call->GetCallingConv(),
                 call->GetNumFixedArgs(),
+                call->GetCont(),
                 call->GetAnnots()
             );
             break;
@@ -158,10 +158,10 @@ bool UnusedArgPass::Run(Prog &prog)
                 site->GetCallee(),
                 newArgs,
                 newFlags,
-                call->GetCont(),
-                call->GetThrow(),
                 call->GetCallingConv(),
                 call->GetNumFixedArgs(),
+                call->GetCont(),
+                call->GetThrow(),
                 call->GetAnnots()
             );
             break;

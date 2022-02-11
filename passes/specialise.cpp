@@ -381,9 +381,9 @@ void SpecialisePass::Specialise(
             newMov,
             args,
             flags,
-            call->GetCont(),
             call->GetCallingConv(),
             numArgs,
+            call->GetCont(),
             call->GetAnnots()
         );
         break;
@@ -395,10 +395,10 @@ void SpecialisePass::Specialise(
             newMov,
             args,
             flags,
-            call->GetCont(),
-            call->GetThrow(),
             call->GetCallingConv(),
             numArgs,
+            call->GetCont(),
+            call->GetThrow(),
             call->GetAnnots()
         );
         break;

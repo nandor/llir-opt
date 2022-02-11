@@ -566,6 +566,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool wasTailCall = isTailCall;
+
+  // Determine the argument mapping.
   std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), call));
 
   // Find the number of bytes allocated to hold arguments.
@@ -574,7 +576,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Compute the stack difference for tail calls.
   int fpDiff = 0;
   if (isTailCall) {
-    std::unique_ptr<X86Call> ci(GetCallLowering(GetDAG(), func));
+    std::unique_ptr<X86Call> parentCI(GetCallLowering(GetDAG(), func));
     int bytesToPop;
     switch (func->GetCallingConv()) {
       default: {
@@ -582,7 +584,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
       case CallingConv::C: {
         if (func->IsVarArg()) {
-          bytesToPop = ci->GetFrameSize();
+          bytesToPop = parentCI->GetFrameSize();
         } else {
           bytesToPop = 0;
         }
@@ -729,6 +731,23 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Finalize the call node.
   if (inFlag.getNode()) {
     ops.push_back(inFlag);
+  }
+
+  if (auto *frameCall = ::cast_or_null<const FrameCallInst>(call)) {
+
+    auto &MRI = MF.getRegInfo();
+
+    ops[0] = DAG.getCopyToReg(
+        ops[0],
+        SDL_,
+        GetStackRegister(),
+        GetValue(frameCall->GetFrame()),
+        inFlag ? ops[ops.size() - 1] : inFlag
+    );
+
+    if (inFlag) {
+      ops[ops.size() - 1] = ops[0].getValue(1);
+    }
   }
 
   // Generate a call or a tail call.

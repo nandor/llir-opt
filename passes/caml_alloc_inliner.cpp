@@ -193,10 +193,10 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
           gcName,
           gcArgs,
           std::vector<TypeFlag>(gcArgs.size(), TypeFlag::GetNone()),
-          noGcBlock,
-          raise,
           CallingConv::CAML_GC,
           std::nullopt,
+          noGcBlock,
+          raise,
           std::move(annot)
       );
       for (PhiInst &phi : raise->phis()) {
@@ -210,9 +210,9 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
           gcName,
           gcArgs,
           std::vector<TypeFlag>(gcArgs.size(), TypeFlag::GetNone()),
-          noGcBlock,
           CallingConv::CAML_GC,
           std::nullopt,
+          noGcBlock,
           std::move(annot)
       );
     }

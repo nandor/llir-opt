@@ -166,10 +166,10 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             Map(call->GetCallee()),
             CloneVisitor::Map(call->args()),
             call->GetFlags(),
-            Map(call->GetCont()),
-            throw_,
             call->GetCallingConv(),
             call->GetNumFixedArgs(),
+            Map(call->GetCont()),
+            throw_,
             Annot(inst)
         );
       } else {
@@ -197,10 +197,10 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 Map(call->GetCallee()),
                 CloneVisitor::Map(call->args()),
                 call->GetFlags(),
-                cont,
-                throw_,
                 call->GetCallingConv(),
                 call->GetNumFixedArgs(),
+                cont,
+                throw_,
                 Annot(inst)
             );
           } else {
@@ -209,9 +209,9 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 Map(call->GetCallee()),
                 CloneVisitor::Map(call->args()),
                 call->GetFlags(),
-                cont,
                 call->GetCallingConv(),
                 call->GetNumFixedArgs(),
+                cont,
                 Annot(inst)
             );
           }
@@ -562,6 +562,7 @@ void InlineHelper::SplitEntry()
     switch (block->GetTerminator()->GetKind()) {
       case Inst::Kind::CALL:
       case Inst::Kind::INVOKE:
+      case Inst::Kind::FRAME_CALL:
       case Inst::Kind::JUMP_COND:
       case Inst::Kind::JUMP:
       case Inst::Kind::SWITCH: {

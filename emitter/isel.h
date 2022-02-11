@@ -223,6 +223,8 @@ protected:
   void LowerTailCall(const TailCallInst *inst);
   /// Lowers an invoke instruction.
   void LowerInvoke(const InvokeInst *inst);
+  /// Lowers a frame call instruction.
+  void LowerFrameCall(const FrameCallInst *inst);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.

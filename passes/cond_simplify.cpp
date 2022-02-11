@@ -247,6 +247,7 @@ public:
           case Inst::Kind::CALL:
           case Inst::Kind::TAIL_CALL:
           case Inst::Kind::INVOKE:
+          case Inst::Kind::FRAME_CALL:
           case Inst::Kind::RAISE: {
             break;
           }

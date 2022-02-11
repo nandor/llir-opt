@@ -573,6 +573,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::CALL:        return LowerCall(static_cast<const CallInst *>(i));
     case Inst::Kind::TAIL_CALL:   return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:      return LowerInvoke(static_cast<const InvokeInst *>(i));
+    case Inst::Kind::FRAME_CALL:  return LowerFrameCall(static_cast<const FrameCallInst *>(i));
     case Inst::Kind::RETURN:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::JUMP_COND:   return LowerJUMP_COND(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return LowerRaise(static_cast<const RaiseInst *>(i));
@@ -1978,6 +1979,36 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
   sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
   sourceMBB->normalizeSuccProbs();
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerFrameCall(const FrameCallInst *inst)
+{
+  auto &dag = GetDAG();
+
+  // Forward the flag.
+  if (ReturnsTwice(inst->GetCallingConv())) {
+    dag.getMachineFunction().setExposesReturnsTwice(true);
+  }
+
+  // Find the continuation block.
+  auto *sourceMBB = mbbs_[inst->getParent()];
+  auto *contMBB = mbbs_[inst->GetCont()];
+
+  // Lower the call.
+  LowerCallSite(dag.getRoot(), inst);
+
+  // Add a jump to the continuation block.
+  dag.setRoot(dag.getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      GetExportRoot(),
+      dag.getBasicBlock(contMBB)
+  ));
+
+  // Mark successors.
+  sourceMBB->addSuccessor(contMBB, BranchProbability::getOne());
 }
 
 // -----------------------------------------------------------------------------
