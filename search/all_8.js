@@ -22,7 +22,7 @@ var searchData=
   ['inline_470',['Inline',['../classInlineHelper.html#af9f583380e83ed5095a2e36e95758bcc',1,'InlineHelper']]],
   ['inlinehelper_471',['InlineHelper',['../classInlineHelper.html',1,'InlineHelper'],['../classInlineHelper.html#ae1edd22256fb20cc00c717f47b6f76cc',1,'InlineHelper::InlineHelper()']]],
   ['inlinerpass_472',['InlinerPass',['../classInlinerPass.html',1,'InlinerPass'],['../classInlinerPass.html#aee435a6feb2b6ac05eb2d8bba3dcc364',1,'InlinerPass::InlinerPass()']]],
-  ['insert_473',['insert',['../classBlock.html#ae03c5c7e14d4cdc686355ff93eab80d5',1,'Block::insert()'],['../classFunc.html#a0c16e09e03076fb757b3a499052e6311',1,'Func::insert()'],['../classBitSet.html#ad40503561af33f070604634cdeebb577',1,'BitSet::Insert()']]],
+  ['insert_473',['Insert',['../classBitSet.html#ad40503561af33f070604634cdeebb577',1,'BitSet::Insert()'],['../classBlock.html#ae03c5c7e14d4cdc686355ff93eab80d5',1,'Block::insert()'],['../classFunc.html#a0c16e09e03076fb757b3a499052e6311',1,'Func::insert()']]],
   ['insert_5f_474',['insert_',['../classISel.html#a4ff9c38aa74cb97d680ffb3d2696fc6e',1,'ISel']]],
   ['insertafter_475',['insertAfter',['../classBlock.html#a5651f3724030565c76018b6b0d1edd58',1,'Block::insertAfter()'],['../classFunc.html#a5ea0e040519f06bb349d70befab88a41',1,'Func::insertAfter()']]],
   ['inst_476',['Inst',['../classInst.html',1,'Inst'],['../classInst.html#a5d12023e1238e86f0d8cfecb35074a8f',1,'Inst::Inst(Kind kind, unsigned numOps, AnnotSet &amp;&amp;annot)'],['../classInst.html#ae0e6c8aaa66f657b720bfb27e276337d',1,'Inst::Inst(Kind kind, unsigned numOps, const AnnotSet &amp;annot)']]],
