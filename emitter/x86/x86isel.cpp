@@ -733,31 +733,80 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     ops.push_back(inFlag);
   }
 
-  if (auto *frameCall = ::cast_or_null<const FrameCallInst>(call)) {
-
-    auto &MRI = MF.getRegInfo();
-
-    ops[0] = DAG.getCopyToReg(
-        ops[0],
-        SDL_,
-        GetStackRegister(),
-        GetValue(frameCall->GetFrame()),
-        inFlag ? ops[ops.size() - 1] : inFlag
-    );
-
-    if (inFlag) {
-      ops[ops.size() - 1] = ops[0].getValue(1);
-    }
-  }
-
   // Generate a call or a tail call.
   SDVTList nodeTypes = DAG.getVTList(MVT::Other, MVT::Glue);
+  auto *frameCall = ::cast_or_null<const FrameCallInst>(call);
   if (isTailCall) {
+    assert(!frameCall && "frame calls cannot be tail calls");
     MF.getFrameInfo().setHasTailCall();
     DAG.setRoot(DAG.getNode(X86ISD::TC_RETURN, SDL_, nodeTypes, ops));
   } else {
+    if (frameCall) {
+      // Save the original rsp in rbp and set a new rsp.
+      SDValue rsp = DAG.getCopyFromReg(
+          ops[0],
+          SDL_,
+          GetStackRegister(),
+          ptrTy,
+          inFlag
+      );
+      ops[0] = rsp.getValue(1);
+      if (inFlag) {
+        ops[ops.size() - 1] = rsp.getValue(2);
+      }
+
+      ops[0] = DAG.getCopyToReg(
+          ops[0],
+          SDL_,
+          GetBaseRegister(),
+          rsp,
+          inFlag ? ops[ops.size() - 1] : inFlag
+      );
+
+      auto rbpReg = DAG.getRegister(GetBaseRegister(), ptrTy);
+      if (inFlag) {
+        ops[ops.size() - 1] = rbpReg;
+        ops.push_back(ops[0].getValue(1));
+      } else {
+        ops.push_back(rbpReg);
+      }
+
+      ops[0] = DAG.getCopyToReg(
+          ops[0],
+          SDL_,
+          GetStackRegister(),
+          GetValue(frameCall->GetFrame()),
+          inFlag ? ops[ops.size() - 1] : inFlag
+      );
+      if (inFlag) {
+        ops[ops.size() - 1] = ops[0].getValue(1);
+      }
+    }
+
     chain = DAG.getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
+
+    if (frameCall) {
+      // Restore rsp from rbp.
+      SDValue rbp = DAG.getCopyFromReg(
+          chain,
+          SDL_,
+          GetBaseRegister(),
+          ptrTy,
+          inFlag
+      );
+      chain = rbp.getValue(1);
+      inFlag = rbp.getValue(2);
+
+      chain = DAG.getCopyToReg(
+          chain,
+          SDL_,
+          GetStackRegister(),
+          rbp,
+          inFlag
+      );
+      inFlag = chain.getValue(1);
+    }
 
     // Find the register to store the return value in.
     llvm::SmallVector<CallLowering::RetLoc, 3> returns;
@@ -1671,4 +1720,10 @@ void X86ISel::LowerContextMask(bool store, unsigned op, SDValue addr, SDValue ma
 llvm::Register X86ISel::GetStackRegister() const
 {
   return GetPointerType() == MVT::i64 ? X86::RSP : X86::ESP;
+}
+
+// -----------------------------------------------------------------------------
+llvm::Register X86ISel::GetBaseRegister() const
+{
+  return GetPointerType() == MVT::i64 ? X86::RBP : X86::EBP;
 }

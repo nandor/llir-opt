@@ -391,24 +391,24 @@ Inst *Parser::CreateInst(
         if (is_sym(-1)) {
           return new FrameCallInst(
               ts,
-              OpInst(ts.size()),
+              OpInst(ts.size() + 1),
               args(2 + ts.size(), -1),
               flags(2 + ts.size(), -1),
               call(),
               size,
-              OpInst(ts.size() + 1),
+              OpInst(ts.size()),
               OpBlock(-1),
               std::move(annot)
           );
         } else {
           return new FrameCallInst(
               ts,
-              OpInst(ts.size()),
+              OpInst(ts.size() + 1),
               args(2 + ts.size(), 0),
               flags(2 + ts.size(), 0),
               call(),
               size,
-              OpInst(ts.size() + 1),
+              OpInst(ts.size()),
               nullptr,
               std::move(annot)
           );

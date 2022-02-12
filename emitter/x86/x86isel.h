@@ -184,6 +184,8 @@ private:
 
   /// Returns the stack pointer.
   llvm::Register GetStackRegister() const override;
+  /// Returns the base pointer.
+  llvm::Register GetBaseRegister() const;
 
 private:
   /// Lowers a call instruction.
