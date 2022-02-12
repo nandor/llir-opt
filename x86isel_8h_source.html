@@ -200,16 +200,17 @@ $(function() {
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="keywordtype">void</span> Select(SDNode *node)<span class="keyword"> override </span>{ m_-&gt;Select(node); }</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160; </div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;  llvm::Register GetStackRegister() <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;  <span class="keywordtype">void</span> LowerCallSite(llvm::SDValue chain, <span class="keyword">const</span> CallSite *call) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160; </div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;  llvm::X86TargetMachine &amp;tm_;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  std::unique_ptr&lt;X86Matcher&gt; m_;</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  llvm::Function *trampoline_;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;};</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;  llvm::Register GetBaseRegister() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  <span class="keywordtype">void</span> LowerCallSite(llvm::SDValue chain, <span class="keyword">const</span> CallSite *call) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  llvm::X86TargetMachine &amp;tm_;</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  std::unique_ptr&lt;X86Matcher&gt; m_;</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;  llvm::Function *trampoline_;</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  <span class="keywordtype">bool</span> shared_;</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;};</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassInst_html"><div class="ttname"><a href="classInst.html">Inst</a></div><div class="ttdef"><b>Definition:</b> inst.h:53</div></div>
 <div class="ttc" id="aclassFunc_html"><div class="ttname"><a href="classFunc.html">Func</a></div><div class="ttdef"><b>Definition:</b> func.h:30</div></div>
