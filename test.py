@@ -141,7 +141,7 @@ def run_test(path, output_dir=None):
     """Runs a test in a temporary directory."""
     if path.endswith('.S'):
       return run_opt_test(path, output_dir, '#')
-    if path.endswith('.c'):
+    if path.endswith('.c') or path.endswith('.cc'):
       return run_opt_test(path, output_dir, '//')
     raise Exception(f'Unknown extension: {path}')
 
