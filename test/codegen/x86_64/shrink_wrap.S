@@ -6,6 +6,10 @@ caml_apply2:
   .args i64,i64,v64,v64,v64
 .LBBentry697:
   .visibility local
+  # CHECK: cmpq
+  # CHECK: jne
+  # CHECK: pushq
+  # CHECK: popq
   arg.i64 $0, 0
   arg.i64 $1, 1
   arg.v64 $2, 2

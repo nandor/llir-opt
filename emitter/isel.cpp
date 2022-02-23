@@ -413,7 +413,7 @@ void ISel::PrepareGlobals()
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
     F->setCallingConv(getLLVMCallingConv(func.GetCallingConv()));
-    F->setDoesNotThrow();
+
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();

@@ -1,7 +1,6 @@
 // RUN: %clang -O2 -target llir_x86_64 -S -xc++ - -o - -O1
 
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
 
 class A {};
 class B {};
@@ -11,7 +10,7 @@ bool destroyed = false;
 
 class D { public: ~D() { destroyed = true; } };
 
-void run(int x)
+int run(int x)
 {
   D d;
 
@@ -23,19 +22,19 @@ void run(int x)
       default: throw 5;
     }
   } catch (const A &a) {
-    puts("A");
+    return 1;
   } catch (const B &a) {
-    puts("B");
+    return 2;
   } catch (const C &a) {
-    puts("C");
+    return 3;
   } catch (...) {
-    puts("default");
+    return 4;
   }
 }
 
 int main(int argc, char **argv)
 {
-  run(argc);
+  int ret = run(argc);
   assert(destroyed);
-  return 0;
+  return ret;
 }
