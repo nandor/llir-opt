@@ -76,6 +76,7 @@ Driver::Driver(
   , noShared_(args.hasFlag(OPT_Bstatic, OPT_Bdynamic, false))
   , relocatable_(args.hasArg(OPT_relocatable))
   , exportDynamic_(args.hasArg(OPT_export_dynamic))
+  , ehFrameHdr_(args.hasFlag(OPT_eh_frame_hdr, OPT_no_eh_frame_hdr, false))
   , targetCPU_(args.getLastArgValue(OPT_mcpu))
   , targetABI_(args.getLastArgValue(OPT_mabi))
   , targetFS_(args.getLastArgValue(OPT_mfs))
@@ -623,6 +624,12 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
                   args.push_back("-E");
                 }
               }
+            }
+            // Exception handling frames.
+            if (ehFrameHdr_) {
+              args.push_back("--eh-frame-hdr");
+            } else {
+              args.push_back("--no-eh-frame-hdr");
             }
             // Run the linker.
             return RunExecutable(ld, args);

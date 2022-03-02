@@ -111,6 +111,8 @@ private:
   bool relocatable_;
   /// Flag to indicate dynamic symbols are to be exported.
   bool exportDynamic_;
+  /// Flag to indicate whether exception handler frames are emitted.
+  bool ehFrameHdr_;
   /// Target CPU flag.
   std::string targetCPU_;
   /// Target ABI flag.

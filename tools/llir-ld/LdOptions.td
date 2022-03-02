@@ -171,6 +171,7 @@ def Bsymbolic: Flag<["-", "--"], "Bsymbolic">;
 def as_needed: Flag<["--"], "as-needed">;
 def no_as_needed: Flag<["--"], "no-as-needed">;
 def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
+def no_eh_frame_hdr: Flag<["--"], "no-eh-frame-hdr">;
 def d: Flag<["-"], "d">;
 def fatal_warnings: Flag<["--"], "fatal-warnings">;
 
