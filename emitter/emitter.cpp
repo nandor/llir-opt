@@ -124,6 +124,9 @@ void Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
     auto *os = printer->OutStreamer.get();
     auto *objInfo = &printer->getObjFileLowering();
 
+    // Print __EH_FRAME_LIST_END__.
+    os->setPrintEhFrameListEnd(true);
+
     // Check if there are OCaml functions.
     bool hasOCaml = false;
     for (auto &func : prog) {
