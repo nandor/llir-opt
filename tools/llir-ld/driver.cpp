@@ -552,33 +552,13 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
             std::vector<llvm::StringRef> args;
             args.push_back(ld);
 
-            // Architecture-specific flags.
-            switch (baseTriple_.getArch()) {
-              case llvm::Triple::x86:
-              case llvm::Triple::llir_x86: {
-                break;
-              }
-              case llvm::Triple::x86_64:
-              case llvm::Triple::llir_x86_64: {
-                args.push_back("--no-ld-generated-unwind-info");
-                break;
-              }
-              case llvm::Triple::aarch64:
-              case llvm::Triple::llir_aarch64: {
-                break;
-              }
-              case llvm::Triple::riscv64:
-              case llvm::Triple::llir_riscv64: {
-                break;
-              }
-              case llvm::Triple::ppc64le:
-              case llvm::Triple::llir_ppc64le: {
-                break;
-              }
-              default: {
-                return MakeError("unknown target: " + baseTriple_.str());
-              }
+            // Exception handling frames.
+            if (ehFrameHdr_) {
+              args.push_back("--eh-frame-hdr");
+            } else {
+              args.push_back("--no-eh-frame-hdr");
             }
+
             // Common flags.
             args.push_back("-nostdlib");
             // Output file.
@@ -625,12 +605,7 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
                 }
               }
             }
-            // Exception handling frames.
-            if (ehFrameHdr_) {
-              args.push_back("--eh-frame-hdr");
-            } else {
-              args.push_back("--no-eh-frame-hdr");
-            }
+
             // Run the linker.
             return RunExecutable(ld, args);
           });

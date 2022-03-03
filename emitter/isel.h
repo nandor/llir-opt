@@ -48,6 +48,8 @@ private:
   llvm::StringRef getPassName() const override;
   /// Requires MachineModuleInfo.
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
+  /// Set up the instruction selector to run on a module.
+  bool doInitialization(llvm::Module &M) override;
   /// Creates MachineFunctions from LLIR.
   bool runOnModule(llvm::Module &M) override;
 
@@ -197,8 +199,6 @@ protected:
   MVT GetPointerType() const;
 
 protected:
-  /// Prepare LLVM globals.
-  void PrepareGlobals();
   /// Prepare a function.
   virtual void PrepareFunction(const Func &func, llvm::MachineFunction &MF) {}
   /// Handle PHI nodes in successor blocks.

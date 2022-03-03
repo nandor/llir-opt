@@ -122,7 +122,6 @@ void ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 bool ISel::runOnModule(llvm::Module &Module)
 {
   M_ = &Module;
-  PrepareGlobals();
 
   // Generate code for functions.
   for (const Func &func : prog_) {
@@ -379,10 +378,12 @@ getLLVMVisibility(Visibility vis)
 };
 
 // -----------------------------------------------------------------------------
-void ISel::PrepareGlobals()
+bool ISel::doInitialization(llvm::Module &M)
 {
-  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &Ctx = M_->getContext();
+  auto *MMIWP = getAnalysisIfAvailable<llvm::MachineModuleInfoWrapperPass>();
+  assert(MMIWP && "MachineModuleInfoWrapperPass was not required");
+  auto &MMI = MMIWP->getMMI();
+  auto &Ctx = M.getContext();
 
   voidTy_ = llvm::Type::getVoidTy(Ctx);
   i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
@@ -394,9 +395,28 @@ void ISel::PrepareGlobals()
     auto [linkage, visibility, dso] = getLLVMVisibility(func.GetVisibility());
 
     // Add a dummy function to the module.
-    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
+    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), &M);
     F->setVisibility(visibility);
     F->setDSOLocal(dso);
+
+    // Forward exception info.
+    switch (func.GetCallingConv()) {
+      case CallingConv::C:
+      case CallingConv::WIN64: {
+        F->setHasUWTable();
+        break;
+      }
+      case CallingConv::CAML:
+      case CallingConv::CAML_ALLOC:
+      case CallingConv::CAML_GC:
+      case CallingConv::XEN:
+      case CallingConv::INTR:
+      case CallingConv::MULTIBOOT:
+      case CallingConv::SETJMP: {
+        F->setDoesNotThrow();
+        break;
+      }
+    }
 
     // Forward target CPU and features if set.
     {
@@ -425,7 +445,7 @@ void ISel::PrepareGlobals()
     for (const Block &block : func) {
       // Create a skeleton basic block, with a jump to itself.
       llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-          M_->getContext(),
+          M.getContext(),
           block.getName(),
           F,
           nullptr
@@ -448,7 +468,7 @@ void ISel::PrepareGlobals()
         auto [linkage, visibility, dso] = getLLVMVisibility(atom.GetVisibility());
 
         auto *GV = new llvm::GlobalVariable(
-            *M_,
+            M,
             i8PtrTy_,
             false,
             linkage,
@@ -467,7 +487,7 @@ void ISel::PrepareGlobals()
   for (const Extern &ext : prog_.externs()) {
     auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
     if (ext.GetSection() == ".text") {
-      auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
+      auto C = M.getOrInsertFunction(ext.getName(), funcTy_);
       auto *GV = llvm::cast<llvm::Function>(C.getCallee());
       GV->setDSOLocal(true);
       GV->setVisibility(visibility);
@@ -477,14 +497,14 @@ void ISel::PrepareGlobals()
           llvm::GlobalValue::ExternalLinkage,
           0,
           ext.getName(),
-          M_
+          &M
       );
       F->setDSOLocal(dso);
       F->addFnAttr("target-cpu", target_.getCPU());
       F->setVisibility(visibility);
     } else {
       auto *GV = new llvm::GlobalVariable(
-          *M_,
+          M,
           i8PtrTy_,
           false,
           linkage,
@@ -499,6 +519,7 @@ void ISel::PrepareGlobals()
       GV->setVisibility(visibility);
     }
   }
+  return false;
 }
 
 // -----------------------------------------------------------------------------
