@@ -96,82 +96,86 @@ bool UnusedArgPass::Run(Prog &prog)
         for (unsigned i = 0, n = site->arg_size(); i < n; ++i) {
           newFlags.push_back(site->flag(i));
           auto arg = site->arg(i);
-          if (it->second.count(i)) {
+          if (it->second.count(i) || arg->Is(Inst::Kind::UNDEF)) {
             newArgs.push_back(arg);
-          } else if (!arg->Is(Inst::Kind::UNDEF)) {
+          } else {
             auto *undef = new UndefInst(arg.GetType(), {});
             block.AddInst(undef, site);
             newArgs.push_back(undef);
             replaced = true;
           }
         }
-        if (replaced) {
-          NumSitesReplaced++;
-        }
-      }
-      if (auto it = removedArgs.find(callee); it != removedArgs.end()) {
+        assert(newArgs.size() == site->arg_size() && "invalid argument count");
+      } else if (auto it = removedArgs.find(callee); it != removedArgs.end()) {
         for (unsigned i = 0, n = site->arg_size(); i < n; ++i) {
           if (!it->second.count(i)) {
             newArgs.push_back(site->arg(i));
             newFlags.push_back(site->flag(i));
+          } else {
+            replaced = true;
           }
         }
-        replaced = true;
-        NumSitesSimplified++;
       }
 
-      if (replaced) {
-        CallSite *newInst = nullptr;
-        switch (site->GetKind()) {
-          default: llvm_unreachable("not a call instruction");
-          case Inst::Kind::CALL: {
-            auto *call = static_cast<CallInst *>(site);
-            newInst = new CallInst(
-                std::vector<Type>{ site->type_begin(), site->type_end() },
-                site->GetCallee(),
-                newArgs,
-                newFlags,
-                call->GetCallingConv(),
-                call->GetNumFixedArgs(),
-                call->GetCont(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          case Inst::Kind::TAIL_CALL: {
-            auto *call = static_cast<TailCallInst *>(site);
-            newInst = new TailCallInst(
-                std::vector<Type>{ site->type_begin(), site->type_end() },
-                site->GetCallee(),
-                newArgs,
-                newFlags,
-                call->GetCallingConv(),
-                call->GetNumFixedArgs(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          case Inst::Kind::INVOKE: {
-            auto *call = static_cast<InvokeInst *>(site);
-            newInst = new InvokeInst(
-                std::vector<Type>{ site->type_begin(), site->type_end() },
-                site->GetCallee(),
-                newArgs,
-                newFlags,
-                call->GetCallingConv(),
-                call->GetNumFixedArgs(),
-                call->GetCont(),
-                call->GetThrow(),
-                call->GetAnnots()
-            );
-            break;
-          }
-        }
-        block.AddInst(newInst, site);
-        site->replaceAllUsesWith(newInst);
-        site->eraseFromParent();
-        changed = true;
+      if (!replaced) {
+        continue;
       }
+
+      assert(newArgs.size() == newFlags.size() && "invalid replacement");
+
+      CallSite *newInst = nullptr;
+      switch (site->GetKind()) {
+        default: llvm_unreachable("not a call instruction");
+        case Inst::Kind::CALL: {
+          auto *call = static_cast<CallInst *>(site);
+          newInst = new CallInst(
+              std::vector<Type>{ site->type_begin(), site->type_end() },
+              site->GetCallee(),
+              newArgs,
+              newFlags,
+              call->GetCallingConv(),
+              call->GetNumFixedArgs(),
+              call->GetCont(),
+              call->GetAnnots()
+          );
+          break;
+        }
+        case Inst::Kind::TAIL_CALL: {
+          auto *call = static_cast<TailCallInst *>(site);
+          newInst = new TailCallInst(
+              std::vector<Type>{ site->type_begin(), site->type_end() },
+              site->GetCallee(),
+              newArgs,
+              newFlags,
+              call->GetCallingConv(),
+              call->GetNumFixedArgs(),
+              call->GetAnnots()
+          );
+          break;
+        }
+        case Inst::Kind::INVOKE: {
+          auto *call = static_cast<InvokeInst *>(site);
+          newInst = new InvokeInst(
+              std::vector<Type>{ site->type_begin(), site->type_end() },
+              site->GetCallee(),
+              newArgs,
+              newFlags,
+              call->GetCallingConv(),
+              call->GetNumFixedArgs(),
+              call->GetCont(),
+              call->GetThrow(),
+              call->GetAnnots()
+          );
+          break;
+        }
+      }
+
+      block.AddInst(newInst, site);
+      site->replaceAllUsesWith(newInst);
+      site->eraseFromParent();
+      changed = true;
+
+      NumSitesReplaced++;
     }
   }
 
