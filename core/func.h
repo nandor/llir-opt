@@ -136,6 +136,11 @@ public:
   /// Returns the number of parameters.
   unsigned GetNumParams() const { return params_.size(); }
 
+  /// Set the personality routine.
+  void SetPersonality(Global *func);
+  /// Return the personality routine.
+  ConstRef<Global> GetPersonality() const;
+
   /// Iterator over stack objects.
   llvm::ArrayRef<StackObject> objects() const { return objects_; }
 

@@ -152,6 +152,13 @@ void BitcodeWriter::Write(const Func &func)
     }
   }
 
+  // Emit personality.
+  if (auto pers = func.GetPersonality()) {
+    Write(*pers);
+  } else {
+    Emit<uint32_t>(0);
+  }
+
   // Emit BBs and instructions.
   {
     std::unordered_map<ConstRef<Inst>, unsigned> map;
@@ -285,9 +292,7 @@ void BitcodeWriter::Write(const Expr &expr)
     case Expr::Kind::SYMBOL_OFFSET: {
       auto &offsetExpr = static_cast<const SymbolOffsetExpr &>(expr);
       if (auto *symbol = offsetExpr.GetSymbol()) {
-        auto it = symbols_.find(symbol);
-        assert(it != symbols_.end() && "missing symbol");
-        Emit<uint32_t>(it->second + 1);
+        Write(*symbol);
       } else {
         Emit<uint32_t>(0);
       }
@@ -296,6 +301,14 @@ void BitcodeWriter::Write(const Expr &expr)
     }
   }
   llvm_unreachable("invalid expression kind");
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(const Global &global)
+{
+  auto it = symbols_.find(&global);
+  assert(it != symbols_.end() && "missing symbol");
+  Emit<uint32_t>(it->second + 1);
 }
 
 // -----------------------------------------------------------------------------

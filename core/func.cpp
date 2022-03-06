@@ -33,6 +33,23 @@ Func::~Func()
 }
 
 // -----------------------------------------------------------------------------
+void Func::SetPersonality(Global *func)
+{
+  resizeUses(1);
+  Set(0, func);
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Global> Func::GetPersonality() const
+{
+  if (User::size() != 0) {
+    return ::cast<const Global>(Get(0));
+  } else {
+    return nullptr;
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Func::removeFromParent()
 {
   getParent()->remove(this->getIterator());

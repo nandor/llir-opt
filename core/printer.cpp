@@ -203,6 +203,11 @@ void Printer::Print(const Func &func)
     os_ << "\n";
   }
 
+  // Print personality.
+  if (auto pers = func.GetPersonality()) {
+    os_ << "\t.personality\t" << pers->getName() << "\n";
+  }
+
   // Hook to print additional info.
   PrintFuncHeader(func);
 

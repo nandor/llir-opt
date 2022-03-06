@@ -162,6 +162,14 @@ void BitcodeReader::Read(Func &func)
     func.SetParameters(parameters);
   }
 
+  // Read personality.
+  if (auto symbol = ReadData<uint32_t>()) {
+    if (symbol - 1 >= globals_.size()) {
+      llvm::report_fatal_error("invalid global index");
+    }
+    func.SetPersonality(globals_[symbol - 1]);
+  }
+
   // Read blocks.
   {
     std::vector<Ref<Inst>> map;

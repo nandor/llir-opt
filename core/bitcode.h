@@ -131,6 +131,8 @@ private:
   void Write(ConstRef<Constant> value);
   /// Writes an expression.
   void Write(const Expr &expr);
+  /// Writes a global.
+  void Write(const Global &global);
   /// Writes an annotation.
   void Write(const Annot &annot);
   /// Writes a constructor/destructor.

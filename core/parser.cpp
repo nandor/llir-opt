@@ -381,6 +381,7 @@ void Parser::ParseDirective(const std::string_view op)
       if (op == ".p2align") return ParseP2Align();
       if (op == ".protected") return ParseProtected();
       if (op == ".popsection") return ParsePopSection();
+      if (op == ".personality") return ParsePersonality();
       break;
     }
     case 'q': {
@@ -611,6 +612,15 @@ void Parser::ParseArgs()
     func->SetParameters(params);
   }
   l_.Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParsePersonality()
+{
+  auto *func = GetFunction();
+  l_.Check(Token::IDENT);
+  func->SetPersonality(prog_->GetGlobalOrExtern(l_.String()));
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
