@@ -136,6 +136,9 @@ bool ISel::runOnModule(llvm::Module &Module)
     // Register a handler for more verbose debug info.
     F_ = M_->getFunction(func.getName());
     llvm::PassManagerPrettyStackEntry E(this, *F_);
+    if (auto pers = func.GetPersonality()) {
+      F_->setPersonalityFn(M_->getNamedValue(pers->getName()));
+    }
 
     // Create a MachineFunction, attached to the dummy one.
     auto *MF = funcs_[&func];
@@ -389,6 +392,9 @@ bool ISel::doInitialization(llvm::Module &M)
   i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
 
+  // Gather the set of personality functions.
+  llvm::DenseSet<llvm::StringRef> personalities;
+
   // Create function definitions for all functions.
   for (const Func &func : prog_) {
     // Determine the LLVM linkage type.
@@ -458,6 +464,10 @@ bool ISel::doInitialization(llvm::Module &M)
       mbbs_[&block] = MBB;
       MF->push_back(MBB);
     }
+
+    if (auto pers = func.GetPersonality()) {
+      personalities.insert(pers->getName());
+    }
   }
 
   // Create objects for all atoms.
@@ -486,7 +496,15 @@ bool ISel::doInitialization(llvm::Module &M)
   // Create function declarations for externals.
   for (const Extern &ext : prog_.externs()) {
     auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
-    if (ext.GetSection() == ".text") {
+    if (personalities.count(ext.getName())) {
+      MMI.addPersonality(llvm::Function::Create(
+          funcTy_,
+          llvm::GlobalValue::ExternalLinkage,
+          0,
+          ext.getName(),
+          &M
+      ));
+    } else if (ext.GetSection() == ".text") {
       auto C = M.getOrInsertFunction(ext.getName(), funcTy_);
       auto *GV = llvm::cast<llvm::Function>(C.getCallee());
       GV->setDSOLocal(true);
@@ -519,6 +537,7 @@ bool ISel::doInitialization(llvm::Module &M)
       GV->setVisibility(visibility);
     }
   }
+
   return false;
 }
 
@@ -1013,6 +1032,8 @@ void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
     }
     Export(inst->GetSubValue(retLoc.Index), ret);
   }
+
+  MF.getOrCreateLandingPadInfo(MBB_);
 }
 
 // -----------------------------------------------------------------------------
