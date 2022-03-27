@@ -35,6 +35,7 @@
 namespace ISD = llvm::ISD;
 using BranchProbability = llvm::BranchProbability;
 using GlobalValue = llvm::GlobalValue;
+using MCSymbol = llvm::MCSymbol;
 
 
 // -----------------------------------------------------------------------------
@@ -497,13 +498,13 @@ bool ISel::doInitialization(llvm::Module &M)
   for (const Extern &ext : prog_.externs()) {
     auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
     if (personalities.count(ext.getName())) {
-      MMI.addPersonality(llvm::Function::Create(
+      llvm::Function::Create(
           funcTy_,
           llvm::GlobalValue::ExternalLinkage,
           0,
           ext.getName(),
           &M
-      ));
+      );
     } else if (ext.GetSection() == ".text") {
       auto C = M.getOrInsertFunction(ext.getName(), funcTy_);
       auto *GV = llvm::cast<llvm::Function>(C.getCallee());
@@ -535,6 +536,14 @@ bool ISel::doInitialization(llvm::Module &M)
       );
       GV->setDSOLocal(dso);
       GV->setVisibility(visibility);
+    }
+  }
+
+  for (auto pers : personalities) {
+    if (auto *func = llvm::dyn_cast<llvm::Function>(M.getNamedValue(pers))) {
+      MMI.addPersonality(func);
+    } else {
+      llvm::report_fatal_error("invalid personality function " + pers);
     }
   }
 
@@ -990,8 +999,17 @@ void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
+  auto &MMI = MF.getMMI();
+  auto &Ctx = MMI.getContext();
   auto &TLI = *MF.getSubtarget().getTargetLowering();
 
+  // Record the label of the landing pad.
+  auto &pad = MF.getOrCreateLandingPadInfo(MBB_);
+  MCSymbol *label = Ctx.createTempSymbol();
+  pad.LandingPadLabel = label;
+  DAG.setRoot(DAG.getEHLabel(SDL_, DAG.getRoot(), label));
+
+  // Lower the entry registers.
   for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
     auto &retLoc = ci.Return(i);
     llvm::SmallVector<SDValue, 2> parts;
@@ -1032,8 +1050,6 @@ void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
     }
     Export(inst->GetSubValue(retLoc.Index), ret);
   }
-
-  MF.getOrCreateLandingPadInfo(MBB_);
 }
 
 // -----------------------------------------------------------------------------
@@ -1996,6 +2012,7 @@ void ISel::LowerInvoke(const InvokeInst *inst)
 
   // Find the continuation blocks.
   auto &MMI = MF.getMMI();
+  auto &Ctx = MMI.getContext();
   auto *bCont = inst->GetCont();
   auto *bThrow = inst->GetThrow();
   auto *mbbCont = mbbs_[bCont];
@@ -2004,8 +2021,16 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   // Mark the landing pad as such.
   mbbThrow->setIsEHPad();
 
-  // Lower the invoke call: export here since the call might not return.
-  LowerCallSite(GetPrimitiveExportRoot(), inst);
+  // Create a start label and export here since the call might not return.
+  MCSymbol *lblBegin = Ctx.createTempSymbol();
+  DAG.setRoot(DAG.getEHLabel(SDL_, GetPrimitiveExportRoot(), lblBegin));
+
+  // Lower the invoke call.
+  LowerCallSite(DAG.getRoot(), inst);
+
+  // Record an end label for the call.
+  MCSymbol *lblEnd = MMI.getContext().createTempSymbol();
+  DAG.setRoot(DAG.getEHLabel(SDL_, DAG.getRoot(), lblEnd));
 
   // Add a jump to the continuation block: export the invoke result.
   DAG.setRoot(DAG.getNode(
@@ -2021,6 +2046,9 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
   sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
   sourceMBB->normalizeSuccProbs();
+
+  // Record the mapping from the invoke to the landing pad.
+  MF.addInvoke(mbbThrow, lblBegin, lblEnd);
 }
 
 // -----------------------------------------------------------------------------

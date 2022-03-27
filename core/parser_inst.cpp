@@ -521,6 +521,23 @@ Inst *Parser::CreateInst(
 // -----------------------------------------------------------------------------
 void Parser::ParseAnnotation(const std::string_view name, AnnotSet &annot)
 {
+  if (name == "probability") {
+    std::vector<size_t> allocs;
+    std::vector<CamlFrame::DebugInfos> infos;
+
+    auto sexp = l_.ParseSExp();
+    if (auto *list = sexp.AsList(); list && list->size() == 2) {
+      auto *n = (*list)[0].AsNumber();
+      auto *d = (*list)[1].AsNumber();
+      if (!n || !d) {
+        l_.Error("invalid numerator or denumerator");
+      }
+      if (!annot.Set<Probability>(n->Get(), d->Get())) {
+        l_.Error("duplicate @probability");
+      }
+    }
+    return;
+  }
   if (name == "caml_frame") {
     std::vector<size_t> allocs;
     std::vector<CamlFrame::DebugInfos> infos;
@@ -586,22 +603,56 @@ void Parser::ParseAnnotation(const std::string_view name, AnnotSet &annot)
     }
     return;
   }
-  if (name == "probability") {
-    std::vector<size_t> allocs;
-    std::vector<CamlFrame::DebugInfos> infos;
-
+  if (name == "cxx_lsda") {
     auto sexp = l_.ParseSExp();
-    if (auto *list = sexp.AsList(); list && list->size() == 2) {
-      auto *n = (*list)[0].AsNumber();
-      auto *d = (*list)[1].AsNumber();
-      if (!n || !d) {
-        l_.Error("invalid numerator or denumerator");
+    if (auto *list = sexp.AsList(); list && list->size() == 4) {
+      bool isCleanup;
+      if (auto cleanup = (*list)[0].AsNumber()) {
+        isCleanup = cleanup->Get();
+      } else {
+        l_.Error("@cxx_lsda expects cleanup flag");
       }
-      if (!annot.Set<Probability>(n->Get(), d->Get())) {
-        l_.Error("duplicate @probability");
+
+      bool isCatchAll;
+      if (auto catchAll = (*list)[1].AsNumber()) {
+        isCatchAll = catchAll->Get();
+      } else {
+        l_.Error("@cxx_lsda expects catch-all flag");
       }
+
+      std::vector<std::string> cs;
+      if (auto catchTys = (*list)[2].AsList()) {
+        for (unsigned i = 0, n = catchTys->size(); i < n; ++i) {
+          if (auto str = (*catchTys)[i].AsString()) {
+            cs.push_back(str->Get());
+          } else {
+            l_.Error("@cxx_lsda expects catch type names");
+          }
+        }
+      } else {
+        l_.Error("@cxx_lsda expects catch types");
+      }
+
+      std::vector<std::string> fs;
+      if (auto filterTys = (*list)[3].AsList()) {
+        for (unsigned i = 0, n = filterTys->size(); i < n; ++i) {
+          if (auto str = (*filterTys)[i].AsString()) {
+            fs.push_back(str->Get());
+          } else {
+            l_.Error("@cxx_lsda expects filter type names");
+          }
+        }
+      } else {
+        l_.Error("@cxx_lsda expects filter types");
+      }
+
+      if (!annot.Set<CxxLSDA>(isCleanup, isCatchAll, std::move(cs), std::move(fs))) {
+        l_.Error("duplicate @cxx_lsda");
+      }
+      return;
+    } else {
+      l_.Error("malformed @cxx_lsda, expecte 4-element tuple");
     }
-    return;
   }
   l_.Error("invalid annotation");
 }

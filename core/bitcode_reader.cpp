@@ -413,6 +413,23 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       annots.Set<Probability>(n, d);
       return;
     }
+    case Annot::Kind::CXX_LSDA: {
+      bool cleanup = ReadData<uint8_t>();
+      bool catchAll = ReadData<uint8_t>();
+
+      std::vector<std::string> cs;
+      for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+        cs.push_back(ReadString());
+      }
+
+      std::vector<std::string> fs;
+      for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+        fs.push_back(ReadString());
+      }
+
+      annots.Set<CxxLSDA>(cleanup, catchAll, std::move(cs), std::move(fs));
+      return;
+    }
   }
   llvm::report_fatal_error("invalid annotation kind");
 }

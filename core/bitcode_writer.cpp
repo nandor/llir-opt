@@ -316,6 +316,12 @@ void BitcodeWriter::Write(const Annot &annot)
 {
   Emit<uint8_t>(static_cast<uint8_t>(annot.GetKind()));
   switch (annot.GetKind()) {
+    case Annot::Kind::PROBABILITY: {
+      auto &p = static_cast<const Probability &>(annot);
+      Emit<uint32_t>(p.GetNumerator());
+      Emit<uint32_t>(p.GetDenumerator());
+      return;
+    }
     case Annot::Kind::CAML_FRAME: {
       auto &frame = static_cast<const CamlFrame &>(annot);
       Emit<uint8_t>(frame.alloc_size());
@@ -333,10 +339,20 @@ void BitcodeWriter::Write(const Annot &annot)
       }
       return;
     }
-    case Annot::Kind::PROBABILITY: {
-      auto &p = static_cast<const Probability &>(annot);
-      Emit<uint32_t>(p.GetNumerator());
-      Emit<uint32_t>(p.GetDenumerator());
+    case Annot::Kind::CXX_LSDA: {
+      auto &lsda = static_cast<const CxxLSDA &>(annot);
+      Emit<uint8_t>(lsda.IsCleanup());
+      Emit<uint8_t>(lsda.IsCatchAll());
+
+      Emit<uint8_t>(lsda.catch_size());
+      for (auto &ty : lsda.catches()) {
+        Emit(ty);
+      }
+
+      Emit<uint8_t>(lsda.filter_size());
+      for (auto &ty : lsda.filters()) {
+        Emit(ty);
+      }
       return;
     }
   }

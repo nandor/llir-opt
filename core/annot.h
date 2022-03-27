@@ -15,8 +15,9 @@
 class Annot : public llvm::ilist_node<Annot> {
 public:
   enum class Kind {
-    CAML_FRAME  = 0,
-    PROBABILITY = 1,
+    PROBABILITY = 0,
+    CAML_FRAME  = 1,
+    CXX_LSDA    = 2,
   };
 
 public:
@@ -36,6 +37,31 @@ private:
   Kind kind_;
 };
 
+/**
+ * Annotates a conditional jump with the probability of the taken branch.
+ */
+class Probability final : public Annot {
+public:
+  static constexpr Annot::Kind kAnnotKind = Kind::PROBABILITY;
+
+public:
+  /// Constructs an annotation carrying a probability.
+  Probability(uint32_t n, uint32_t d);
+
+  /// Returns the numerator.
+  uint32_t GetNumerator() const { return n_; };
+  /// Returns the denominator.
+  uint32_t GetDenumerator() const { return d_; }
+
+  /// Checks if two annotations are equal.
+  bool operator==(const Probability &that) const;
+
+private:
+  /// Numerator.
+  uint32_t n_;
+  /// Denominator.
+  uint32_t d_;
+};
 
 /**
  * Class representing a set of annotations.
@@ -245,27 +271,57 @@ private:
 };
 
 /**
- * Annotates a conditional jump with the probability of the taken branch.
+ * Annotates a landing pad with exception handling information.
  */
-class Probability final : public Annot {
+class CxxLSDA final : public Annot {
 public:
-  static constexpr Annot::Kind kAnnotKind = Kind::PROBABILITY;
+  static constexpr Annot::Kind kAnnotKind = Kind::CXX_LSDA;
+
+  /// Iterator over type IDs.
+  using const_type_iterator = std::vector<std::string>::const_iterator;
 
 public:
-  /// Constructs an annotation carrying a probability.
-  Probability(uint32_t n, uint32_t d);
+  CxxLSDA(
+      bool cleanup,
+      bool catchAll,
+      std::vector<std::string> &&catches,
+      std::vector<std::string> &&filters)
+    : Annot(Kind::CXX_LSDA)
+    , cleanup_(cleanup)
+    , catchAll_(catchAll)
+    , catches_(std::move(catches))
+    , filters_(std::move(filters))
+  {
+  }
 
-  /// Returns the numerator.
-  uint32_t GetNumerator() const { return n_; };
-  /// Returns the denominator.
-  uint32_t GetDenumerator() const { return d_; }
+  /// Checks whether the frame is a cleanup frame.
+  bool IsCleanup() const { return cleanup_; }
+  /// Checks whether the frame is a catch-all frame.
+  bool IsCatchAll() const { return catchAll_; }
 
-  /// Checks if two annotations are equal.
-  bool operator==(const Probability &that) const;
+  /// Returns the number of catches.
+  size_t catch_size() const { return catches_.size(); }
+  /// Iterator over catches.
+  llvm::iterator_range<const_type_iterator> catches() const
+  {
+    return { catches_.begin(), catches_.end() };
+  }
+
+  /// Returns the number of filters.
+  size_t filter_size() const { return filters_.size(); }
+  /// Iterator over filters.
+  llvm::iterator_range<const_type_iterator> filters() const
+  {
+    return { filters_.begin(), filters_.end() };
+  }
 
 private:
-  /// Numerator.
-  uint32_t n_;
-  /// Denominator.
-  uint32_t d_;
+  /// Indicates whether the landing pad has cleanup code.
+  bool cleanup_;
+  /// Indicates whether the landing pad has a catch-all clause.
+  bool catchAll_;
+  /// List of catch types.
+  std::vector<std::string> catches_;
+  /// List of filter types.
+  std::vector<std::string> filters_;
 };
